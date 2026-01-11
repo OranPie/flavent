@@ -1,0 +1,9 @@
+type Event.Tick = {}
+
+sector main:
+  on Event.Tick -> do:
+    for x in (1, 2, 3):
+      yield()
+    stop()
+
+run()

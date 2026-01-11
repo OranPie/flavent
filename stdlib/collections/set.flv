@@ -1,0 +1,16 @@
+use collections.map
+use collections.list
+
+type Set[T] = Map[T, Unit]
+
+fn setEmpty[T]() -> Set[T] = mapEmpty()
+
+fn setHas[T](s: Set[T], x: T) -> Bool = match mapGet(s, x):
+  Some(_) -> true
+  None -> false
+
+fn setAdd[T](s: Set[T], x: T) -> Set[T] = mapPut(s, x, ())
+
+fn setRemove[T](s: Set[T], x: T) -> Set[T] = mapRemove(s, x)
+
+fn setSize[T](s: Set[T]) -> Int = length(s)

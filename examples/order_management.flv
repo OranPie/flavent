@@ -1,0 +1,25 @@
+type Event.PlaceOrder = {}
+type Event.CancelOrder = {}
+
+sector Warehouse:
+  fn checkStock(item: Str) -> Bool = true
+
+sector OrderManager:
+  let orders = 0
+
+  fn@OrderManager createOrder(item: Str) -> Result[Str, Str] = do:
+    let stockOk = rpc Warehouse.checkStock(item)
+    if stockOk:
+      return Ok("ORD-123")
+    else:
+      return Err("Out of stock")
+
+  on Event.PlaceOrder as req -> do:
+    let id = createOrder("sku-1")?
+    stop()
+
+  on Event.CancelOrder as req -> do:
+    0
+    stop()
+
+run()

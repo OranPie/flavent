@@ -1,0 +1,83 @@
+use _bridge_python
+use collections.list
+use std.option
+use bytelib
+
+type UUID = { bytes: Bytes }
+
+fn _uLen(s: Str) -> Int = strLen(s)
+fn _uCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn _uSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+
+fn _uHexVal(c: Int) -> Int = match c >= 48 and c <= 57:
+  true -> c - 48
+  false -> match c >= 97 and c <= 102:
+    true -> 10 + (c - 97)
+    false -> match c >= 65 and c <= 70:
+      true -> 10 + (c - 65)
+      false -> 0 - 1
+
+fn _uIsHyphenPos(i: Int) -> Bool = i == 8 or i == 13 or i == 18 or i == 23
+
+fn _uParseHexByte(s: Str, i: Int) -> Int = do:
+  let a = _uHexVal(_uCodeAt(s, i))
+  let b = _uHexVal(_uCodeAt(s, i + 1))
+  return match a < 0 or b < 0:
+    true -> 0 - 1
+    false -> a * 16 + b
+
+type _UAcc = { ok: Bool, out: List[Int] }
+
+fn _uParseLoop(s: Str, i: Int, bi: Int) -> _UAcc = do:
+  let n = _uLen(s)
+  return match bi >= 16:
+    true -> match i == n:
+      true -> { ok = true, out = nil() }
+      false -> { ok = false, out = nil() }
+    false -> match i >= n:
+      true -> { ok = false, out = nil() }
+      false -> match _uIsHyphenPos(i):
+        true -> match _uCodeAt(s, i) == 45:
+          true -> _uParseLoop(s, i + 1, bi)
+          false -> { ok = false, out = nil() }
+        false -> do:
+          let b = _uParseHexByte(s, i)
+          return match b < 0:
+            true -> { ok = false, out = nil() }
+            false -> do:
+              let acc = _uParseLoop(s, i + 2, bi + 1)
+              return match acc.ok:
+                true -> { ok = true, out = Cons(b, acc.out) }
+                false -> acc
+
+fn parse(s: Str) -> Option[UUID] = do:
+  let n = _uLen(s)
+  return match n != 36:
+    true -> None
+    false -> do:
+      let acc = _uParseLoop(s, 0, 0)
+      return match acc.ok:
+        true -> Some({ bytes = bytesFromList(reverse(acc.out)) })
+        false -> None
+
+fn _uHexNib(n: Int) -> Str = _uSlice("0123456789abcdef", n, n + 1)
+
+fn _uHexByte(b: Int) -> Str = do:
+  let hi = b / 16
+  let lo = b - (b / 16) * 16
+  return _uHexNib(hi) + _uHexNib(lo)
+
+fn _uStrAcc(xs: List[Int], bi: Int, acc: Str) -> Str = match xs:
+  Nil -> acc
+  Cons(x, rest) -> do:
+    let sep = match bi == 4 or bi == 6 or bi == 8 or bi == 10:
+      true -> "-"
+      false -> ""
+    return _uStrAcc(rest, bi + 1, acc + sep + _uHexByte(x))
+
+fn toString(u: UUID) -> Str = _uStrAcc(bytesToList(u.bytes), 0, "")
+
+sector uuid:
+  fn uuid4() -> UUID = do:
+    let b = rpc _bridge_python.uuid4Bytes()
+    return { bytes = b }

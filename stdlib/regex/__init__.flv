@@ -1,0 +1,366 @@
+use std.option
+use std.result
+use _bridge_python
+use collections.list
+
+// Minimal regex surface for now.
+//
+// Future directions:
+// - Return Result[Regex, Str] from compile() (syntax validation).
+// - Implement NFA/DFA in pure Flavent.
+// - Or route execution through an internal bridge (discouraged unless unavoidable).
+
+type Regex = { pat: Str }
+
+fn regex(pat: Str) -> Regex = { pat = pat }
+
+// Alias for now.
+fn compile(pat: Str) -> Regex = regex(pat)
+
+type _RxRange = { lo: Int, hi: Int }
+
+type _RxClass = { invert: Bool, ranges: List[_RxRange], digit: Bool, word: Bool, space: Bool }
+
+type _RxAtom = RxAny(Int) | RxChar(Int, Int) | RxClass(_RxClass, Int)
+
+fn _rxCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+
+fn _rxLen(s: Str) -> Int = strLen(s)
+
+fn _rxIsDigit(c: Int) -> Bool = c >= 48 and c <= 57
+
+fn _rxIsUpper(c: Int) -> Bool = c >= 65 and c <= 90
+
+fn _rxIsLower(c: Int) -> Bool = c >= 97 and c <= 122
+
+fn _rxIsWord(c: Int) -> Bool = _rxIsUpper(c) or _rxIsLower(c) or _rxIsDigit(c) or c == 95
+
+fn _rxIsSpace(c: Int) -> Bool = c == 32 or c == 9 or c == 10 or c == 13
+
+fn _rxRangeMatches(r: _RxRange, c: Int) -> Bool = c >= r.lo and c <= r.hi
+
+fn _rxRangesMatches(rs: List[_RxRange], c: Int) -> Bool = match rs:
+  Nil -> false
+  Cons(r, rest) -> match _rxRangeMatches(r, c):
+    true -> true
+    false -> _rxRangesMatches(rest, c)
+
+fn _rxClassMatches(cls: _RxClass, c: Int) -> Bool = do:
+  let m0 = _rxRangesMatches(cls.ranges, c)
+  let m1 = cls.digit and _rxIsDigit(c)
+  let m2 = cls.word and _rxIsWord(c)
+  let m3 = cls.space and _rxIsSpace(c)
+  let m = m0 or m1 or m2 or m3
+  return match cls.invert:
+    true -> not m
+    false -> m
+
+fn _rxHasAny[T](xs: List[T]) -> Bool = match xs:
+  Nil -> false
+  Cons(_x, _rest) -> true
+
+fn _rxFindClassEnd(pat: Str, i: Int, end: Int) -> Int = match i >= end:
+  true -> 0 - 1
+  false -> do:
+    let c = _rxCodeAt(pat, i)
+    return match c == 92 and i + 1 < end:
+      true -> _rxFindClassEnd(pat, i + 2, end)
+      false -> match c == 93:
+        true -> i
+        false -> _rxFindClassEnd(pat, i + 1, end)
+
+fn _rxFindGroupClose(pat: Str, i: Int, end: Int, depth: Int) -> Int = match i >= end:
+  true -> 0 - 1
+  false -> do:
+    let c = _rxCodeAt(pat, i)
+    return match c == 92 and i + 1 < end:
+      true -> _rxFindGroupClose(pat, i + 2, end, depth)
+      false -> match c == 91:
+        true -> do:
+          let j = _rxFindClassEnd(pat, i + 1, end)
+          return match j < 0:
+            true -> 0 - 1
+            false -> _rxFindGroupClose(pat, j + 1, end, depth)
+        false -> match c == 40:
+          true -> _rxFindGroupClose(pat, i + 1, end, depth + 1)
+          false -> match c == 41:
+            true -> match depth == 1:
+              true -> i
+              false -> _rxFindGroupClose(pat, i + 1, end, depth - 1)
+            false -> _rxFindGroupClose(pat, i + 1, end, depth)
+
+fn _rxFindTopBar(pat: Str, i: Int, end: Int, depth: Int) -> Int = match i >= end:
+  true -> 0 - 1
+  false -> do:
+    let c = _rxCodeAt(pat, i)
+    return match c == 92 and i + 1 < end:
+      true -> _rxFindTopBar(pat, i + 2, end, depth)
+      false -> match c == 91:
+        true -> do:
+          let j = _rxFindClassEnd(pat, i + 1, end)
+          return match j < 0:
+            true -> 0 - 1
+            false -> _rxFindTopBar(pat, j + 1, end, depth)
+        false -> match c == 40:
+          true -> _rxFindTopBar(pat, i + 1, end, depth + 1)
+          false -> match c == 41 and depth > 0:
+            true -> _rxFindTopBar(pat, i + 1, end, depth - 1)
+            false -> match c == 124 and depth == 0:
+              true -> i
+              false -> _rxFindTopBar(pat, i + 1, end, depth)
+
+fn _rxAtomMatches(a: _RxAtom, s: Str, si: Int) -> Bool = match si < _rxLen(s):
+  false -> false
+  true -> do:
+    let c = _rxCodeAt(s, si)
+    return match a:
+      RxAny(_next) -> true
+      RxChar(code, _next) -> c == code
+      RxClass(cls, _next) -> _rxClassMatches(cls, c)
+
+fn _rxMatchEndsFromList(ends: List[Int], pat: Str, pi: Int, end: Int, s: Str) -> List[Int] = match ends:
+  Nil -> Nil
+  Cons(e, rest) -> append(_rxMatchEnds(pat, pi, end, s, e), _rxMatchEndsFromList(rest, pat, pi, end, s))
+
+fn _rxMatchEndsStar(a: _RxAtom, pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[Int] = do:
+  let base = _rxMatchEnds(pat, pi, end, s, si)
+  return match _rxAtomMatches(a, s, si):
+    true -> append(base, _rxMatchEndsStar(a, pat, pi, end, s, si + 1))
+    false -> base
+
+fn _rxMatchEnds(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[Int] = do:
+  let slen = _rxLen(s)
+  return match pi >= end:
+    true -> Cons(si, Nil)
+    false -> do:
+      let bar = _rxFindTopBar(pat, pi, end, 0)
+      return match bar >= 0:
+        true -> append(_rxMatchEnds(pat, pi, bar, s, si), _rxMatchEnds(pat, bar + 1, end, s, si))
+        false -> do:
+          let c0 = _rxCodeAt(pat, pi)
+          return match (c0 == 36) and (pi + 1 == end):
+            true -> match si == slen:
+              true -> Cons(si, Nil)
+              false -> Nil
+            false -> match c0 == 40:
+              true -> do:
+                let close = _rxFindGroupClose(pat, pi + 1, end, 1)
+                return match close < 0:
+                  true -> do:
+                    let a0 = _rxParseAtom(pat, pi)
+                    let next0 = match a0:
+                      RxAny(n) -> n
+                      RxChar(_c, n) -> n
+                      RxClass(_cls, n) -> n
+                    return match next0 < end:
+                      true -> do:
+                        let q = _rxCodeAt(pat, next0)
+                        return match q == 42:
+                          true -> _rxMatchEndsStar(a0, pat, next0 + 1, end, s, si)
+                          false -> match q == 43:
+                            true -> match _rxAtomMatches(a0, s, si):
+                              true -> _rxMatchEndsStar(a0, pat, next0 + 1, end, s, si + 1)
+                              false -> Nil
+                            false -> match q == 63:
+                              true -> do:
+                                let z0 = _rxMatchEnds(pat, next0 + 1, end, s, si)
+                                return match _rxAtomMatches(a0, s, si):
+                                  true -> append(z0, _rxMatchEnds(pat, next0 + 1, end, s, si + 1))
+                                  false -> z0
+                              false -> match _rxAtomMatches(a0, s, si):
+                                true -> _rxMatchEnds(pat, next0, end, s, si + 1)
+                                false -> Nil
+                      false -> match _rxAtomMatches(a0, s, si):
+                        true -> _rxMatchEnds(pat, next0, end, s, si + 1)
+                        false -> Nil
+                  false -> do:
+                    let inner = _rxMatchEnds(pat, pi + 1, close, s, si)
+                    return _rxMatchEndsFromList(inner, pat, close + 1, end, s)
+              false -> do:
+                let a0 = _rxParseAtom(pat, pi)
+                let next0 = match a0:
+                  RxAny(n) -> n
+                  RxChar(_c, n) -> n
+                  RxClass(_cls, n) -> n
+                return match next0 < end:
+                  true -> do:
+                    let q = _rxCodeAt(pat, next0)
+                    return match q == 42:
+                      true -> _rxMatchEndsStar(a0, pat, next0 + 1, end, s, si)
+                      false -> match q == 43:
+                        true -> match _rxAtomMatches(a0, s, si):
+                          true -> _rxMatchEndsStar(a0, pat, next0 + 1, end, s, si + 1)
+                          false -> Nil
+                        false -> match q == 63:
+                          true -> do:
+                            let z0 = _rxMatchEnds(pat, next0 + 1, end, s, si)
+                            return match _rxAtomMatches(a0, s, si):
+                              true -> append(z0, _rxMatchEnds(pat, next0 + 1, end, s, si + 1))
+                              false -> z0
+                          false -> match _rxAtomMatches(a0, s, si):
+                            true -> _rxMatchEnds(pat, next0, end, s, si + 1)
+                            false -> Nil
+                  false -> match _rxAtomMatches(a0, s, si):
+                    true -> _rxMatchEnds(pat, next0, end, s, si + 1)
+                    false -> Nil
+
+type _RxClassItem = RxLit(Int, Int) | RxDigit(Int) | RxWord(Int) | RxSpace(Int)
+
+fn _rxClassItemNext(it: _RxClassItem) -> Int = match it:
+  RxLit(_c, next) -> next
+  RxDigit(next) -> next
+  RxWord(next) -> next
+  RxSpace(next) -> next
+
+fn _rxClassItemIsLit(it: _RxClassItem) -> Bool = match it:
+  RxLit(_c, _next) -> true
+  _ -> false
+
+fn _rxClassItemLitCode(it: _RxClassItem) -> Int = match it:
+  RxLit(c, _next) -> c
+  _ -> 0
+
+fn _rxParseClassItem(pat: Str, i: Int) -> _RxClassItem = do:
+  let c = _rxCodeAt(pat, i)
+  let plen = _rxLen(pat)
+  return match c == 92 and i + 1 < plen:
+    true -> do:
+      let e = _rxCodeAt(pat, i + 1)
+      return match e == 100:
+        true -> RxDigit(i + 2)
+        false -> match e == 119:
+          true -> RxWord(i + 2)
+          false -> match e == 115:
+            true -> RxSpace(i + 2)
+            false -> RxLit(e, i + 2)
+    false -> RxLit(c, i + 1)
+
+type _RxParseClassAcc = { cls: _RxClass, next: Int, ok: Bool }
+
+fn _rxParseClassLoop(pat: Str, i: Int, invert: Bool, ranges: List[_RxRange], digit: Bool, word: Bool, space: Bool) -> _RxParseClassAcc = do:
+  let plen = _rxLen(pat)
+  return match i >= plen:
+    true -> { cls = { invert = invert, ranges = ranges, digit = digit, word = word, space = space }, next = i, ok = false }
+    false -> do:
+      let c = _rxCodeAt(pat, i)
+      return match c == 93:
+        true -> { cls = { invert = invert, ranges = ranges, digit = digit, word = word, space = space }, next = i + 1, ok = true }
+        false -> do:
+          let it1 = _rxParseClassItem(pat, i)
+          let i1 = _rxClassItemNext(it1)
+          let doRange = match _rxClassItemIsLit(it1) and i1 + 1 < plen and _rxCodeAt(pat, i1) == 45 and _rxCodeAt(pat, i1 + 1) != 93:
+            true -> true
+            false -> false
+          return match doRange:
+            true -> do:
+              let it2 = _rxParseClassItem(pat, i1 + 1)
+              return match _rxClassItemIsLit(it2):
+                true -> do:
+                  let r = { lo = _rxClassItemLitCode(it1), hi = _rxClassItemLitCode(it2) }
+                  let i2 = _rxClassItemNext(it2)
+                  return _rxParseClassLoop(pat, i2, invert, Cons(r, ranges), digit, word, space)
+                false -> do:
+                  let r = { lo = _rxClassItemLitCode(it1), hi = _rxClassItemLitCode(it1) }
+                  let d2 = digit or match it2:
+                    RxDigit(_n) -> true
+                    _ -> false
+                  let w2 = word or match it2:
+                    RxWord(_n) -> true
+                    _ -> false
+                  let s2 = space or match it2:
+                    RxSpace(_n) -> true
+                    _ -> false
+                  let r2 = Cons({ lo = 45, hi = 45 }, Cons(r, ranges))
+                  let i2 = _rxClassItemNext(it2)
+                  return _rxParseClassLoop(pat, i2, invert, r2, d2, w2, s2)
+            false -> do:
+              let ranges2 = match _rxClassItemIsLit(it1):
+                true -> Cons({ lo = _rxClassItemLitCode(it1), hi = _rxClassItemLitCode(it1) }, ranges)
+                false -> ranges
+              let digit2 = digit or match it1:
+                RxDigit(_n) -> true
+                _ -> false
+              let word2 = word or match it1:
+                RxWord(_n) -> true
+                _ -> false
+              let space2 = space or match it1:
+                RxSpace(_n) -> true
+                _ -> false
+              return _rxParseClassLoop(pat, i1, invert, ranges2, digit2, word2, space2)
+
+fn _rxParseClass(pat: Str, pi: Int) -> _RxParseClassAcc = do:
+  let plen = _rxLen(pat)
+  let invert = pi + 1 < plen and _rxCodeAt(pat, pi + 1) == 94
+  let i0 = match invert:
+    true -> pi + 2
+    false -> pi + 1
+  let ranges0 = match i0 < plen and _rxCodeAt(pat, i0) == 93:
+    true -> Cons({ lo = 93, hi = 93 }, Nil)
+    false -> Nil
+  let i1 = match i0 < plen and _rxCodeAt(pat, i0) == 93:
+    true -> i0 + 1
+    false -> i0
+  let ranges1 = match i1 < plen and _rxCodeAt(pat, i1) == 45:
+    true -> Cons({ lo = 45, hi = 45 }, ranges0)
+    false -> ranges0
+  let i2 = match i1 < plen and _rxCodeAt(pat, i1) == 45:
+    true -> i1 + 1
+    false -> i1
+  return _rxParseClassLoop(pat, i2, invert, ranges1, false, false, false)
+
+fn _rxParseAtom(pat: Str, pi: Int) -> _RxAtom = do:
+  let c = _rxCodeAt(pat, pi)
+  let plen = _rxLen(pat)
+  return match c == 91:
+    true -> do:
+      let acc = _rxParseClass(pat, pi)
+      return match acc.ok:
+        true -> RxClass({ invert = acc.cls.invert, ranges = reverse(acc.cls.ranges), digit = acc.cls.digit, word = acc.cls.word, space = acc.cls.space }, acc.next)
+        false -> RxChar(c, pi + 1)
+    false -> match c == 92:
+      true -> match pi + 1 < plen:
+        true -> do:
+          let e = _rxCodeAt(pat, pi + 1)
+          let cls = { invert = false, ranges = nil(), digit = e == 100, word = e == 119, space = e == 115 }
+          return match cls.digit or cls.word or cls.space:
+            true -> RxClass(cls, pi + 2)
+            false -> RxChar(e, pi + 2)
+        false -> RxChar(c, pi + 1)
+      false -> match c == 46:
+        true -> RxAny(pi + 1)
+        false -> RxChar(c, pi + 1)
+
+fn _rxMatchHere(pat: Str, pi: Int, s: Str, si: Int) -> Bool = _rxHasAny(_rxMatchEnds(pat, pi, _rxLen(pat), s, si))
+
+fn _rxSearch(pat: Str, s: Str, si: Int) -> Bool = do:
+  let slen = _rxLen(s)
+  return match _rxMatchHere(pat, 0, s, si):
+    true -> true
+    false -> match si >= slen:
+      true -> false
+      false -> _rxSearch(pat, s, si + 1)
+
+fn isMatch(r: Regex, s: Str) -> Bool = do:
+  let pat = r.pat
+  let plen = _rxLen(pat)
+  return match plen > 0 and _rxCodeAt(pat, 0) == 94:
+    true -> _rxMatchHere(pat, 1, s, 0)
+    false -> _rxSearch(pat, s, 0)
+
+fn _rxFindFirstFrom(pat: Str, s: Str, si: Int) -> Option[Int] = do:
+  let slen = _rxLen(s)
+  return match _rxMatchHere(pat, 0, s, si):
+    true -> Some(si)
+    false -> match si >= slen:
+      true -> None
+      false -> _rxFindFirstFrom(pat, s, si + 1)
+
+fn findFirst(r: Regex, s: Str) -> Option[Int] = do:
+  let pat = r.pat
+  let plen = _rxLen(pat)
+  return match plen > 0 and _rxCodeAt(pat, 0) == 94:
+    true -> match _rxMatchHere(pat, 1, s, 0):
+      true -> Some(0)
+      false -> None
+    false -> _rxFindFirstFrom(pat, s, 0)
+

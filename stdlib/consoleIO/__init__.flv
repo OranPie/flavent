@@ -1,0 +1,23 @@
+// Console IO (stub, no bridge by default).
+//
+// This module is intentionally minimal to keep Flavent decoupled from Python.
+//
+// Future directions:
+// - Provide an internal `_bridge_python` (or other host) implementation.
+// - Make these effectful and require sector context.
+// - Add readLine()/writeErr()/flush() etc.
+
+use _bridge_python
+
+sector consoleIO:
+  fn print(s: Str) -> Unit = call _bridge_python.consolePrint(s)
+
+  fn println(s: Str) -> Unit = call _bridge_python.consolePrintln(s)
+
+  fn printErr(s: Str) -> Unit = call _bridge_python.consolePrintErr(s)
+
+  fn printlnErr(s: Str) -> Unit = call _bridge_python.consolePrintlnErr(s)
+
+  fn readLine() -> Str = rpc _bridge_python.consoleReadLine()
+
+  fn flush() -> Unit = call _bridge_python.consoleFlush()

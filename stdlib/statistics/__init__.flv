@@ -1,0 +1,59 @@
+use collections.list
+use math
+
+fn _stSum(xs: List[Float]) -> Float = match xs:
+  Nil -> 0.0
+  Cons(x, rest) -> x + _stSum(rest)
+
+fn _stCount(xs: List[Float]) -> Float = match xs:
+  Nil -> 0.0
+  Cons(_x, rest) -> 1.0 + _stCount(rest)
+
+fn mean(xs: List[Float]) -> Float = do:
+  let n = _stCount(xs)
+  return match n == 0.0:
+    true -> 0.0
+    false -> _stSum(xs) / n
+
+fn _stInsertSorted(x: Float, xs: List[Float]) -> List[Float] = match xs:
+  Nil -> Cons(x, Nil)
+  Cons(y, rest) -> match x <= y:
+    true -> Cons(x, xs)
+    false -> Cons(y, _stInsertSorted(x, rest))
+
+fn _stSort(xs: List[Float]) -> List[Float] = match xs:
+  Nil -> Nil
+  Cons(x, rest) -> _stInsertSorted(x, _stSort(rest))
+
+fn _stNth(xs: List[Float], idx: Int) -> Float = match xs:
+  Nil -> 0.0
+  Cons(x, rest) -> match idx <= 0:
+    true -> x
+    false -> _stNth(rest, idx - 1)
+
+fn median(xs: List[Float]) -> Float = do:
+  let n = length(xs)
+  return match n <= 0:
+    true -> 0.0
+    false -> do:
+      let ys = _stSort(xs)
+      return match (n - (n / 2) * 2) == 1:
+        true -> _stNth(ys, n / 2)
+        false -> (_stNth(ys, n / 2 - 1) + _stNth(ys, n / 2)) / 2.0
+
+fn variance(xs: List[Float]) -> Float = do:
+  let n = _stCount(xs)
+  return match n == 0.0:
+    true -> 0.0
+    false -> do:
+      let m = mean(xs)
+      let s = _stVarSum(xs, m)
+      return s / n
+
+fn _stVarSum(xs: List[Float], m: Float) -> Float = match xs:
+  Nil -> 0.0
+  Cons(x, rest) -> do:
+    let d = x - m
+    return d * d + _stVarSum(rest, m)
+
+fn stdev(xs: List[Float]) -> Float = sqrt(variance(xs))

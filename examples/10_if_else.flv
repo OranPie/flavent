@@ -1,0 +1,11 @@
+type Event.Decide = {}
+
+sector main:
+  on Event.Decide -> do:
+    if true:
+      stop()
+    else:
+      yield()
+      stop()
+
+run()

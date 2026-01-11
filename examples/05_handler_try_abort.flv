@@ -1,0 +1,9 @@
+type Event.Ping = {}
+
+fn risky() -> Result[Int, Str] = Err("bad")
+
+on Event.Ping as e -> do:
+  let x = risky()?
+  stop()
+
+run()

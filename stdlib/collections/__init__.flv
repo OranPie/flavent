@@ -1,0 +1,5 @@
+use collections.heap
+use collections.list
+use collections.queue
+use collections.map
+use collections.set

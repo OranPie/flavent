@@ -1,0 +1,34 @@
+use _bridge_python
+use collections.list
+
+fn bytesLen(b: Bytes) -> Int = _pyBytesLen(b)
+
+fn bytesGet(b: Bytes, i: Int) -> Int = _pyBytesGet(b, i)
+
+fn bytesSlice(b: Bytes, start: Int, end: Int) -> Bytes = _pyBytesSlice(b, start, end)
+
+fn bytesConcat(a: Bytes, b: Bytes) -> Bytes = _pyBytesConcat(a, b)
+
+fn bytesFromByte(x: Int) -> Bytes = _pyBytesFromByte(x)
+
+fn _btToListAcc(b: Bytes, i: Int, n: Int) -> List[Int] = match i >= n:
+  true -> Nil
+  false -> Cons(bytesGet(b, i), _btToListAcc(b, i + 1, n))
+
+fn bytesToList(b: Bytes) -> List[Int] = _btToListAcc(b, 0, bytesLen(b))
+
+fn _btFromList(xs: List[Int]) -> Bytes = match xs:
+  Nil -> b""
+  Cons(x, rest) -> bytesConcat(bytesFromByte(x), _btFromList(rest))
+
+fn bytesFromList(xs: List[Int]) -> Bytes = _btFromList(xs)
+
+type ByteArray = List[Int]
+
+fn byteArrayEmpty() -> ByteArray = Nil
+
+fn byteArrayPush(a: ByteArray, x: Int) -> ByteArray = append(a, Cons(x, Nil))
+
+fn byteArrayToBytes(a: ByteArray) -> Bytes = bytesFromList(a)
+
+fn bytesToByteArray(b: Bytes) -> ByteArray = bytesToList(b)

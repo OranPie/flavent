@@ -1,0 +1,20 @@
+type DeviceStatus = { online: Bool, battery: Int }
+type Event.Report = { deviceId: Str, data: DeviceStatus }
+type Event.Alert = { msg: Str }
+
+sector DeviceRegistry:
+  fn register(id: Str) -> Int = 0
+
+sector Analytics:
+  fn@Analytics process(id: Str, s: DeviceStatus) -> Unit = do:
+    if true:
+      yield()
+    else:
+      yield()
+
+sector IoTGateway:
+  on Event.Report as r -> do:
+    emit r
+    stop()
+
+run()

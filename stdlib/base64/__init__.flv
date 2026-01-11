@@ -1,0 +1,9 @@
+use base64.core
+
+fn encode(b: Bytes) -> Str = encodeStd(b)
+
+fn decode(s: Str) -> Bytes = decodeStd(s)
+
+fn urlsafeEncode(b: Bytes) -> Str = encodeUrl(b)
+
+fn urlsafeDecode(s: Str) -> Bytes = decodeUrl(s)

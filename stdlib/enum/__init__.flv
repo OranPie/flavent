@@ -1,0 +1,56 @@
+use collections.list
+use std.option
+
+// Enum helpers (very minimal).
+//
+// In Flavent, most enums should be modeled as sum types:
+//   type Color = Red | Green | Blue
+//
+// Future directions:
+// - Reflection/serialization helpers (toInt/toStr/fromInt/fromStr).
+// - Derive-style codegen in the compiler.
+// - Stable ordering/hash support.
+
+type EnumCase = { name: Str, tag: Int }
+
+type EnumInfo = { cases: List[EnumCase] }
+
+fn enumInfoEmpty() -> EnumInfo = { cases = Nil }
+
+fn enumCase(name: Str, tag: Int) -> EnumCase = { name = name, tag = tag }
+
+fn enumInfoAdd(info: EnumInfo, c: EnumCase) -> EnumInfo = { cases = Cons(c, info.cases) }
+
+fn enumCases(info: EnumInfo) -> List[EnumCase] = info.cases
+
+fn _enMaxTag(xs: List[EnumCase], cur: Int) -> Int = match xs:
+  Nil -> cur
+  Cons(c, rest) -> do:
+    let cur2 = match c.tag > cur:
+      true -> c.tag
+      false -> cur
+    return _enMaxTag(rest, cur2)
+
+fn enumNextTag(info: EnumInfo) -> Int = _enMaxTag(info.cases, -1) + 1
+
+fn enumInfoAddAuto(info: EnumInfo, name: Str) -> EnumInfo = do:
+  let tag = enumNextTag(info)
+  return enumInfoAdd(info, enumCase(name, tag))
+
+fn enumFindByName(info: EnumInfo, name: Str) -> Option[EnumCase] = match info.cases:
+  Nil -> None
+  Cons(c, rest) -> match c.name == name:
+    true -> Some(c)
+    false -> enumFindByName({ cases = rest }, name)
+
+fn _enFromNames(names: List[Str], i: Int, acc: EnumInfo) -> EnumInfo = match names:
+  Nil -> acc
+  Cons(n, rest) -> _enFromNames(rest, i + 1, enumInfoAdd(acc, enumCase(n, i)))
+
+fn enumInfoFromNames(names: List[Str]) -> EnumInfo = _enFromNames(names, 0, enumInfoEmpty())
+
+fn enumFindByTag(info: EnumInfo, tag: Int) -> Option[EnumCase] = match info.cases:
+  Nil -> None
+  Cons(c, rest) -> match c.tag == tag:
+    true -> Some(c)
+    false -> enumFindByTag({ cases = rest }, tag)

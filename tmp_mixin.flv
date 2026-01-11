@@ -1,0 +1,18 @@
+
+sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  around fn foo(x: Int) -> Int:
+    return proceed(x)
+
+mixin B v1 into sector S:
+  around fn foo(x: Int) -> Int:
+    return proceed(x)
+
+resolve mixin-conflict:
+  prefer A v1 over B v1
+
+use mixin A v1
+use mixin B v1
+run()

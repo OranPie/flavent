@@ -1,0 +1,5 @@
+type Option[T] = Some(T) | None
+
+fn unwrapOr[T](o: Option[T], default: T) -> T = match o:
+  Some(v) -> v
+  None -> default

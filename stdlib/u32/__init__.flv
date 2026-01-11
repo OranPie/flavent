@@ -1,0 +1,18 @@
+use _bridge_python
+
+// U32 operations represented as Int values in range [0, 2^32).
+// Semantics are defined by the bridge primitives (wrap on every op).
+
+fn wrap(x: Int) -> Int = _pyU32Wrap(x)
+
+fn u32And(a: Int, b: Int) -> Int = _pyU32And(a, b)
+
+fn u32Or(a: Int, b: Int) -> Int = _pyU32Or(a, b)
+
+fn u32Xor(a: Int, b: Int) -> Int = _pyU32Xor(a, b)
+
+fn u32Not(a: Int) -> Int = _pyU32Not(a)
+
+fn u32Shl(a: Int, n: Int) -> Int = _pyU32Shl(a, n)
+
+fn u32Shr(a: Int, n: Int) -> Int = _pyU32Shr(a, n)

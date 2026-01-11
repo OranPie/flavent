@@ -1,0 +1,31 @@
+use collections.list
+
+type MapEntry[K, V] = { key: K, value: V }
+
+type Map[K, V] = List[MapEntry[K, V]]
+
+fn mapEmpty[K, V]() -> Map[K, V] = Nil
+
+fn mapGet[K, V](m: Map[K, V], k: K) -> Option[V] = match m:
+  Nil -> None
+  Cons(e, rest) -> do:
+    if e.key == k:
+      return Some(e.value)
+    else:
+      return mapGet(rest, k)
+
+fn mapPut[K, V](m: Map[K, V], k: K, v: V) -> Map[K, V] = match m:
+  Nil -> Cons({ key = k, value = v }, Nil)
+  Cons(e, rest) -> do:
+    if e.key == k:
+      return Cons({ key = k, value = v }, rest)
+    else:
+      return Cons(e, mapPut(rest, k, v))
+
+fn mapRemove[K, V](m: Map[K, V], k: K) -> Map[K, V] = match m:
+  Nil -> Nil
+  Cons(e, rest) -> do:
+    if e.key == k:
+      return rest
+    else:
+      return Cons(e, mapRemove(rest, k))

@@ -1,0 +1,13 @@
+type Event.Ping = {}
+
+sector db:
+  fn ping() -> Int = 1
+
+sector web:
+  on Event.Ping as e -> do:
+    let x = rpc db.ping()
+    call db.ping()
+    emit e
+    stop()
+
+run()

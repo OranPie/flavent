@@ -1,0 +1,7 @@
+fn maybe() -> Option[Int] = Some(1)
+
+fn demo() -> Option[Int] = do:
+  let x = maybe()?
+  return Some(x)
+
+run()

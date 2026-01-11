@@ -1,0 +1,29 @@
+use collections.list
+
+type Queue[T] = { front: List[T], back: List[T] }
+
+type QueuePop[T] = { value: T, rest: Queue[T] }
+
+fn queueEmpty[T]() -> Queue[T] = { front = Nil, back = Nil }
+
+fn _queueNormalize[T](q: Queue[T]) -> Queue[T] = do:
+  if isEmpty(q.front):
+    return { front = reverse(q.back), back = Nil }
+  else:
+    return q
+
+fn queueIsEmpty[T](q: Queue[T]) -> Bool = isEmpty(q.front) and isEmpty(q.back)
+
+fn queuePush[T](q: Queue[T], x: T) -> Queue[T] = _queueNormalize({ front = q.front, back = Cons(x, q.back) })
+
+fn queuePeek[T](q: Queue[T]) -> Option[T] = do:
+  let q2 = _queueNormalize(q)
+  return match q2.front:
+    Nil -> None
+    Cons(x, _) -> Some(x)
+
+fn queuePop[T](q: Queue[T]) -> Option[QueuePop[T]] = do:
+  let q2 = _queueNormalize(q)
+  return match q2.front:
+    Nil -> None
+    Cons(x, rest) -> Some({ value = x, rest = _queueNormalize({ front = rest, back = q2.back }) })

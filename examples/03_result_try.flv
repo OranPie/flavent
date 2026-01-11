@@ -1,0 +1,7 @@
+fn parse() -> Result[Int, Str] = Ok(1)
+
+fn demo() -> Result[Int, Str] = do:
+  let x = parse()?
+  return Ok(x)
+
+run()

@@ -1,0 +1,99 @@
+use _bridge_python
+use collections.list
+use bytelib
+
+fn _b64Len(s: Str) -> Int = strLen(s)
+
+fn _b64CodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+
+fn _b64Slice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+
+fn _b64Mod(x: Int, m: Int) -> Int = x - (x / m) * m
+
+fn _b64AlphaStd() -> Str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+fn _b64AlphaUrl() -> Str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+fn _b64Char(alpha: Str, idx: Int) -> Str = _b64Slice(alpha, idx, idx + 1)
+
+fn _b64IndexAcc(alpha: Str, code: Int, i: Int) -> Int = match i >= _b64Len(alpha):
+  true -> 0 - 1
+  false -> match _b64CodeAt(alpha, i) == code:
+    true -> i
+    false -> _b64IndexAcc(alpha, code, i + 1)
+
+fn _b64Index(alpha: Str, code: Int) -> Int = _b64IndexAcc(alpha, code, 0)
+
+fn _b64EncodeAcc(b: Bytes, i: Int, n: Int, alpha: Str, acc: Str) -> Str = match i >= n:
+  true -> acc
+  false -> do:
+    let b0 = bytesGet(b, i)
+    let has1 = i + 1 < n
+    let has2 = i + 2 < n
+    let b1 = match has1:
+      true -> bytesGet(b, i + 1)
+      false -> 0
+    let b2 = match has2:
+      true -> bytesGet(b, i + 2)
+      false -> 0
+    let triple = b0 * 65536 + b1 * 256 + b2
+    let c0 = triple / 262144
+    let c1 = _b64Mod(triple / 4096, 64)
+    let c2 = _b64Mod(triple / 64, 64)
+    let c3 = _b64Mod(triple, 64)
+    let o0 = _b64Char(alpha, c0)
+    let o1 = _b64Char(alpha, c1)
+    let eq = "="
+    let out = match has1:
+      false -> o0 + o1 + eq + eq
+      true -> match has2:
+        false -> o0 + o1 + _b64Char(alpha, c2) + eq
+        true -> o0 + o1 + _b64Char(alpha, c2) + _b64Char(alpha, c3)
+    return _b64EncodeAcc(b, i + 3, n, alpha, acc + out)
+
+fn _b64Encode(alpha: Str, b: Bytes) -> Str = _b64EncodeAcc(b, 0, bytesLen(b), alpha, "")
+
+fn encodeStd(b: Bytes) -> Str = _b64Encode(_b64AlphaStd(), b)
+
+fn encodeUrl(b: Bytes) -> Str = _b64Encode(_b64AlphaUrl(), b)
+
+fn _b64Val(alpha: Str, code: Int) -> Int = match code == 61:
+  true -> 0 - 2
+  false -> _b64Index(alpha, code)
+
+fn _b64DecodeChunk(alpha: Str, s: Str, i: Int) -> List[Int] = do:
+  let c0 = _b64CodeAt(s, i)
+  let c1 = _b64CodeAt(s, i + 1)
+  let c2 = _b64CodeAt(s, i + 2)
+  let c3 = _b64CodeAt(s, i + 3)
+  let v0 = _b64Val(alpha, c0)
+  let v1 = _b64Val(alpha, c1)
+  let v2 = _b64Val(alpha, c2)
+  let v3 = _b64Val(alpha, c3)
+  let p2 = v2 == 0 - 2
+  let p3 = v3 == 0 - 2
+  let vv2 = match p2:
+    true -> 0
+    false -> v2
+  let vv3 = match p3:
+    true -> 0
+    false -> v3
+  let triple = v0 * 262144 + v1 * 4096 + vv2 * 64 + vv3
+  let b0 = triple / 65536
+  let b1 = _b64Mod(triple / 256, 256)
+  let b2 = _b64Mod(triple, 256)
+  return match p2:
+    true -> Cons(b0, Nil)
+    false -> match p3:
+      true -> Cons(b0, Cons(b1, Nil))
+      false -> Cons(b0, Cons(b1, Cons(b2, Nil)))
+
+fn _b64DecodeAcc(alpha: Str, s: Str, i: Int, n: Int) -> List[Int] = match i >= n:
+  true -> Nil
+  false -> append(_b64DecodeChunk(alpha, s, i), _b64DecodeAcc(alpha, s, i + 4, n))
+
+fn _b64Decode(alpha: Str, s: Str) -> Bytes = bytesFromList(_b64DecodeAcc(alpha, s, 0, _b64Len(s)))
+
+fn decodeStd(s: Str) -> Bytes = _b64Decode(_b64AlphaStd(), s)
+
+fn decodeUrl(s: Str) -> Bytes = _b64Decode(_b64AlphaUrl(), s)

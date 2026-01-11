@@ -1,0 +1,11 @@
+type Event.Start = {}
+
+sector main:
+  let base = 10
+  fn addBase(x: Int) -> Int = x + base
+
+  on Event.Start -> do:
+    let y = addBase(1)
+    stop()
+
+run()

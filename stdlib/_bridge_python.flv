@@ -1,0 +1,84 @@
+fn strLen(s: Str) -> Int = 0
+
+fn strCodeAt(s: Str, i: Int) -> Int = 0
+
+fn strSlice(s: Str, start: Int, end: Int) -> Str = ""
+
+fn strFromCode(code: Int) -> Str = ""
+
+fn _pyBytesLen(b: Bytes) -> Int = 0
+
+fn _pyBytesGet(b: Bytes, i: Int) -> Int = 0
+
+fn _pyBytesSlice(b: Bytes, start: Int, end: Int) -> Bytes = b""
+
+fn _pyBytesConcat(a: Bytes, b: Bytes) -> Bytes = b""
+
+fn _pyBytesFromByte(x: Int) -> Bytes = b""
+
+fn _pyU32Wrap(x: Int) -> Int = 0
+
+fn _pyU32And(a: Int, b: Int) -> Int = 0
+
+fn _pyU32Or(a: Int, b: Int) -> Int = 0
+
+fn _pyU32Xor(a: Int, b: Int) -> Int = 0
+
+fn _pyU32Not(a: Int) -> Int = 0
+
+fn _pyU32Shl(a: Int, n: Int) -> Int = 0
+
+fn _pyU32Shr(a: Int, n: Int) -> Int = 0
+
+fn _pyBase64Encode(b: Bytes) -> Str = ""
+
+fn _pyBase64Decode(s: Str) -> Bytes = b""
+
+fn _pyBase64UrlEncode(b: Bytes) -> Str = ""
+
+fn _pyBase64UrlDecode(s: Str) -> Bytes = b""
+
+fn _pyMd5Digest(b: Bytes) -> Bytes = b""
+
+fn _pyMd5Hex(b: Bytes) -> Str = ""
+
+fn _pySha1Digest(b: Bytes) -> Bytes = b""
+
+fn _pySha1Hex(b: Bytes) -> Str = ""
+
+fn _pySha256Digest(b: Bytes) -> Bytes = b""
+
+fn _pySha256Hex(b: Bytes) -> Str = ""
+
+fn _pySha512Digest(b: Bytes) -> Bytes = b""
+
+fn _pySha512Hex(b: Bytes) -> Str = ""
+
+use collections.list
+
+sector _bridge_python:
+  fn nowMillis() -> Int = 0
+  fn nowNanos() -> Int = 0
+  fn monoMillis() -> Int = 0
+  fn monoNanos() -> Int = 0
+  fn sleep(ms: Int) -> Unit = ()
+
+  fn fsReadFileBytes(path: Str) -> Bytes = b""
+  fn fsReadFileStr(path: Str) -> Str = ""
+  fn fsWriteFileBytes(path: Str, data: Bytes) -> Unit = ()
+  fn fsWriteFileStr(path: Str, data: Str) -> Unit = ()
+  fn fsListDir(path: Str) -> List[Str] = Nil
+  fn fsExists(path: Str) -> Bool = false
+  fn fsMkdirs(path: Str) -> Unit = ()
+  fn fsRemove(path: Str) -> Unit = ()
+  fn fsTempFile(prefix: Str, suffix: Str) -> Str = ""
+  fn fsTempDir(prefix: Str) -> Str = ""
+
+  fn uuid4Bytes() -> Bytes = b""
+
+  fn consolePrint(s: Str) -> Unit = ()
+  fn consolePrintln(s: Str) -> Unit = ()
+  fn consolePrintErr(s: Str) -> Unit = ()
+  fn consolePrintlnErr(s: Str) -> Unit = ()
+  fn consoleReadLine() -> Str = ""
+  fn consoleFlush() -> Unit = ()

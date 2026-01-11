@@ -1,0 +1,77 @@
+use _bridge_python
+use collections.list
+use fslib
+
+fn _glLen(s: Str) -> Int = strLen(s)
+fn _glCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn _glSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+
+fn _glMatch(pat: Str, pi: Int, s: Str, si: Int) -> Bool = do:
+  let plen = _glLen(pat)
+  let slen = _glLen(s)
+  return match pi >= plen:
+    true -> si == slen
+    false -> do:
+      let pc = _glCodeAt(pat, pi)
+      return match pc == 42:
+        true -> match _glMatch(pat, pi + 1, s, si):
+          true -> true
+          false -> match si < slen:
+            true -> _glMatch(pat, pi, s, si + 1)
+            false -> false
+        false -> match pc == 63:
+          true -> match si < slen:
+            true -> _glMatch(pat, pi + 1, s, si + 1)
+            false -> false
+          false -> match si < slen and _glCodeAt(s, si) == pc:
+            true -> _glMatch(pat, pi + 1, s, si + 1)
+            false -> false
+
+fn _glHasWildcard(pat: Str, i: Int) -> Bool = match i >= _glLen(pat):
+  true -> false
+  false -> do:
+    let c = _glCodeAt(pat, i)
+    return match c == 42 or c == 63:
+      true -> true
+      false -> _glHasWildcard(pat, i + 1)
+
+fn _glLastSlash(pat: Str, i: Int, last: Int) -> Int = match i >= _glLen(pat):
+  true -> last
+  false -> do:
+    let c = _glCodeAt(pat, i)
+    let last2 = match c == 47:
+      true -> i
+      false -> last
+    return _glLastSlash(pat, i + 1, last2)
+
+fn _glJoin(dir: Str, name: Str) -> Str = match dir == ".":
+  true -> name
+  false -> dir + "/" + name
+
+fn _glFilter(dir: Str, pat: Str, names: List[Str]) -> List[Str] = match names:
+  Nil -> Nil
+  Cons(x, rest) -> match _glMatch(pat, 0, x, 0):
+    true -> Cons(_glJoin(dir, x), _glFilter(dir, pat, rest))
+    false -> _glFilter(dir, pat, rest)
+
+sector glob:
+  fn glob(pat: Str) -> List[Str] = do:
+    let slash = _glLastSlash(pat, 0, 0 - 1)
+    let dir = match slash < 0:
+      true -> "."
+      false -> _glSlice(pat, 0, slash)
+    let base = match slash < 0:
+      true -> pat
+      false -> _glSlice(pat, slash + 1, _glLen(pat))
+
+    let hasWc = _glHasWildcard(base, 0)
+    return match hasWc:
+      true -> do:
+        let names = rpc fslib.listDir(dir)
+        return _glFilter(dir, base, names)
+      false -> do:
+        let path = _glJoin(dir, base)
+        let ok = rpc fslib.exists(path)
+        return match ok:
+          true -> Cons(path, Nil)
+          false -> Nil

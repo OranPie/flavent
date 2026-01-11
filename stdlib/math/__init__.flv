@@ -1,0 +1,167 @@
+
+fn minInt(a: Int, b: Int) -> Int = match a <= b:
+  true -> a
+  false -> b
+
+fn maxInt(a: Int, b: Int) -> Int = match a <= b:
+  true -> b
+  false -> a
+
+fn absInt(x: Int) -> Int = match x < 0:
+  true -> 0 - x
+  false -> x
+
+fn clampInt(x: Int, lo: Int, hi: Int) -> Int = maxInt(lo, minInt(x, hi))
+
+fn signInt(x: Int) -> Int = match x < 0:
+  true -> -1
+  false -> match x == 0:
+    true -> 0
+    false -> 1
+
+fn isEven(x: Int) -> Bool = ((x / 2) * 2) == x
+
+fn isOdd(x: Int) -> Bool = match isEven(x):
+  true -> false
+  false -> true
+
+fn min3Int(a: Int, b: Int, c: Int) -> Int = minInt(minInt(a, b), c)
+
+fn max3Int(a: Int, b: Int, c: Int) -> Int = maxInt(maxInt(a, b), c)
+
+fn gcdInt(a: Int, b: Int) -> Int = do:
+  let x0 = absInt(a)
+  let y0 = absInt(b)
+  return match y0 == 0:
+    true -> x0
+    false -> gcdInt(y0, x0 - (x0 / y0) * y0)
+
+fn lcmInt(a: Int, b: Int) -> Int = do:
+  let g = gcdInt(a, b)
+  return match g == 0:
+    true -> 0
+    false -> absInt((a / g) * b)
+
+fn minFloat(a: Float, b: Float) -> Float = match a <= b:
+  true -> a
+  false -> b
+
+fn maxFloat(a: Float, b: Float) -> Float = match a <= b:
+  true -> b
+  false -> a
+
+fn absFloat(x: Float) -> Float = match x < 0.0:
+  true -> 0.0 - x
+  false -> x
+
+fn clampFloat(x: Float, lo: Float, hi: Float) -> Float = maxFloat(lo, minFloat(x, hi))
+
+fn pi() -> Float = 3.141592653589793
+
+fn tau() -> Float = 6.283185307179586
+
+fn halfPi() -> Float = 1.5707963267948966
+
+fn ln10() -> Float = 2.302585092994046
+
+fn _normAngle(x: Float, i: Float) -> Float = match i >= 100.0:
+  true -> x
+  false -> match x > pi():
+    true -> _normAngle(x - tau(), i + 1.0)
+    false -> match x < (0.0 - pi()):
+      true -> _normAngle(x + tau(), i + 1.0)
+      false -> x
+
+fn normAngle(x: Float) -> Float = _normAngle(x, 0.0)
+
+fn _sinSeries(x: Float, k: Float, term: Float, acc: Float) -> Float = match k >= 8.0:
+  true -> acc
+  false -> do:
+    let denom = (2.0 * k) * (2.0 * k + 1.0)
+    let term2 = term * (0.0 - x * x) / denom
+    return _sinSeries(x, k + 1.0, term2, acc + term2)
+
+fn sin(x: Float) -> Float = do:
+  let y = normAngle(x)
+  return _sinSeries(y, 1.0, y, y)
+
+fn _cosSeries(x: Float, k: Float, term: Float, acc: Float) -> Float = match k >= 8.0:
+  true -> acc
+  false -> do:
+    let denom = (2.0 * k - 1.0) * (2.0 * k)
+    let term2 = term * (0.0 - x * x) / denom
+    return _cosSeries(x, k + 1.0, term2, acc + term2)
+
+fn cos(x: Float) -> Float = do:
+  let y = normAngle(x)
+  return _cosSeries(y, 1.0, 1.0, 1.0)
+
+fn tan(x: Float) -> Float = do:
+  let s = sin(x)
+  let c = cos(x)
+  return match absFloat(c) < 0.000001:
+    true -> 0.0
+    false -> s / c
+
+fn _expSeries(x: Float, k: Float, term: Float, acc: Float) -> Float = match k >= 20.0:
+  true -> acc
+  false -> do:
+    let term2 = term * x / k
+    return _expSeries(x, k + 1.0, term2, acc + term2)
+
+fn exp(x: Float) -> Float = _expSeries(x, 1.0, 1.0, 1.0)
+
+fn _atanhSeries(z: Float, i: Float, denom: Float, term: Float, acc: Float) -> Float = match i >= 15.0:
+  true -> acc
+  false -> do:
+    let term2 = term * z * z
+    let denom2 = denom + 2.0
+    return _atanhSeries(z, i + 1.0, denom2, term2, acc + term2 / denom2)
+
+fn ln(x: Float) -> Float = match x <= 0.0:
+  true -> 0.0
+  false -> do:
+    let z = (x - 1.0) / (x + 1.0)
+    let s = _atanhSeries(z, 0.0, 1.0, z, z)
+    return 2.0 * s
+
+fn log10(x: Float) -> Float = ln(x) / ln10()
+
+fn log(x: Float, base: Float) -> Float = ln(x) / ln(base)
+
+fn _sqrtIter(x: Float, g: Float, i: Float) -> Float = match i >= 12.0:
+  true -> g
+  false -> do:
+    let g2 = 0.5 * (g + x / g)
+    return _sqrtIter(x, g2, i + 1.0)
+
+fn sqrt(x: Float) -> Float = match x <= 0.0:
+  true -> 0.0
+  false -> _sqrtIter(x, x, 0.0)
+
+fn _atanSeries(x: Float, i: Float, denom: Float, term: Float, acc: Float) -> Float = match i >= 20.0:
+  true -> acc
+  false -> do:
+    let term2 = term * (0.0 - x * x)
+    let denom2 = denom + 2.0
+    return _atanSeries(x, i + 1.0, denom2, term2, acc + term2 / denom2)
+
+fn atan(x: Float) -> Float = match absFloat(x) > 1.0:
+  true -> match x < 0.0:
+    true -> (0.0 - halfPi()) - atan(1.0 / x)
+    false -> halfPi() - atan(1.0 / x)
+  false -> _atanSeries(x, 0.0, 1.0, x, x)
+
+fn atan2(y: Float, x: Float) -> Float = match x == 0.0:
+  true -> match y < 0.0:
+    true -> 0.0 - halfPi()
+    false -> match y == 0.0:
+      true -> 0.0
+      false -> halfPi()
+  false -> do:
+    let a = atan(y / x)
+    return match x < 0.0:
+      true -> match y < 0.0:
+        true -> a - pi()
+        false -> a + pi()
+      false -> a

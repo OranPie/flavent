@@ -1,0 +1,31 @@
+
+type Heap = Empty | Node(Int, Heap, Heap)
+
+type HeapPop = { value: Int, rest: Heap }
+
+fn heapEmpty() -> Heap = Empty
+
+fn heapIsEmpty(h: Heap) -> Bool = match h:
+  Empty -> true
+  Node(_, _, _) -> false
+
+fn heapMerge(a: Heap, b: Heap) -> Heap = match a:
+  Empty -> b
+  Node(x, al, ar) -> match b:
+    Empty -> a
+    Node(y, bl, br) -> do:
+      if x <= y:
+        return Node(x, heapMerge(ar, b), al)
+      else:
+        return Node(y, heapMerge(br, a), bl)
+
+fn heapInsert(x: Int, h: Heap) -> Heap = heapMerge(Node(x, Empty, Empty), h)
+
+fn heapPeek(h: Heap) -> Option[Int] = match h:
+  Empty -> None
+  Node(x, _, _) -> Some(x)
+
+fn heapPop(h: Heap) -> Option[HeapPop] = match h:
+  Empty -> None
+  Node(x, l, r) -> Some({ value = x, rest = heapMerge(l, r) })
+

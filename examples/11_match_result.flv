@@ -1,0 +1,5 @@
+fn unwrap(r: Result[Int, Str]) -> Int = match r:
+  Ok(v) -> v
+  Err(e) -> 0
+
+run()

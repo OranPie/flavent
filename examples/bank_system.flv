@@ -1,0 +1,32 @@
+type Event.Transfer = {}
+type Event.Query = {}
+type Event.Response = {}
+
+type AccountState = { id: Str, balance: Int, status: Str }
+
+sector Ledger:
+  let accounts = 0
+
+  fn getBalance(id: Str) -> Int = 100 // simplified map lookup
+
+  fn@Ledger updateBalance(id: Str, delta: Int) -> Result[Int, Str] = do:
+    let current = getBalance(id)
+    if current + delta < 0:
+      return Err("Insufficient funds")
+    else:
+      return Ok(0)
+
+sector Bank:
+  on Event.Transfer as req -> do:
+    let res = rpc Ledger.updateBalance("alice", 0 - 1)
+    match res:
+      Ok(v) -> rpc Ledger.updateBalance("bob", 1)
+      Err(msg) -> Err(msg)
+    stop()
+
+  on Event.Query as req -> do:
+    let bal = rpc Ledger.getBalance("alice")
+    bal
+    stop()
+
+run()

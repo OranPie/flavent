@@ -1,0 +1,9 @@
+type Event.Start = {}
+
+fn solve(input: Str) -> Str = input
+
+sector main:
+  on Event.Start -> do:
+    stop()
+
+run()

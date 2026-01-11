@@ -1,0 +1,189 @@
+use _bridge_python
+use collections.list
+use bytelib
+use u32
+
+fn _shaLen(s: Str) -> Int = strLen(s)
+
+fn _shaSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+
+fn _shaMod(x: Int, m: Int) -> Int = x - (x / m) * m
+
+fn _shaListGet(xs: List[Int], idx: Int) -> Int = match xs:
+  Nil -> 0
+  Cons(x, rest) -> match idx == 0:
+    true -> x
+    false -> _shaListGet(rest, idx - 1)
+
+fn _shaHexNib(n: Int) -> Str = _shaSlice("0123456789abcdef", n, n + 1)
+
+fn _shaHexByte(b: Int) -> Str = do:
+  let hi = b / 16
+  let lo = _shaMod(b, 16)
+  return _shaHexNib(hi) + _shaHexNib(lo)
+
+fn _shaHexAcc(bs: List[Int], acc: Str) -> Str = match bs:
+  Nil -> acc
+  Cons(x, rest) -> _shaHexAcc(rest, acc + _shaHexByte(x))
+
+fn _shaU32Add(a: Int, b: Int) -> Int = wrap(a + b)
+
+fn _shaU32Add4(a: Int, b: Int, c: Int, d: Int) -> Int = wrap(a + b + c + d)
+
+fn _shaU32Add5(a: Int, b: Int, c: Int, d: Int, e: Int) -> Int = wrap(a + b + c + d + e)
+
+fn _shaRotR(x: Int, n: Int) -> Int = u32Or(u32Shr(x, n), u32Shl(x, 32 - n))
+
+fn _shaSig0(x: Int) -> Int = u32Xor(u32Xor(_shaRotR(x, 7), _shaRotR(x, 18)), u32Shr(x, 3))
+
+fn _shaSig1(x: Int) -> Int = u32Xor(u32Xor(_shaRotR(x, 17), _shaRotR(x, 19)), u32Shr(x, 10))
+
+fn _shaBig0(x: Int) -> Int = u32Xor(u32Xor(_shaRotR(x, 2), _shaRotR(x, 13)), _shaRotR(x, 22))
+
+fn _shaBig1(x: Int) -> Int = u32Xor(u32Xor(_shaRotR(x, 6), _shaRotR(x, 11)), _shaRotR(x, 25))
+
+fn _shaCh(x: Int, y: Int, z: Int) -> Int = u32Xor(u32And(x, y), u32And(u32Not(x), z))
+
+fn _shaMaj(x: Int, y: Int, z: Int) -> Int = u32Xor(u32Xor(u32And(x, y), u32And(x, z)), u32And(y, z))
+
+fn _shaK() -> List[Int] = append(_shaK0(), append(_shaK1(), append(_shaK2(), append(_shaK3(), append(_shaK4(), append(_shaK5(), append(_shaK6(), _shaK7())))))))
+
+fn _shaK0() -> List[Int] = Cons(wrap(1116352408), Cons(wrap(1899447441), Cons(wrap(3049323471), Cons(wrap(3921009573), Cons(wrap(961987163), Cons(wrap(1508970993), Cons(wrap(2453635748), Cons(wrap(2870763221), Nil))))))))
+
+fn _shaK1() -> List[Int] = Cons(wrap(3624381080), Cons(wrap(310598401), Cons(wrap(607225278), Cons(wrap(1426881987), Cons(wrap(1925078388), Cons(wrap(2162078206), Cons(wrap(2614888103), Cons(wrap(3248222580), Nil))))))))
+
+fn _shaK2() -> List[Int] = Cons(wrap(3835390401), Cons(wrap(4022224774), Cons(wrap(264347078), Cons(wrap(604807628), Cons(wrap(770255983), Cons(wrap(1249150122), Cons(wrap(1555081692), Cons(wrap(1996064986), Nil))))))))
+
+fn _shaK3() -> List[Int] = Cons(wrap(2554220882), Cons(wrap(2821834349), Cons(wrap(2952996808), Cons(wrap(3210313671), Cons(wrap(3336571891), Cons(wrap(3584528711), Cons(wrap(113926993), Cons(wrap(338241895), Nil))))))))
+
+fn _shaK4() -> List[Int] = Cons(wrap(666307205), Cons(wrap(773529912), Cons(wrap(1294757372), Cons(wrap(1396182291), Cons(wrap(1695183700), Cons(wrap(1986661051), Cons(wrap(2177026350), Cons(wrap(2456956037), Nil))))))))
+
+fn _shaK5() -> List[Int] = Cons(wrap(2730485921), Cons(wrap(2820302411), Cons(wrap(3259730800), Cons(wrap(3345764771), Cons(wrap(3516065817), Cons(wrap(3600352804), Cons(wrap(4094571909), Cons(wrap(275423344), Nil))))))))
+
+fn _shaK6() -> List[Int] = Cons(wrap(430227734), Cons(wrap(506948616), Cons(wrap(659060556), Cons(wrap(883997877), Cons(wrap(958139571), Cons(wrap(1322822218), Cons(wrap(1537002063), Cons(wrap(1747873779), Nil))))))))
+
+fn _shaK7() -> List[Int] = Cons(wrap(1955562222), Cons(wrap(2024104815), Cons(wrap(2227730452), Cons(wrap(2361852424), Cons(wrap(2428436474), Cons(wrap(2756734187), Cons(wrap(3204031479), Cons(wrap(3329325298), Nil))))))))
+
+fn _shaInit() -> List[Int] = Cons(wrap(1779033703), Cons(wrap(3144134277), Cons(wrap(1013904242), Cons(wrap(2773480762), Cons(wrap(1359893119), Cons(wrap(2600822924), Cons(wrap(528734635), Cons(wrap(1541459225), Nil))))))))
+
+fn _shaReadU32BE(b: Bytes, off: Int) -> Int = do:
+  let x0 = wrap(bytesGet(b, off))
+  let x1 = wrap(bytesGet(b, off + 1))
+  let x2 = wrap(bytesGet(b, off + 2))
+  let x3 = wrap(bytesGet(b, off + 3))
+  return u32Or(u32Or(u32Or(u32Shl(x0, 24), u32Shl(x1, 16)), u32Shl(x2, 8)), x3)
+
+fn _shaBuildW0(b: Bytes, base: Int, t: Int) -> List[Int] = match t >= 16:
+  true -> Nil
+  false -> Cons(_shaReadU32BE(b, base + t * 4), _shaBuildW0(b, base, t + 1))
+
+fn _shaBuildW(b: Bytes, base: Int) -> List[Int] = do:
+  let w0 = _shaBuildW0(b, base, 0)
+  return _shaExtendW(w0, 16)
+
+fn _shaExtendW(w: List[Int], t: Int) -> List[Int] = match t >= 64:
+  true -> w
+  false -> do:
+    let wt2 = _shaListGet(w, t - 2)
+    let wt7 = _shaListGet(w, t - 7)
+    let wt15 = _shaListGet(w, t - 15)
+    let wt16 = _shaListGet(w, t - 16)
+    let v = _shaU32Add4(_shaSig1(wt2), wt7, _shaSig0(wt15), wt16)
+    return _shaExtendW(append(w, Cons(v, Nil)), t + 1)
+
+type _ShaState = { a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, g: Int, h: Int }
+
+type _ShaHash = { h0: Int, h1: Int, h2: Int, h3: Int, h4: Int, h5: Int, h6: Int, h7: Int }
+
+fn _shaRound(i: Int, st: _ShaState, w: List[Int], k: List[Int]) -> _ShaState = match i >= 64:
+  true -> st
+  false -> do:
+    let wi = _shaListGet(w, i)
+    let ki = _shaListGet(k, i)
+    let t1 = _shaU32Add5(st.h, _shaBig1(st.e), _shaCh(st.e, st.f, st.g), ki, wi)
+    let t2 = _shaU32Add(_shaBig0(st.a), _shaMaj(st.a, st.b, st.c))
+    let na = _shaU32Add(t1, t2)
+    let ne = _shaU32Add(st.d, t1)
+    let st2 = { a = na, b = st.a, c = st.b, d = st.c, e = ne, f = st.e, g = st.f, h = st.g }
+    return _shaRound(i + 1, st2, w, k)
+
+fn _shaCompressBlock(hash: _ShaHash, b: Bytes, off: Int, k: List[Int]) -> _ShaHash = do:
+  let w = _shaBuildW(b, off)
+  let st0 = { a = hash.h0, b = hash.h1, c = hash.h2, d = hash.h3, e = hash.h4, f = hash.h5, g = hash.h6, h = hash.h7 }
+  let st = _shaRound(0, st0, w, k)
+  return {
+    h0 = _shaU32Add(hash.h0, st.a),
+    h1 = _shaU32Add(hash.h1, st.b),
+    h2 = _shaU32Add(hash.h2, st.c),
+    h3 = _shaU32Add(hash.h3, st.d),
+    h4 = _shaU32Add(hash.h4, st.e),
+    h5 = _shaU32Add(hash.h5, st.f),
+    h6 = _shaU32Add(hash.h6, st.g),
+    h7 = _shaU32Add(hash.h7, st.h)
+  }
+
+fn _shaPadZeros(n: Int) -> Bytes = match n <= 0:
+  true -> b""
+  false -> bytesConcat(bytesFromByte(0), _shaPadZeros(n - 1))
+
+fn _shaU32ToBytesBE(x: Int) -> Bytes = do:
+  let m = wrap(255)
+  let b0 = u32And(u32Shr(x, 24), m)
+  let b1 = u32And(u32Shr(x, 16), m)
+  let b2 = u32And(u32Shr(x, 8), m)
+  let b3 = u32And(x, m)
+  return bytesConcat(bytesConcat(bytesFromByte(b0), bytesFromByte(b1)), bytesConcat(bytesFromByte(b2), bytesFromByte(b3)))
+
+fn _shaU64LenBytes(bitLen: Int) -> Bytes = do:
+  let hi = bitLen / 4294967296
+  let lo = bitLen - hi * 4294967296
+  return bytesConcat(_shaU32ToBytesBE(wrap(hi)), _shaU32ToBytesBE(wrap(lo)))
+
+fn _shaPad(b: Bytes) -> Bytes = do:
+  let n = bytesLen(b)
+  let bitLen = n * 8
+  let b1 = bytesConcat(b, bytesFromByte(128))
+  let n1 = bytesLen(b1)
+  let rem = _shaMod(n1, 64)
+  let padZero = match rem <= 56:
+    true -> 56 - rem
+    false -> 56 + 64 - rem
+  let b2 = bytesConcat(b1, _shaPadZeros(padZero))
+  return bytesConcat(b2, _shaU64LenBytes(bitLen))
+
+fn _shaDigestBytes(hash: _ShaHash) -> Bytes = (
+  bytesConcat(
+    bytesConcat(_shaU32ToBytesBE(hash.h0), _shaU32ToBytesBE(hash.h1)),
+    bytesConcat(
+      bytesConcat(_shaU32ToBytesBE(hash.h2), _shaU32ToBytesBE(hash.h3)),
+      bytesConcat(
+        bytesConcat(_shaU32ToBytesBE(hash.h4), _shaU32ToBytesBE(hash.h5)),
+        bytesConcat(_shaU32ToBytesBE(hash.h6), _shaU32ToBytesBE(hash.h7))
+      )
+    )
+  )
+)
+
+fn sha256DigestNative(b: Bytes) -> Bytes = do:
+  let k = _shaK()
+  let init = _shaInit()
+  let h = {
+    h0 = _shaListGet(init, 0),
+    h1 = _shaListGet(init, 1),
+    h2 = _shaListGet(init, 2),
+    h3 = _shaListGet(init, 3),
+    h4 = _shaListGet(init, 4),
+    h5 = _shaListGet(init, 5),
+    h6 = _shaListGet(init, 6),
+    h7 = _shaListGet(init, 7)
+  }
+  let msg = _shaPad(b)
+  let total = bytesLen(msg)
+  let out = _shaLoop(msg, 0, total, h, k)
+  return _shaDigestBytes(out)
+
+fn _shaLoop(msg: Bytes, off: Int, total: Int, h: _ShaHash, k: List[Int]) -> _ShaHash = match off >= total:
+  true -> h
+  false -> _shaLoop(msg, off + 64, total, _shaCompressBlock(h, msg, off, k), k)
+
+fn sha256HexNative(b: Bytes) -> Str = _shaHexAcc(bytesToList(sha256DigestNative(b)), "")
