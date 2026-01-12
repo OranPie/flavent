@@ -1,6 +1,6 @@
 use fslib
 
 sector tempfile:
-  fn mkstemp(prefix: Str, suffix: Str) -> Str = rpc fslib.tempFile(prefix, suffix)
+  fn mkstemp(prefix: Str, suffix: Str) -> Result[Str, Str] = rpc fslib.tempFile(prefix, suffix)
 
-  fn mkdtemp(prefix: Str) -> Str = rpc fslib.tempDir(prefix)
+  fn mkdtemp(prefix: Str) -> Result[Str, Str] = rpc fslib.tempDir(prefix)

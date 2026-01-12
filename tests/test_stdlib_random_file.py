@@ -23,6 +23,10 @@ fn f() -> Int = do:
   let o3 = rngNextFloat01(o2.rng)
   let o4 = rngBool(o3.rng)
   let s = rngShuffle(o4.rng, Cons(1, Cons(2, Cons(3, Nil))))
+  let ch = rngChoice(s.rng, s.value)
+  let bs = rngBytes(ch.rng, 16)
+  let u = rngUniform(bs.rng, 0.0, 1.0)
+  let smp = rngSample(u.rng, s.value, 2)
   return o2.value + o1.value + length(s.value)
 
 run()
@@ -39,6 +43,9 @@ sector main:
   on Event.Test -> do:
     let _e = rpc file.exists("/tmp")
     let _l = rpc file.listDir("/tmp")
+    let _rl = rpc file.readLines("/tmp/x")
+    let _wl = rpc file.writeLines("/tmp/x", Cons("a", Cons("b", Nil)))
+    let _al = rpc file.appendLines("/tmp/x", Cons("c", Nil))
     stop()
 
 run()

@@ -1,6 +1,8 @@
 use u32
 use math
 use collections.list
+use bytelib
+use std.result
 
 // Deterministic PRNG (xorshift32) with explicit state.
 //
@@ -17,6 +19,14 @@ type RngStepFloat = { value: Float, rng: Rng }
 type RngStepBool = { value: Bool, rng: Rng }
 
 type RngShuffleRes[T] = { value: List[T], rng: Rng }
+
+type RngChoiceRes[T] = { value: Result[T, Str], rng: Rng }
+
+type RngBytesRes = { value: Result[Bytes, Str], rng: Rng }
+
+type RngUniformRes = { value: Float, rng: Rng }
+
+type RngSampleRes[T] = { value: Result[List[T], Str], rng: Rng }
 
 fn rngSeed(seed: Int) -> Rng = do:
   let s0 = wrap(seed)
@@ -86,3 +96,39 @@ fn _shuffleLoop[T](i: Int, rr: Rng, cur: List[T]) -> RngShuffleRes[T] = match i 
 fn rngShuffle[T](r: Rng, xs: List[T]) -> RngShuffleRes[T] = do:
   // Fisher-Yates shuffle (implemented functionally; O(n^2) due to list updates).
   return _shuffleLoop(length(xs), r, xs)
+
+fn rngChoice[T](r: Rng, xs: List[T]) -> RngChoiceRes[T] = do:
+  let n = length(xs)
+  return match n <= 0:
+    true -> { value = Err("empty list"), rng = r }
+    false -> do:
+      let pick = rngNextInt(r, 0, n)
+      let v = get(xs, pick.value)
+      return match v:
+        None -> { value = Err("index out of range"), rng = pick.rng }
+        Some(x) -> { value = Ok(x), rng = pick.rng }
+
+fn _rngBytesAcc(r: Rng, n: Int, acc: ByteArray) -> RngBytesRes = match n <= 0:
+  true -> { value = Ok(byteArrayToBytes(acc)), rng = r }
+  false -> do:
+    let out = rngNextU32(r)
+    let b = out.value - (out.value / 256) * 256
+    return _rngBytesAcc(out.rng, n - 1, byteArrayPush(acc, b))
+
+fn rngBytes(r: Rng, n: Int) -> RngBytesRes = match n < 0:
+  true -> { value = Err("negative length"), rng = r }
+  false -> _rngBytesAcc(r, n, byteArrayEmpty())
+
+fn rngUniform(r: Rng, lo: Float, hi: Float) -> RngUniformRes = do:
+  let out = rngNextFloat01(r)
+  return { value = lo + (hi - lo) * out.value, rng = out.rng }
+
+fn rngSample[T](r: Rng, xs: List[T], k: Int) -> RngSampleRes[T] = do:
+  let n = length(xs)
+  return match k < 0:
+    true -> { value = Err("negative k"), rng = r }
+    false -> match k > n:
+      true -> { value = Err("k larger than list"), rng = r }
+      false -> do:
+        let sh = rngShuffle(r, xs)
+        return { value = Ok(take(sh.value, k)), rng = sh.rng }

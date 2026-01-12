@@ -101,7 +101,7 @@ sector s:
     let _c5 = u32Shr(a, 1)
 
     let _exists = rpc fslib.exists("/tmp")
-    call fslib.mkdirs("/tmp/flavent_test")
+    let _mk = rpc fslib.mkdirs("/tmp/flavent_test")
 
     let xs = Cons(1.0, Cons(2.0, Cons(3.0, Nil)))
     let _m = mean(xs)

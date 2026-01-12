@@ -2,6 +2,8 @@ use fslib
 use collections.list
 use bytelib
 use std.option
+use std.result
+use file.lines
 
 // High-level file helpers built on top of fslib.
 //
@@ -11,41 +13,53 @@ use std.option
 // - write*/append* return Result[Unit, Str].
 
 sector file:
-  fn readBytes(path: Str) -> Result[Bytes, Str] = Ok(rpc fslib.readFileBytes(path))
+  fn readBytes(path: Str) -> Result[Bytes, Str] = rpc fslib.readFileBytes(path)
 
-  fn readText(path: Str) -> Result[Str, Str] = Ok(rpc fslib.readFileStr(path))
+  fn readText(path: Str) -> Result[Str, Str] = rpc fslib.readFileStr(path)
 
   fn writeBytes(path: Str, data: Bytes) -> Result[Unit, Str] = do:
-    call fslib.writeFileBytes(path, data)
-    return Ok(())
+    return rpc fslib.writeFileBytes(path, data)
 
   fn writeText(path: Str, data: Str) -> Result[Unit, Str] = do:
-    call fslib.writeFileStr(path, data)
-    return Ok(())
+    return rpc fslib.writeFileStr(path, data)
 
   fn appendBytes(path: Str, data: Bytes) -> Result[Unit, Str] = do:
     // naive read+concat+write
-    let old = rpc fslib.readFileBytes(path)
-    call fslib.writeFileBytes(path, bytesConcat(old, data))
-    return Ok(())
+    let rold = rpc fslib.readFileBytes(path)
+    return match rold:
+      Err(e) -> Err(e)
+      Ok(old) -> rpc fslib.writeFileBytes(path, bytesConcat(old, data))
 
   fn appendText(path: Str, data: Str) -> Result[Unit, Str] = do:
-    let old = rpc fslib.readFileStr(path)
-    call fslib.writeFileStr(path, old + data)
-    return Ok(())
+    let rold = rpc fslib.readFileStr(path)
+    return match rold:
+      Err(e) -> Err(e)
+      Ok(old) -> rpc fslib.writeFileStr(path, old + data)
 
   fn ensureDir(path: Str) -> Result[Unit, Str] = do:
-    call fslib.mkdirs(path)
-    return Ok(())
+    return rpc fslib.mkdirs(path)
 
   fn remove(path: Str) -> Result[Unit, Str] = do:
-    call fslib.remove(path)
-    return Ok(())
+    return rpc fslib.remove(path)
 
-  fn exists(path: Str) -> Bool = rpc fslib.exists(path)
+  fn exists(path: Str) -> Result[Bool, Str] = rpc fslib.exists(path)
 
-  fn listDir(path: Str) -> Result[List[Str], Str] = Ok(rpc fslib.listDir(path))
+  fn listDir(path: Str) -> Result[List[Str], Str] = rpc fslib.listDir(path)
 
-  fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = Ok(rpc fslib.tempFile(prefix, suffix))
+  fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = rpc fslib.tempFile(prefix, suffix)
 
-  fn tempDir(prefix: Str) -> Result[Str, Str] = Ok(rpc fslib.tempDir(prefix))
+  fn tempDir(prefix: Str) -> Result[Str, Str] = rpc fslib.tempDir(prefix)
+
+  fn readLines(path: Str) -> Result[List[Str], Str] = do:
+    let r = readText(path)
+    return match r:
+      Err(e) -> Err(e)
+      Ok(s) -> Ok(splitLines(s))
+
+  fn writeLines(path: Str, xs: List[Str]) -> Result[Unit, Str] = writeText(path, joinLines(xs))
+
+  fn appendLine(path: Str, line: Str) -> Result[Unit, Str] = appendText(path, "\n" + line)
+
+  fn appendLines(path: Str, xs: List[Str]) -> Result[Unit, Str] = match xs:
+    Nil -> Ok(())
+    Cons(_, _) -> appendText(path, "\n" + joinLines(xs))

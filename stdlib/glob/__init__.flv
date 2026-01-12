@@ -55,7 +55,7 @@ fn _glFilter(dir: Str, pat: Str, names: List[Str]) -> List[Str] = match names:
     false -> _glFilter(dir, pat, rest)
 
 sector glob:
-  fn glob(pat: Str) -> List[Str] = do:
+  fn glob(pat: Str) -> Result[List[Str], Str] = do:
     let slash = _glLastSlash(pat, 0, 0 - 1)
     let dir = match slash < 0:
       true -> "."
@@ -67,11 +67,15 @@ sector glob:
     let hasWc = _glHasWildcard(base, 0)
     return match hasWc:
       true -> do:
-        let names = rpc fslib.listDir(dir)
-        return _glFilter(dir, base, names)
+        let rnames = rpc fslib.listDir(dir)
+        return match rnames:
+          Err(e) -> Err(e)
+          Ok(names) -> Ok(_glFilter(dir, base, names))
       false -> do:
         let path = _glJoin(dir, base)
-        let ok = rpc fslib.exists(path)
-        return match ok:
-          true -> Cons(path, Nil)
-          false -> Nil
+        let rok = rpc fslib.exists(path)
+        return match rok:
+          Err(e) -> Err(e)
+          Ok(ok) -> match ok:
+            true -> Ok(Cons(path, Nil))
+            false -> Ok(Nil)

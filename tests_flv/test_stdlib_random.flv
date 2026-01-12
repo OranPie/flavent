@@ -18,3 +18,34 @@ test "random-shuffle" -> do:
   assertTrue(contains(out.value, 1))?
   assertTrue(contains(out.value, 2))?
   assertTrue(contains(out.value, 3))?
+
+test "random-choice" -> do:
+  let xs = Cons(10, Cons(20, Nil))
+  let a = rngChoice(rngSeed(1), xs)
+  let b = rngChoice(rngSeed(1), xs)
+  assertEq(a.value, b.value)?
+
+test "random-bytes" -> do:
+  let a = rngBytes(rngSeed(1), 4)
+  let b = rngBytes(rngSeed(1), 4)
+  assertEq(a.value, b.value)?
+
+test "random-errors" -> do:
+  let e0 = rngChoice(rngSeed(1), Nil)
+  assertEq(e0.value, Err("empty list"))?
+  let e1 = rngBytes(rngSeed(1), 0 - 1)
+  assertEq(e1.value, Err("negative length"))?
+
+test "random-uniform" -> do:
+  let a = rngUniform(rngSeed(1), 0.0, 10.0)
+  let b = rngUniform(rngSeed(1), 0.0, 10.0)
+  assertEq(a.value, b.value)?
+
+test "random-sample" -> do:
+  let xs = Cons(1, Cons(2, Cons(3, Nil)))
+  let ok = rngSample(rngSeed(1), xs, 2)
+  assertTrue(isOk(ok.value))?
+  let bad0 = rngSample(rngSeed(1), xs, 0 - 1)
+  assertEq(bad0.value, Err("negative k"))?
+  let bad1 = rngSample(rngSeed(1), xs, 4)
+  assertEq(bad1.value, Err("k larger than list"))?

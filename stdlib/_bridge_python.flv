@@ -63,16 +63,16 @@ sector _bridge_python:
   fn monoNanos() -> Int = 0
   fn sleep(ms: Int) -> Unit = ()
 
-  fn fsReadFileBytes(path: Str) -> Bytes = b""
-  fn fsReadFileStr(path: Str) -> Str = ""
-  fn fsWriteFileBytes(path: Str, data: Bytes) -> Unit = ()
-  fn fsWriteFileStr(path: Str, data: Str) -> Unit = ()
-  fn fsListDir(path: Str) -> List[Str] = Nil
-  fn fsExists(path: Str) -> Bool = false
-  fn fsMkdirs(path: Str) -> Unit = ()
-  fn fsRemove(path: Str) -> Unit = ()
-  fn fsTempFile(prefix: Str, suffix: Str) -> Str = ""
-  fn fsTempDir(prefix: Str) -> Str = ""
+  fn fsReadFileBytes(path: Str) -> Result[Bytes, Str] = Err("")
+  fn fsReadFileStr(path: Str) -> Result[Str, Str] = Err("")
+  fn fsWriteFileBytes(path: Str, data: Bytes) -> Result[Unit, Str] = Err("")
+  fn fsWriteFileStr(path: Str, data: Str) -> Result[Unit, Str] = Err("")
+  fn fsListDir(path: Str) -> Result[List[Str], Str] = Err("")
+  fn fsExists(path: Str) -> Result[Bool, Str] = Err("")
+  fn fsMkdirs(path: Str) -> Result[Unit, Str] = Err("")
+  fn fsRemove(path: Str) -> Result[Unit, Str] = Err("")
+  fn fsTempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = Err("")
+  fn fsTempDir(prefix: Str) -> Result[Str, Str] = Err("")
 
   fn uuid4Bytes() -> Bytes = b""
 

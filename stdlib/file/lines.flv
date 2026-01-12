@@ -1,0 +1,26 @@
+use collections.list
+use std.result
+use std.option
+use stringfmt
+
+// Line-oriented helpers for file module.
+
+fn _linesSplitAcc(s: Str, i: Int, start: Int, pieces: List[Str]) -> List[Str] = match i >= strLen(s):
+  true -> reverse(Cons(strSlice(s, start, strLen(s)), pieces))
+  false -> do:
+    let c = strCodeAt(s, i)
+    return match c == 10:
+      true -> do:
+        let part = strSlice(s, start, i)
+        return _linesSplitAcc(s, i + 1, i + 1, Cons(part, pieces))
+      false -> _linesSplitAcc(s, i + 1, start, pieces)
+
+fn splitLines(s: Str) -> List[Str] = _linesSplitAcc(s, 0, 0, Nil)
+
+fn _joinLines(xs: List[Str]) -> Str = match xs:
+  Nil -> ""
+  Cons(x, rest) -> match rest:
+    Nil -> x
+    Cons(_, _) -> x + "\n" + _joinLines(rest)
+
+fn joinLines(xs: List[Str]) -> Str = _joinLines(xs)
