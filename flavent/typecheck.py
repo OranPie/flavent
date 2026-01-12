@@ -634,8 +634,27 @@ def _infer_expr(ctx: _TypeCtx, e: Expr, *, expected: Optional[T]) -> tuple[T, _E
     if isinstance(e, BinaryExpr):
         lt, le = _infer_expr(ctx, e.left, expected=None)
         rt, re = _infer_expr(ctx, e.right, expected=None)
-        _unify(ctx, lt, rt, e.span)
         eff = _join_effect(le, re, e.span)
+
+        int_id = ctx.type_id_by_name.get("Int", 0)
+        float_id = ctx.type_id_by_name.get("Float", 0)
+
+        lt0 = _prune(ctx, lt)
+        rt0 = _prune(ctx, rt)
+
+        def is_int(t: T) -> bool:
+            return isinstance(t, tuple) and t and t[0] == "con" and t[1] == int_id
+
+        def is_float(t: T) -> bool:
+            return isinstance(t, tuple) and t and t[0] == "con" and t[1] == float_id
+
+        # Numeric promotion: allow Int <-> Float mixing for arithmetic ops.
+        if e.op in ("+", "-", "*", "/"):
+            if (is_int(lt0) and is_float(rt0)) or (is_float(lt0) and is_int(rt0)):
+                return ("con", float_id), eff
+
+        # Default: operands must unify.
+        _unify(ctx, lt, rt, e.span)
 
         if e.op in ("==", "!=", "<", "<=", ">", ">="):
             return ("con", ctx.type_id_by_name.get("Bool", 0)), eff

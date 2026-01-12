@@ -1,0 +1,51 @@
+use fslib
+use collections.list
+use bytelib
+use std.option
+
+// High-level file helpers built on top of fslib.
+//
+// This is effectful (sector) because it performs I/O.
+// Convention:
+// - read* returns Result to avoid exceptions.
+// - write*/append* return Result[Unit, Str].
+
+sector file:
+  fn readBytes(path: Str) -> Result[Bytes, Str] = Ok(rpc fslib.readFileBytes(path))
+
+  fn readText(path: Str) -> Result[Str, Str] = Ok(rpc fslib.readFileStr(path))
+
+  fn writeBytes(path: Str, data: Bytes) -> Result[Unit, Str] = do:
+    call fslib.writeFileBytes(path, data)
+    return Ok(())
+
+  fn writeText(path: Str, data: Str) -> Result[Unit, Str] = do:
+    call fslib.writeFileStr(path, data)
+    return Ok(())
+
+  fn appendBytes(path: Str, data: Bytes) -> Result[Unit, Str] = do:
+    // naive read+concat+write
+    let old = rpc fslib.readFileBytes(path)
+    call fslib.writeFileBytes(path, bytesConcat(old, data))
+    return Ok(())
+
+  fn appendText(path: Str, data: Str) -> Result[Unit, Str] = do:
+    let old = rpc fslib.readFileStr(path)
+    call fslib.writeFileStr(path, old + data)
+    return Ok(())
+
+  fn ensureDir(path: Str) -> Result[Unit, Str] = do:
+    call fslib.mkdirs(path)
+    return Ok(())
+
+  fn remove(path: Str) -> Result[Unit, Str] = do:
+    call fslib.remove(path)
+    return Ok(())
+
+  fn exists(path: Str) -> Bool = rpc fslib.exists(path)
+
+  fn listDir(path: Str) -> Result[List[Str], Str] = Ok(rpc fslib.listDir(path))
+
+  fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = Ok(rpc fslib.tempFile(prefix, suffix))
+
+  fn tempDir(prefix: Str) -> Result[Str, Str] = Ok(rpc fslib.tempDir(prefix))

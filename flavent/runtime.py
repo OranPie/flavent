@@ -245,6 +245,8 @@ def run_hir_program(
             if op == "*":
                 return a * b
             if op == "/":
+                if isinstance(a, int) and isinstance(b, int):
+                    return a // b
                 return a / b
             if op == "==":
                 return deep_eq(a, b)

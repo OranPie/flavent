@@ -1,0 +1,88 @@
+use u32
+use math
+use collections.list
+
+// Deterministic PRNG (xorshift32) with explicit state.
+//
+// This is pure Flavent (no bridge). All functions return a new RNG state.
+
+type Rng = { state: Int }
+
+type RngStepU32 = { value: Int, rng: Rng }
+
+type RngStepInt = { value: Int, rng: Rng }
+
+type RngStepFloat = { value: Float, rng: Rng }
+
+type RngStepBool = { value: Bool, rng: Rng }
+
+type RngShuffleRes[T] = { value: List[T], rng: Rng }
+
+fn rngSeed(seed: Int) -> Rng = do:
+  let s0 = wrap(seed)
+  let s1 = match s0 == 0:
+    true -> 1
+    false -> s0
+  return { state = s1 }
+
+fn rngNextU32(r: Rng) -> RngStepU32 = do:
+  // xorshift32
+  let x0 = r.state
+  let x1 = u32Xor(x0, u32Shl(x0, 13))
+  let x2 = u32Xor(x1, u32Shr(x1, 17))
+  let x3 = u32Xor(x2, u32Shl(x2, 5))
+  let x = wrap(x3)
+  return { value = x, rng = { state = x } }
+
+fn rngNextInt(r: Rng, lo: Int, hi: Int) -> RngStepInt = do:
+  // Returns value in [lo, hi). If hi <= lo, returns lo.
+  let n = hi - lo
+  return match n <= 0:
+    true -> { value = lo, rng = r }
+    false -> do:
+      let out = rngNextU32(r)
+      // Reduce using pure Int arithmetic; relies on Int division behaving as floor division.
+      let m = out.value - (out.value / n) * n
+      return { value = lo + m, rng = out.rng }
+
+fn rngNextFloat01(r: Rng) -> RngStepFloat = do:
+  let out = rngNextU32(r)
+  // Map [0, 2^32) to [0.0, 1.0)
+  let denom = 4294967296.0
+  return { value = out.value / denom, rng = out.rng }
+
+fn rngBool(r: Rng) -> RngStepBool = do:
+  let out = rngNextU32(r)
+  return { value = isOdd(out.value), rng = out.rng }
+
+fn _swapAt[T](xs: List[T], i: Int, j: Int) -> List[T] = match i == j:
+  true -> xs
+  false -> do:
+    let ai = get(xs, i)
+    let aj = get(xs, j)
+    return match ai:
+      None -> xs
+      Some(vi) -> match aj:
+        None -> xs
+        Some(vj) -> _swapAtGo(0, xs, i, j, vi, vj)
+
+fn _swapAtGo[T](k: Int, ys: List[T], i: Int, j: Int, vi: T, vj: T) -> List[T] = match ys:
+  Nil -> Nil
+  Cons(x, rest) -> do:
+    let x2 = match k == i:
+      true -> vj
+      false -> match k == j:
+        true -> vi
+        false -> x
+    return Cons(x2, _swapAtGo(k + 1, rest, i, j, vi, vj))
+
+fn _shuffleLoop[T](i: Int, rr: Rng, cur: List[T]) -> RngShuffleRes[T] = match i <= 1:
+  true -> { value = cur, rng = rr }
+  false -> do:
+    let pick = rngNextInt(rr, 0, i)
+    let cur2 = _swapAt(cur, i - 1, pick.value)
+    return _shuffleLoop(i - 1, pick.rng, cur2)
+
+fn rngShuffle[T](r: Rng, xs: List[T]) -> RngShuffleRes[T] = do:
+  // Fisher-Yates shuffle (implemented functionally; O(n^2) due to list updates).
+  return _shuffleLoop(length(xs), r, xs)

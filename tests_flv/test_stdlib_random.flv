@@ -1,0 +1,20 @@
+use flvtest
+use random
+use collections.list
+
+test "random-deterministic" -> do:
+  let r0 = rngSeed(123)
+  let a1 = rngNextInt(r0, 0, 10)
+  let a2 = rngNextInt(a1.rng, 0, 10)
+  let b1 = rngNextInt(rngSeed(123), 0, 10)
+  let b2 = rngNextInt(b1.rng, 0, 10)
+  assertEq(a1.value, b1.value)?
+  assertEq(a2.value, b2.value)?
+
+test "random-shuffle" -> do:
+  let xs = Cons(1, Cons(2, Cons(3, Nil)))
+  let out = rngShuffle(rngSeed(42), xs)
+  assertEq(length(out.value), 3)?
+  assertTrue(contains(out.value, 1))?
+  assertTrue(contains(out.value, 2))?
+  assertTrue(contains(out.value, 3))?
