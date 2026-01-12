@@ -1,0 +1,266 @@
+use _bridge_python
+use collections.list
+use collections.map
+use std.option
+
+type Json = JNull | JBool(Bool) | JInt(Int) | JStr(Str) | JArr(List[Json]) | JObj(Map[Str, Json])
+
+fn jNull() -> Json = JNull
+
+fn _jLen(s: Str) -> Int = strLen(s)
+fn _jCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn _jSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn _jChar(code: Int) -> Str = strFromCode(code)
+
+fn _jConcatPieces(xs: List[Str]) -> Str = match xs:
+  Nil -> ""
+  Cons(x, rest) -> x + _jConcatPieces(rest)
+
+fn _jMod(x: Int, m: Int) -> Int = x - (x / m) * m
+
+fn _jIntToStrPos(x: Int) -> Str = match x == 0:
+  true -> "0"
+  false -> _jIntToStrPosAcc(x, Nil)
+
+fn _jIntToStrPosAcc(x: Int, acc: List[Str]) -> Str = match x <= 0:
+  true -> _jConcatPieces(reverse(acc))
+  false -> do:
+    let d = _jMod(x, 10)
+    let ch = _jChar(48 + d)
+    return _jIntToStrPosAcc(x / 10, Cons(ch, acc))
+
+fn _jIntToStr(x: Int) -> Str = match x < 0:
+  true -> "-" + _jIntToStrPos(0 - x)
+  false -> _jIntToStrPos(x)
+
+fn _jEscChar(code: Int) -> Str = match code == 34:
+  true -> "\\\""
+  false -> match code == 92:
+    true -> "\\\\"
+    false -> match code == 10:
+      true -> "\\n"
+      false -> match code == 13:
+        true -> "\\r"
+        false -> match code == 9:
+          true -> "\\t"
+          false -> _jChar(code)
+
+fn _jDumpStrAcc(s: Str, i: Int, pieces: List[Str]) -> List[Str] = match i >= _jLen(s):
+  true -> pieces
+  false -> do:
+    let c = _jCodeAt(s, i)
+    return _jDumpStrAcc(s, i + 1, Cons(_jEscChar(c), pieces))
+
+fn _jDumpStr(s: Str) -> Str = do:
+  let pieces = _jDumpStrAcc(s, 0, Nil)
+  return "\"" + _jConcatPieces(reverse(pieces)) + "\""
+
+fn _jJoinComma(xs: List[Str]) -> Str = match xs:
+  Nil -> ""
+  Cons(x, rest) -> match rest:
+    Nil -> x
+    Cons(_, _) -> x + "," + _jJoinComma(rest)
+
+fn dumps(j: Json) -> Str = match j:
+  JNull -> "null"
+  JBool(b) -> match b:
+    true -> "true"
+    false -> "false"
+  JInt(n) -> _jIntToStr(n)
+  JStr(s) -> _jDumpStr(s)
+  JArr(xs) -> "[" + _jJoinComma(_jDumpArr(xs)) + "]"
+  JObj(m) -> "{" + _jJoinComma(_jDumpObj(m)) + "}"
+
+fn _jDumpArr(xs: List[Json]) -> List[Str] = match xs:
+  Nil -> Nil
+  Cons(x, rest) -> Cons(dumps(x), _jDumpArr(rest))
+
+fn _jDumpObj(m: Map[Str, Json]) -> List[Str] = match m:
+  Nil -> Nil
+  Cons(e, rest) -> Cons(_jDumpStr(e.key) + ":" + dumps(e.value), _jDumpObj(rest))
+
+type _JRes = { ok: Bool, i: Int, v: Json }
+
+type _JStrRes = { ok: Bool, i: Int, out: Str }
+
+type _JIntRes = { ok: Bool, i: Int, out: Int }
+
+fn _jSkipWs(s: Str, i: Int) -> Int = match i >= _jLen(s):
+  true -> i
+  false -> do:
+    let c = _jCodeAt(s, i)
+    return match c == 32 or c == 9 or c == 10 or c == 13:
+      true -> _jSkipWs(s, i + 1)
+      false -> i
+
+fn _jStartsWith(s: Str, i: Int, lit: Str) -> Bool = do:
+  let n = _jLen(lit)
+  return match i + n > _jLen(s):
+    true -> false
+    false -> _jSlice(s, i, i + n) == lit
+
+fn _jParseString(s: Str, i: Int) -> _JStrRes = do:
+  let n = _jLen(s)
+  return match i >= n or _jCodeAt(s, i) != 34:
+    true -> { ok = false, i = i, out = "" }
+    false -> _jParseStringAcc(s, i + 1, Nil)
+
+fn _jParseStringAcc(s: Str, i: Int, pieces: List[Str]) -> _JStrRes = do:
+  let n = _jLen(s)
+  return match i >= n:
+    true -> { ok = false, i = i, out = "" }
+    false -> do:
+      let c = _jCodeAt(s, i)
+      return match c == 34:
+        true -> { ok = true, i = i + 1, out = _jConcatPieces(reverse(pieces)) }
+        false -> match c == 92:
+          true -> _jParseEscape(s, i + 1, pieces)
+          false -> _jParseStringAcc(s, i + 1, Cons(_jChar(c), pieces))
+
+fn _jParseEscape(s: Str, i: Int, pieces: List[Str]) -> _JStrRes = do:
+  let n = _jLen(s)
+  return match i >= n:
+    true -> { ok = false, i = i, out = "" }
+    false -> do:
+      let c = _jCodeAt(s, i)
+      let ch = match c == 34:
+        true -> "\""
+        false -> match c == 92:
+          true -> "\\"
+          false -> match c == 47:
+            true -> "/"
+            false -> match c == 110:
+              true -> "\n"
+              false -> match c == 114:
+                true -> "\r"
+                false -> match c == 116:
+                  true -> "\t"
+                  false -> ""
+      return match ch == "":
+        true -> { ok = false, i = i, out = "" }
+        false -> _jParseStringAcc(s, i + 1, Cons(ch, pieces))
+
+fn _jIsDigit(c: Int) -> Bool = c >= 48 and c <= 57
+
+fn _jParseInt(s: Str, i: Int) -> _JIntRes = do:
+  let n = _jLen(s)
+  return match i >= n:
+    true -> { ok = false, i = i, out = 0 }
+    false -> do:
+      let c = _jCodeAt(s, i)
+      return match c == 45:
+        true -> do:
+          let r = _jParseUInt(s, i + 1, 0)
+          return match r.ok:
+            true -> { ok = true, i = r.i, out = 0 - r.out }
+            false -> { ok = false, i = i, out = 0 }
+        false -> do:
+          let r = _jParseUInt(s, i, 0)
+          return match r.ok:
+            true -> { ok = true, i = r.i, out = r.out }
+            false -> { ok = false, i = i, out = 0 }
+
+fn _jParseUInt(s: Str, i: Int, acc: Int) -> _JIntRes = do:
+  let n = _jLen(s)
+  return match i >= n:
+    true -> { ok = false, i = i, out = acc }
+    false -> do:
+      let c = _jCodeAt(s, i)
+      return match _jIsDigit(c):
+        true -> _jParseUIntCont(s, i + 1, acc * 10 + (c - 48), true)
+        false -> { ok = false, i = i, out = acc }
+
+fn _jParseUIntCont(s: Str, i: Int, acc: Int, seen: Bool) -> _JIntRes = do:
+  let n = _jLen(s)
+  return match i >= n:
+    true -> { ok = seen, i = i, out = acc }
+    false -> do:
+      let c = _jCodeAt(s, i)
+      return match _jIsDigit(c):
+        true -> _jParseUIntCont(s, i + 1, acc * 10 + (c - 48), true)
+        false -> { ok = seen, i = i, out = acc }
+
+fn _jParseValue(s: Str, i0: Int) -> _JRes = do:
+  let i = _jSkipWs(s, i0)
+  let n = _jLen(s)
+  return match i >= n:
+    true -> { ok = false, i = i, v = jNull() }
+    false -> do:
+      let c = _jCodeAt(s, i)
+      return match c == 34:
+        true -> do:
+          let r = _jParseString(s, i)
+          return match r.ok:
+            true -> { ok = true, i = r.i, v = JStr(r.out) }
+            false -> { ok = false, i = i, v = jNull() }
+        false -> match c == 110 and _jStartsWith(s, i, "null"):
+          true -> { ok = true, i = i + 4, v = jNull() }
+          false -> match c == 116 and _jStartsWith(s, i, "true"):
+            true -> { ok = true, i = i + 4, v = JBool(true) }
+            false -> match c == 102 and _jStartsWith(s, i, "false"):
+              true -> { ok = true, i = i + 5, v = JBool(false) }
+              false -> match c == 91:
+                true -> _jParseArray(s, i + 1)
+                false -> match c == 123:
+                  true -> _jParseObject(s, i + 1)
+                  false -> do:
+                    let r = _jParseInt(s, i)
+                    return match r.ok:
+                      true -> { ok = true, i = r.i, v = JInt(r.out) }
+                      false -> { ok = false, i = i, v = jNull() }
+
+fn _jParseArray(s: Str, i0: Int) -> _JRes = do:
+  let i1 = _jSkipWs(s, i0)
+  let n = _jLen(s)
+  return match i1 < n and _jCodeAt(s, i1) == 93:
+    true -> { ok = true, i = i1 + 1, v = JArr(Nil) }
+    false -> _jParseArrayElems(s, i1, Nil)
+
+fn _jParseArrayElems(s: Str, i0: Int, acc: List[Json]) -> _JRes = do:
+  let r = _jParseValue(s, i0)
+  return match r.ok:
+    false -> { ok = false, i = i0, v = jNull() }
+    true -> do:
+      let i1 = _jSkipWs(s, r.i)
+      let n = _jLen(s)
+      return match i1 < n and _jCodeAt(s, i1) == 44:
+        true -> _jParseArrayElems(s, i1 + 1, Cons(r.v, acc))
+        false -> match i1 < n and _jCodeAt(s, i1) == 93:
+          true -> { ok = true, i = i1 + 1, v = JArr(reverse(Cons(r.v, acc))) }
+          false -> { ok = false, i = i0, v = jNull() }
+
+fn _jParseObject(s: Str, i0: Int) -> _JRes = do:
+  let i1 = _jSkipWs(s, i0)
+  let n = _jLen(s)
+  return match i1 < n and _jCodeAt(s, i1) == 125:
+    true -> { ok = true, i = i1 + 1, v = JObj(mapEmpty()) }
+    false -> _jParseObjectPairs(s, i1, mapEmpty())
+
+fn _jParseObjectPairs(s: Str, i0: Int, acc: Map[Str, Json]) -> _JRes = do:
+  let k0 = _jParseString(s, _jSkipWs(s, i0))
+  return match k0.ok:
+    false -> { ok = false, i = i0, v = jNull() }
+    true -> do:
+      let i1 = _jSkipWs(s, k0.i)
+      let n = _jLen(s)
+      return match i1 >= n or _jCodeAt(s, i1) != 58:
+        true -> { ok = false, i = i0, v = jNull() }
+        false -> do:
+          let vr = _jParseValue(s, i1 + 1)
+          return match vr.ok:
+            false -> { ok = false, i = i0, v = jNull() }
+            true -> do:
+              let acc2 = mapPut(acc, k0.out, vr.v)
+              let i2 = _jSkipWs(s, vr.i)
+              return match i2 < n and _jCodeAt(s, i2) == 44:
+                true -> _jParseObjectPairs(s, i2 + 1, acc2)
+                false -> match i2 < n and _jCodeAt(s, i2) == 125:
+                  true -> { ok = true, i = i2 + 1, v = JObj(acc2) }
+                  false -> { ok = false, i = i0, v = jNull() }
+
+fn loads(s: Str) -> Option[Json] = do:
+  let r = _jParseValue(s, 0)
+  let i2 = _jSkipWs(s, r.i)
+  return match r.ok and i2 == _jLen(s):
+    true -> Some(r.v)
+    false -> None

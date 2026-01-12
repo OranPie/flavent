@@ -1,0 +1,15 @@
+use flvtest
+
+type Event.Test = {}
+
+sector main:
+  let count = 0
+
+  on Event.Test as e -> do:
+    count = count + 1
+    if count < 2:
+      emit e
+    else:
+      stop()
+
+run()

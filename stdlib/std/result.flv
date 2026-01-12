@@ -4,6 +4,32 @@ fn isOk[T, E](r: Result[T, E]) -> Bool = match r:
   Ok(_) -> true
   Err(_) -> false
 
+fn isErr[T, E](r: Result[T, E]) -> Bool = match r:
+  Ok(_) -> false
+  Err(_) -> true
+
+fn unwrapOr[T, E](r: Result[T, E], default: T) -> T = match r:
+  Ok(v) -> v
+  Err(_) -> default
+
 fn unwrapOrErr[T, E](r: Result[T, E], default: T) -> T = match r:
   Ok(v) -> v
   Err(_) -> default
+
+fn toOption[T, E](r: Result[T, E]) -> Option[T] = match r:
+  Ok(v) -> Some(v)
+  Err(_) -> None
+
+fn errOr[T, E](r: Result[T, E], default: E) -> E = match r:
+  Ok(_) -> default
+  Err(e) -> e
+
+fn unwrapOrEmptyStr[E](r: Result[Str, E]) -> Str = unwrapOr(r, "")
+
+fn toOptionErr[T, E](r: Result[T, E]) -> Option[E] = match r:
+  Ok(_) -> None
+  Err(e) -> Some(e)
+
+fn isOkAndBool[E](r: Result[Bool, E]) -> Bool = match r:
+  Ok(v) -> v
+  Err(_) -> false

@@ -14,3 +14,27 @@ fn setAdd[T](s: Set[T], x: T) -> Set[T] = mapPut(s, x, ())
 fn setRemove[T](s: Set[T], x: T) -> Set[T] = mapRemove(s, x)
 
 fn setSize[T](s: Set[T]) -> Int = length(s)
+
+fn setToList[T](s: Set[T]) -> List[T] = mapKeys(s)
+
+fn _setAddAll[T](s: Set[T], xs: List[T]) -> Set[T] = match xs:
+  Nil -> s
+  Cons(x, rest) -> _setAddAll(setAdd(s, x), rest)
+
+fn setUnion[T](a: Set[T], b: Set[T]) -> Set[T] = _setAddAll(a, setToList(b))
+
+fn _setKeepIfIn[T](a: Set[T], b: Set[T], xs: List[T]) -> Set[T] = match xs:
+  Nil -> setEmpty()
+  Cons(x, rest) -> match setHas(b, x):
+    true -> setAdd(_setKeepIfIn(a, b, rest), x)
+    false -> _setKeepIfIn(a, b, rest)
+
+fn setIntersect[T](a: Set[T], b: Set[T]) -> Set[T] = _setKeepIfIn(a, b, setToList(a))
+
+fn _setKeepIfNotIn[T](a: Set[T], b: Set[T], xs: List[T]) -> Set[T] = match xs:
+  Nil -> setEmpty()
+  Cons(x, rest) -> match setHas(b, x):
+    true -> _setKeepIfNotIn(a, b, rest)
+    false -> setAdd(_setKeepIfNotIn(a, b, rest), x)
+
+fn setDiff[T](a: Set[T], b: Set[T]) -> Set[T] = _setKeepIfNotIn(a, b, setToList(a))

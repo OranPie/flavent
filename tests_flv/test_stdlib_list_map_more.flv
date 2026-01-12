@@ -1,0 +1,18 @@
+use flvtest
+use collections.list
+use collections.map
+use std.option
+use std.result
+
+test "list-more" -> do:
+  let xs = rangeInt(0, 3)
+  assertEq(sumInt(xs), 3)?
+  assertTrue(contains(xs, 2))?
+  assertEq(length(repeat(1, 4)), 4)?
+
+test "map-more" -> do:
+  let m = mapPut(mapEmpty(), "a", 1)
+  assertTrue(mapHasKey(m, "a"))?
+  assertEq(mapSize(m), 1)?
+  assertEq(std.option.unwrapOr(mapGet(m, "a"), 0), 1)?
+  assertEq(std.result.unwrapOr(Err("e"), 9), 9)?

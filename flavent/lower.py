@@ -499,6 +499,10 @@ def _lower_expr(ctx: _Ctx, e: ast.Expr) -> tuple[list[object], Expr]:
         return pre, CallExpr(callee=callee, args=args, span=e.span)
 
     if isinstance(e, ast.MemberExpr):
+        # If resolver bound the field ident to a symbol, treat this as a namespaced reference
+        # (e.g. std.option.unwrapOr) rather than record member access.
+        if id(e.field) in ctx.res.ident_to_symbol:
+            return [], _var(ctx, e.field)
         pre, obj = _lower_expr(ctx, e.object)
         return pre, MemberExpr(object=obj, field=e.field.name, span=e.span)
 

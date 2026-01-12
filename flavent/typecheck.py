@@ -25,6 +25,9 @@ from .hir import (
     IndexExpr,
     LetStmt,
     LitExpr,
+    LIndex,
+    LMember,
+    LVar,
     MatchArmExpr,
     MatchArmStmt,
     MatchExpr,
@@ -223,6 +226,13 @@ def check_program(hir: Program, res: Resolution) -> None:
         _check_fn(ctx0, fn, owner_sector=None)
 
     for sec in hir.sectors:
+        # Sector `let` declarations live in sector state and are assignable from handlers.
+        # Record them in global_env so AssignStmt can typecheck them.
+        for vd in sec.lets:
+            t, eff = _infer_expr(ctx0, vd.expr, expected=None)
+            if eff.kind != "pure":
+                raise EffectError("sector let initializer must be pure", vd.span)
+            ctx0.global_env[vd.sym] = t
         for fn in sec.fns:
             _check_fn(ctx0, fn, owner_sector=sec.sym)
         for h in sec.handlers:
@@ -416,9 +426,12 @@ def _check_stmt(ctx: _TypeCtx, st, *, expected_ret: T, in_handler: bool) -> _Eff
 
     if isinstance(st, AssignStmt):
         t_lhs: T | None = None
-        if hasattr(st.target, "sym"):
+        if isinstance(st.target, LVar):
             sym = st.target.sym
             t_lhs = ctx.env.get(sym)
+            if t_lhs is None:
+                # Allow assignment to sector-level `let` variables.
+                t_lhs = ctx.global_env.get(sym)
             if t_lhs is None:
                 raise TypeError("assign to unknown var", st.span)
 

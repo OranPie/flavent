@@ -29,3 +29,55 @@ fn reverse[T](xs: List[T]) -> List[T] = _revAcc(xs, Nil)
 fn append[T](xs: List[T], ys: List[T]) -> List[T] = match xs:
   Nil -> ys
   Cons(x, rest) -> Cons(x, append(rest, ys))
+
+fn get[T](xs: List[T], i: Int) -> Option[T] = match xs:
+  Nil -> None
+  Cons(x, rest) -> match i == 0:
+    true -> Some(x)
+    false -> match i < 0:
+      true -> None
+      false -> get(rest, i - 1)
+
+fn last[T](xs: List[T]) -> Option[T] = match xs:
+  Nil -> None
+  Cons(x, rest) -> match rest:
+    Nil -> Some(x)
+    Cons(_, _) -> last(rest)
+
+fn take[T](xs: List[T], n: Int) -> List[T] = match n <= 0:
+  true -> Nil
+  false -> match xs:
+    Nil -> Nil
+    Cons(x, rest) -> Cons(x, take(rest, n - 1))
+
+fn drop[T](xs: List[T], n: Int) -> List[T] = match n <= 0:
+  true -> xs
+  false -> match xs:
+    Nil -> Nil
+    Cons(_, rest) -> drop(rest, n - 1)
+
+fn contains[T](xs: List[T], x: T) -> Bool = match xs:
+  Nil -> false
+  Cons(h, rest) -> match h == x:
+    true -> true
+    false -> contains(rest, x)
+
+fn concat[T](xss: List[List[T]]) -> List[T] = match xss:
+  Nil -> Nil
+  Cons(xs, rest) -> append(xs, concat(rest))
+
+fn repeat[T](x: T, n: Int) -> List[T] = match n <= 0:
+  true -> Nil
+  false -> Cons(x, repeat(x, n - 1))
+
+fn rangeInt(start: Int, end: Int) -> List[Int] = match start >= end:
+  true -> Nil
+  false -> Cons(start, rangeInt(start + 1, end))
+
+fn sumInt(xs: List[Int]) -> Int = match xs:
+  Nil -> 0
+  Cons(x, rest) -> x + sumInt(rest)
+
+fn sumFloat(xs: List[Float]) -> Float = match xs:
+  Nil -> 0.0
+  Cons(x, rest) -> x + sumFloat(rest)

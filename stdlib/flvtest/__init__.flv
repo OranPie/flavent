@@ -1,0 +1,11 @@
+use std.result
+
+fn fail(msg: Str) -> Result[Unit, Str] = Err(msg)
+
+fn assertTrue(cond: Bool) -> Result[Unit, Str] = match cond:
+  true -> Ok(())
+  false -> Err("assertTrue failed")
+
+fn assertEq[T](a: T, b: T) -> Result[Unit, Str] = match a == b:
+  true -> Ok(())
+  false -> Err("assertEq failed")

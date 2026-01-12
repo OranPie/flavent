@@ -1,0 +1,12 @@
+use flvtest
+use std.option
+use collections.list
+use std.result
+
+test "option-list" -> do:
+  let xs = Cons(1, Cons(2, Cons(3, Nil)))
+  assertTrue(isSome(get(xs, 0)))?
+  assertTrue(isNone(get(xs, 99)))?
+  assertTrue(isSome(last(xs)))?
+  assertEq(std.option.unwrapOr(None, 7), 7)?
+  assertEq(std.result.unwrapOr(Err("e"), 8), 8)?

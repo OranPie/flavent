@@ -1,0 +1,7 @@
+use flvtest
+
+test "arith" -> do:
+  assertEq(1 + 2, 3)?
+
+test "bool" -> do:
+  assertTrue(true)?

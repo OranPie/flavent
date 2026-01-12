@@ -29,3 +29,17 @@ fn mapRemove[K, V](m: Map[K, V], k: K) -> Map[K, V] = match m:
       return rest
     else:
       return Cons(e, mapRemove(rest, k))
+
+fn mapHasKey[K, V](m: Map[K, V], k: K) -> Bool = match mapGet(m, k):
+  Some(_) -> true
+  None -> false
+
+fn mapKeys[K, V](m: Map[K, V]) -> List[K] = match m:
+  Nil -> Nil
+  Cons(e, rest) -> Cons(e.key, mapKeys(rest))
+
+fn mapValues[K, V](m: Map[K, V]) -> List[V] = match m:
+  Nil -> Nil
+  Cons(e, rest) -> Cons(e.value, mapValues(rest))
+
+fn mapSize[K, V](m: Map[K, V]) -> Int = length(m)

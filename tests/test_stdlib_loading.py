@@ -46,8 +46,10 @@ fn g() -> Result[Int, Str] = Ok(1)
 
 
 def test_stdlib_polymorphic_fns_infer_at_callsite():
-    src = """fn f() -> Int = unwrapOr(None, 0)
-fn g() -> Str = unwrapOr(Some("x"), "y")
+    src = """use std.option
+
+fn f() -> Int = std.option.unwrapOr(None, 0)
+fn g() -> Str = std.option.unwrapOr(Some("x"), "y")
 fn h() -> Bool = isOk(Ok(1))
 """
     prog = parse_program(lex("test.flv", src))

@@ -1,0 +1,19 @@
+use flvtest
+
+type Event.Test = {}
+
+sector main:
+  let sent = false
+
+  on Event.Test as e -> do:
+    let _x = await Event.Test
+    stop()
+
+  on Event.Test as e -> do:
+    if sent:
+      stop()
+    else:
+      sent = true
+      emit e
+
+run()

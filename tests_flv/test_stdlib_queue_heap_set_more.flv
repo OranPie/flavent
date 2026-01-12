@@ -1,0 +1,25 @@
+use flvtest
+use collections.list
+use collections.queue
+use collections.heap
+use collections.set
+
+test "queue-more" -> do:
+  let q0 = queueEmpty()
+  let q1 = queuePushAll(q0, rangeInt(0, 3))
+  assertEq(queueSize(q1), 3)?
+  assertEq(length(queueToList(q1)), 3)?
+  assertTrue(isSome(queuePeek(q1)))?
+
+test "heap-more" -> do:
+  let h = heapFromList(Cons(3, Cons(1, Cons(2, Nil))))
+  assertEq(heapSize(h), 3)?
+  assertEq(heapMinOr(h, 9), 1)?
+  assertEq(length(heapToSortedList(h)), 3)?
+
+test "set-more" -> do:
+  let a = setAdd(setAdd(setEmpty(), 1), 2)
+  let b = setAdd(setAdd(setEmpty(), 2), 3)
+  assertEq(setSize(setUnion(a, b)), 3)?
+  assertEq(setSize(setIntersect(a, b)), 1)?
+  assertEq(setSize(setDiff(a, b)), 1)?

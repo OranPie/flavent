@@ -27,3 +27,13 @@ fn queuePop[T](q: Queue[T]) -> Option[QueuePop[T]] = do:
   return match q2.front:
     Nil -> None
     Cons(x, rest) -> Some({ value = x, rest = _queueNormalize({ front = rest, back = q2.back }) })
+
+fn queueSize[T](q: Queue[T]) -> Int = length(q.front) + length(q.back)
+
+fn queueToList[T](q: Queue[T]) -> List[T] = append(q.front, reverse(q.back))
+
+fn queueFromList[T](xs: List[T]) -> Queue[T] = { front = xs, back = Nil }
+
+fn queuePushAll[T](q: Queue[T], xs: List[T]) -> Queue[T] = match xs:
+  Nil -> q
+  Cons(x, rest) -> queuePushAll(queuePush(q, x), rest)

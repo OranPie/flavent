@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from .diagnostics import Diagnostic, EffectError, LowerError, ParseError, ResolveError, TypeError, format_diagnostic
+from .bridge_audit import audit_bridge_usage, format_bridge_warnings
 from .lexer import lex
 from .parser import parse_program
 from .ast import node_to_dict
@@ -35,6 +36,8 @@ def main(argv: list[str] | None = None) -> int:
     p_check = sub.add_parser("check")
     p_check.add_argument("file")
     p_check.add_argument("--no-stdlib", action="store_true")
+    p_check.add_argument("--bridge-report", default="", help="Write bridge usage report JSON to this path")
+    p_check.add_argument("--bridge-warn", action="store_true", help="Print warnings for deprecated bridge shims")
 
     args = p.parse_args(argv)
     path = Path(args.file)
@@ -89,6 +92,15 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         check_program(hir_prog, res)
+
+        if args.cmd == "check":
+            report = audit_bridge_usage(hir_prog, res)
+            if getattr(args, "bridge_report", ""):
+                Path(args.bridge_report).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+            if getattr(args, "bridge_warn", False):
+                for line in format_bridge_warnings(report):
+                    print(line)
+
         print("OK")
         return 0
 

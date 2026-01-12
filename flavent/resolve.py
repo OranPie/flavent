@@ -839,13 +839,56 @@ def _define_value_decl(ctx: _Ctx, ident: ast.Ident, kind: SymbolKind) -> SymbolI
 
 def _define_in_scope(ctx: _Ctx, scope: Scope, ident: ast.Ident, kind: SymbolKind, *, owner: SymbolId | None) -> SymbolId:
     name = ident.name
-    existing = scope.lookup("values", name)
-    if existing and scope.values.get(name):
-        raise ResolveError(f"Duplicate name in same scope: {name}", ident.span)
+    # Duplicate names may come from `use` expansion (stdlib modules), which is allowed.
+    # We still reject duplicates originating from the same source file (true duplicate definition).
+    existing_in_this_scope = scope.values.get(name)
+    if existing_in_this_scope:
+        same_file = any(ctx.symbols[sid - 1].span.file == ident.span.file for sid in existing_in_this_scope)
+        if same_file:
+            raise ResolveError(f"Duplicate name in same scope: {name}", ident.span)
     sid = ctx.new_symbol(kind, name, ident.span, owner=owner)
     scope.define("values", name, sid)
     ctx.ident_to_symbol[id(ident)] = sid
     return sid
+
+
+def _try_resolve_namespaced_value(ctx: _Ctx, e: ast.MemberExpr) -> Optional[SymbolId]:
+    # Recognize chains like `std.option.unwrapOr` where each segment is an identifier.
+    parts: list[str] = []
+    cur: ast.Expr = e
+    while isinstance(cur, ast.MemberExpr):
+        parts.append(cur.field.name)
+        cur = cur.object
+    if not isinstance(cur, ast.VarExpr):
+        return None
+    parts.append(cur.name.name)
+    parts = list(reversed(parts))
+    if len(parts) < 2:
+        return None
+
+    # Last segment is the symbol name; prefix is the stdlib module qname.
+    sym_name = parts[-1]
+    mod_qname = ".".join(parts[:-1])
+
+    stdlib_root = Path(__file__).resolve().parent.parent / "stdlib"
+    mod_path = stdlib_root.joinpath(*mod_qname.split(".")).with_suffix(".flv")
+    if not mod_path.exists():
+        mod_path = stdlib_root.joinpath(*mod_qname.split(".")) / "__init__.flv"
+    if not mod_path.exists():
+        return None
+
+    mod_file_suffix = str(mod_path).replace("\\", "/")
+
+    # Filter global matches by source file.
+    matches = ctx.global_scope.lookup("values", sym_name)
+    if not matches:
+        return None
+    filtered = [sid for sid in matches if ctx.symbols[sid - 1].span.file.replace("\\", "/").endswith(mod_file_suffix)]
+    if not filtered:
+        return None
+    if len(filtered) > 1:
+        raise ResolveError(f"NameAmbiguity: {sym_name}", e.span)
+    return filtered[0]
 
 
 def _define_fn(ctx: _Ctx, fd: ast.FnDecl, *, owner: SymbolId | None) -> SymbolId:
@@ -1120,6 +1163,10 @@ def _resolve_expr(ctx: _Ctx, scope: Scope, e: ast.Expr) -> None:
                 _resolve_expr(ctx, scope, a)
         return
     if isinstance(e, ast.MemberExpr):
+        sid = _try_resolve_namespaced_value(ctx, e)
+        if sid is not None:
+            ctx.ident_to_symbol[id(e.field)] = sid
+            return
         _resolve_expr(ctx, scope, e.object)
         return
     if isinstance(e, ast.IndexExpr):
@@ -1245,8 +1292,16 @@ def _resolve_ident_value(ctx: _Ctx, scope: Scope, ident: ast.Ident) -> SymbolId:
     if not matches:
         raise ResolveError(f"NameNotFound: {ident.name}", ident.span)
     if len(matches) > 1:
-        raise ResolveError(f"NameAmbiguity: {ident.name}", ident.span)
-    sid = matches[0]
+        # If one of the candidates originates from the same source file, prefer it.
+        # This allows stdlib modules (flattened into global scope) to refer to their
+        # own definitions without being shadowed by imported duplicates.
+        same_file = [sid for sid in matches if ctx.symbols[sid - 1].span.file == ident.span.file]
+        if len(same_file) == 1:
+            sid = same_file[0]
+        else:
+            raise ResolveError(f"NameAmbiguity: {ident.name}", ident.span)
+    else:
+        sid = matches[0]
     ctx.ident_to_symbol[id(ident)] = sid
     return sid
 
@@ -1270,8 +1325,17 @@ def _resolve_sector_fn(ctx: _Ctx, sector_id: SymbolId, fn_name: ast.Ident) -> Sy
     return matches[0]
 
 
-def _lookup_single(ctx: _Ctx, scope: Scope, ns: str, name: str) -> Optional[SymbolId]:
+def _lookup_single(ctx: _Ctx, scope: Scope, ns: str, name: str) -> SymbolId | None:
     matches = scope.lookup(ns, name)
     if not matches:
         return None
+    return matches[0]
+
+
+def _lookup_unique_value(ctx: _Ctx, scope: Scope, name: str, *, span: Span) -> SymbolId:
+    matches = scope.lookup("values", name)
+    if not matches:
+        raise ResolveError(f"NameNotFound: {name}", span)
+    if len(matches) > 1:
+        raise ResolveError(f"NameAmbiguity: {name}", span)
     return matches[0]

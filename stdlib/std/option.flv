@@ -1,5 +1,35 @@
+use collections.list
+
 type Option[T] = Some(T) | None
 
 fn unwrapOr[T](o: Option[T], default: T) -> T = match o:
   Some(v) -> v
   None -> default
+
+fn isSome[T](o: Option[T]) -> Bool = match o:
+  Some(_) -> true
+  None -> false
+
+fn isNone[T](o: Option[T]) -> Bool = match o:
+  Some(_) -> false
+  None -> true
+
+fn orElse[T](o: Option[T], other: Option[T]) -> Option[T] = match o:
+  Some(v) -> Some(v)
+  None -> other
+
+fn okOr[T, E](o: Option[T], err: E) -> Result[T, E] = match o:
+  Some(v) -> Ok(v)
+  None -> Err(err)
+
+fn unwrapOrZeroInt(o: Option[Int]) -> Int = unwrapOr(o, 0)
+
+fn unwrapOrEmptyStr(o: Option[Str]) -> Str = unwrapOr(o, "")
+
+fn toList[T](o: Option[T]) -> List[T] = match o:
+  Some(v) -> Cons(v, Nil)
+  None -> Nil
+
+fn fromBool[T](cond: Bool, v: T) -> Option[T] = match cond:
+  true -> Some(v)
+  false -> None

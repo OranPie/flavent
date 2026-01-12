@@ -1,0 +1,11 @@
+use flvtest
+
+type Event.Test = {}
+
+sector main:
+  on Event.Test -> do:
+    assertEq(1 + 1, 2)?
+    assertTrue(true)?
+    stop()
+
+run()

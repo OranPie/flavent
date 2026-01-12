@@ -20,6 +20,10 @@ use consoleIO
 use base64
 use hashlib
 use collections.map
+use collections.list
+use collections.queue
+use collections.heap
+use collections.set
 use bytelib
 use u32
 use fslib
@@ -27,6 +31,9 @@ use statistics
 use uuid
 use glob
 use tempfile
+use json
+use std.option
+use std.result
 
 type Event.X = {}
 
@@ -59,7 +66,7 @@ sector s:
 
     let s = surround("x", "[", "]")
     let t = concat3("a", "b", "c")
-    call consoleIO.println(concat(s, t))
+    call consoleIO.println(stringfmt.concat(s, t))
 
     let named = mapPut(mapEmpty(), "name", "Alice")
     let _mix = formatWith("hi {name} {} {0}", Cons("X", Nil), named)
@@ -79,7 +86,7 @@ sector s:
 
     let _n = bytesLen(b"hi")
     let _b0 = bytesGet(b"hi", 0)
-    let _sl = bytesSlice(b"hi", 0, 1)
+    let _bsl = bytesSlice(b"hi", 0, 1)
     let _cat = bytesConcat(b"h", b"i")
     let _lst = bytesToList(b"hi")
     let _b2 = bytesFromList(Cons(104, Cons(105, Nil)))
@@ -108,6 +115,79 @@ sector s:
     let _paths = rpc glob.glob("/tmp/*")
     let _tf = rpc tempfile.mkstemp("flv_", ".tmp")
     let _td = rpc tempfile.mkdtemp("flv_")
+
+    let j0 = JArr(Cons(JInt(1), Cons(JBool(true), Cons(jNull(), nil()))))
+    let s0 = dumps(j0)
+    let _j1 = loads(s0)
+
+    let o0 = Some(1)
+    let _os = isSome(o0)
+    let _on = isNone(None)
+    let _o1 = orElse(None, o0)
+    let _r0 = okOr(None, "x")
+    let _ou = std.option.unwrapOr(None, 0)
+
+    let r0 = Ok(1)
+    let _re = isErr(Err("e"))
+    let _ru = unwrapOrErr(r0, 0)
+    let _ro = toOption(Err("e"))
+    let _eo = errOr(Err("e"), "d")
+    let _ru2 = std.result.unwrapOr(Err("e"), 0)
+
+    let xs2 = Cons(1, Cons(2, Cons(3, Nil)))
+    let _g0 = get(xs2, 0)
+    let _g9 = get(xs2, 9)
+    let _last = last(xs2)
+    let _tk = take(xs2, 2)
+    let _dp = drop(xs2, 2)
+    let _has2 = contains(xs2, 2)
+    let _r10 = repeat(1, 0)
+    let _rng = rangeInt(0, 3)
+    let _si = sumInt(xs2)
+
+    let m2 = mapPut(mapEmpty(), "a", 1)
+    let _hk = mapHasKey(m2, "a")
+    let _ks = mapKeys(m2)
+    let _vs = mapValues(m2)
+    let _sz = mapSize(m2)
+
+    let q0 = queueEmpty()
+    let q1 = queuePush(q0, 1)
+    let _qe = queueIsEmpty(q0)
+    let _qpk = queuePeek(q1)
+    let _qsz = queueSize(q1)
+    let _qls = queueToList(q1)
+    let q2 = queueFromList(xs2)
+    let _q3 = queuePushAll(q2, Cons(4, Nil))
+    let _qp = queuePop(q2)
+
+    let h0 = heapEmpty()
+    let h1 = heapInsert(2, heapInsert(1, heapInsert(3, h0)))
+    let _he = heapIsEmpty(h0)
+    let _hp = heapPeek(h1)
+    let _hs = heapSize(h1)
+    let _hl = heapToSortedList(h1)
+    let _hm = heapMinOr(h0, 9)
+    let _hf = heapFromList(xs2)
+
+    let ss0 = setEmpty()
+    let s1 = setAdd(ss0, 1)
+    let _sh = setHas(s1, 1)
+    let _ss = setSize(s1)
+    let _sl2 = setToList(s1)
+    let s2 = setAdd(setEmpty(), 2)
+    let _su = setUnion(s1, s2)
+    let _si2 = setIntersect(s1, s2)
+    let _sd2 = setDiff(s1, s2)
+
+    let _oz = unwrapOrZeroInt(None)
+    let _oe = std.option.unwrapOrEmptyStr(None)
+    let _ol = toList(Some(1))
+    let _ob = fromBool(true, 1)
+
+    let _re0 = std.result.unwrapOrEmptyStr(Err("e"))
+    let _oe0 = toOptionErr(Err("e"))
+    let _okb = isOkAndBool(Ok(true))
 
     stop()
 
