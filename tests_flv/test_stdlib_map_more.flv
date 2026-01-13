@@ -1,0 +1,15 @@
+use flvtest
+use collections.map
+use collections.list
+
+test "map-more" -> do:
+  let m0 = mapEmpty()
+  let m1 = mapPut(m0, "a", 1)
+  let m2 = mapPut(m1, "b", 2)
+  assertEq(mapGetOr(m2, "a", 9), 1)?
+  assertEq(mapGetOr(m2, "c", 9), 9)?
+  let m3 = mapMerge(m2, mapPut(mapEmpty(), "a", 7))
+  assertEq(mapGetOr(m3, "a", 0), 7)?
+  let xs = mapToList(m3)
+  let m4 = mapFromList(xs)
+  assertEq(mapSize(m4), mapSize(m3))?

@@ -1,0 +1,20 @@
+use flvtest
+use stringfmt
+use collections.list
+use collections.map
+
+test "stringfmt-format" -> do:
+  assertEq(format("{}", Cons("x", Nil)), "x")?
+  assertEq(format("{0} {1}", Cons("a", Cons("b", Nil))), "a b")?
+  assertEq(format("{{}}", Nil), "{}")?
+
+test "stringfmt-formatWith-named" -> do:
+  let named = mapPut(mapEmpty(), "name", "Alice")
+  assertEq(formatWith("hi {name}", Nil, named), "hi Alice")?
+  assertEq(formatWith("hi {missing}", Nil, named), "hi ")?
+  assertEq(formatWith("{name} {} {0}", Cons("X", Nil), named), "Alice X X")?
+
+test "stringfmt-formatMap" -> do:
+  let m = mapPut(mapEmpty(), "a", "1")
+  assertEq(formatMap("{a}", m), "1")?
+  assertEq(formatMap("{{{a}}}", m), "{1}")?

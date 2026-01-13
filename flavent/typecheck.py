@@ -109,6 +109,149 @@ def check_program(hir: Program, res: Resolution) -> None:
     type_name_by_id = {s.id: s.name for s in res.symbols if s.kind == SymbolKind.TYPE}
     type_id_by_name = {s.name: s.id for s in res.symbols if s.kind == SymbolKind.TYPE}
 
+    # ---- Python bridge policy enforcement (compile-time) ----
+    # `_bridge_python` is an internal capability boundary. Stdlib modules may use it,
+    # but user code must not reference any bridge symbol directly (even if it becomes
+    # reachable via stdlib expansion).
+    bridge_file_suffix = "/stdlib/_bridge_python.flv"
+
+    def _norm_path(p: str) -> str:
+        return p.replace("\\", "/")
+
+    def _is_stdlib_file(p: str) -> bool:
+        pn = _norm_path(p)
+        return "/stdlib/" in pn
+
+    def _is_bridge_symbol(sym_id: int) -> bool:
+        s = sym_by_id.get(sym_id)
+        if s is None:
+            return False
+        return _norm_path(s.span.file).endswith(bridge_file_suffix)
+
+    # Sector symbol id for `_bridge_python` if present.
+    bridge_sector_id: int | None = None
+    for s in res.symbols:
+        if s.kind == SymbolKind.SECTOR and s.name == "_bridge_python":
+            bridge_sector_id = s.id
+            break
+
+    def _bridge_violation(msg: str, span) -> None:
+        raise EffectError(msg, span)
+
+    def _check_expr_for_bridge(e: Expr) -> None:
+        if isinstance(e, (LitExpr, UndefExpr)):
+            return
+        if isinstance(e, VarExpr):
+            if not _is_stdlib_file(e.span.file) and _is_bridge_symbol(e.sym):
+                _bridge_violation(f"Direct use of _bridge_python symbol is not allowed: {sym_by_id.get(e.sym).name}", e.span)
+            return
+        if isinstance(e, RecordLitExpr):
+            for it in e.items:
+                _check_expr_for_bridge(it.value)
+            return
+        if isinstance(e, TupleLitExpr):
+            for x in e.items:
+                _check_expr_for_bridge(x)
+            return
+        if isinstance(e, MemberExpr):
+            _check_expr_for_bridge(e.object)
+            return
+        if isinstance(e, IndexExpr):
+            _check_expr_for_bridge(e.object)
+            _check_expr_for_bridge(e.index)
+            return
+        if isinstance(e, UnaryExpr):
+            _check_expr_for_bridge(e.expr)
+            return
+        if isinstance(e, BinaryExpr):
+            _check_expr_for_bridge(e.left)
+            _check_expr_for_bridge(e.right)
+            return
+        if isinstance(e, MatchExpr):
+            _check_expr_for_bridge(e.scrutinee)
+            for arm in e.arms:
+                _check_expr_for_bridge(arm.body)
+            return
+        if isinstance(e, CallExpr):
+            _check_expr_for_bridge(e.callee)
+            for a in e.args:
+                if isinstance(a, CallArgPos):
+                    _check_expr_for_bridge(a.value)
+                elif isinstance(a, CallArgStar):
+                    _check_expr_for_bridge(a.value)
+                elif isinstance(a, CallArgKw):
+                    _check_expr_for_bridge(a.value)
+                elif isinstance(a, CallArgStarStar):
+                    _check_expr_for_bridge(a.value)
+            return
+        if isinstance(e, AwaitEventExpr):
+            return
+        if isinstance(e, RpcCallExpr):
+            # Disallow direct calls into `_bridge_python` sector from user code.
+            if bridge_sector_id is not None and e.sector == bridge_sector_id and not _is_stdlib_file(e.span.file):
+                fn_name = sym_by_id.get(e.fn).name if sym_by_id.get(e.fn) is not None else str(e.fn)
+                _bridge_violation(f"Direct rpc/call into _bridge_python is not allowed: {fn_name}", e.span)
+            for a in e.args:
+                _check_expr_for_bridge(a)
+            return
+
+    def _check_stmt_for_bridge(st) -> None:
+        if isinstance(st, LetStmt):
+            _check_expr_for_bridge(st.expr)
+            return
+        if isinstance(st, AssignStmt):
+            _check_expr_for_bridge(st.expr)
+            if hasattr(st.target, "object"):
+                _check_expr_for_bridge(getattr(st.target, "object"))
+            if hasattr(st.target, "index"):
+                _check_expr_for_bridge(getattr(st.target, "index"))
+            return
+        if isinstance(st, IfStmt):
+            _check_expr_for_bridge(st.cond)
+            for s2 in st.thenBlock.stmts:
+                _check_stmt_for_bridge(s2)
+            if st.elseBlock is not None:
+                for s2 in st.elseBlock.stmts:
+                    _check_stmt_for_bridge(s2)
+            return
+        if isinstance(st, ForStmt):
+            _check_expr_for_bridge(st.iterable)
+            for s2 in st.body.stmts:
+                _check_stmt_for_bridge(s2)
+            return
+        if isinstance(st, MatchStmt):
+            _check_expr_for_bridge(st.scrutinee)
+            for arm in st.arms:
+                for s2 in arm.body.stmts:
+                    _check_stmt_for_bridge(s2)
+            return
+        if isinstance(st, EmitStmt):
+            _check_expr_for_bridge(st.expr)
+            return
+        if isinstance(st, ReturnStmt):
+            _check_expr_for_bridge(st.expr)
+            return
+        if isinstance(st, AbortHandlerStmt):
+            if st.cause is not None:
+                _check_expr_for_bridge(st.cause)
+            return
+        if isinstance(st, ExprStmt):
+            _check_expr_for_bridge(st.expr)
+            return
+
+    for fn in hir.fns:
+        for st in fn.body.stmts:
+            _check_stmt_for_bridge(st)
+    for sec in hir.sectors:
+        for fn in sec.fns:
+            for st in fn.body.stmts:
+                _check_stmt_for_bridge(st)
+        for h in sec.handlers:
+            if h.when is not None:
+                _check_expr_for_bridge(h.when)
+            for st in h.body.stmts:
+                _check_stmt_for_bridge(st)
+
     fn_sig: dict[SymbolId, tuple[list[T], T]] = {}
     fn_param_meta: dict[SymbolId, list[tuple[SymbolId, str, T]]] = {}
     fn_tparams: dict[SymbolId, list[TypeId]] = {}

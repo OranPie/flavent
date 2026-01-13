@@ -83,6 +83,81 @@ def run_hir_program(
 
     sym_by_id: dict[SymbolId, Symbol] = {s.id: s for s in res.symbols}
 
+    def is_pure_bridge_sym(sym: SymbolId) -> bool:
+        s = sym_by_id.get(sym)
+        if s is None:
+            return False
+        return s.span.file.replace("\\", "/").endswith("/stdlib/_bridge_python.flv")
+
+    def eval_pure_bridge(name: str, args: list[Any]) -> Any:
+        # String primitives
+        if name == "strLen":
+            return len(str(args[0]))
+        if name == "strCodeAt":
+            s = str(args[0])
+            i = int(args[1])
+            if i < 0 or i >= len(s):
+                return 0
+            return ord(s[i])
+        if name == "strSlice":
+            s = str(args[0])
+            a = int(args[1])
+            b = int(args[2])
+            a = max(0, min(len(s), a))
+            b = max(0, min(len(s), b))
+            if b < a:
+                b = a
+            return s[a:b]
+        if name == "strFromCode":
+            code = int(args[0])
+            try:
+                return chr(code)
+            except Exception:
+                return ""
+
+        # Bytes primitives (Bytes represented as python bytes)
+        if name == "_pyBytesLen":
+            return len(bytes(args[0]))
+        if name == "_pyBytesGet":
+            b = bytes(args[0])
+            i = int(args[1])
+            if i < 0 or i >= len(b):
+                return 0
+            return int(b[i])
+        if name == "_pyBytesSlice":
+            b = bytes(args[0])
+            a = int(args[1])
+            c = int(args[2])
+            a = max(0, min(len(b), a))
+            c = max(0, min(len(b), c))
+            if c < a:
+                c = a
+            return b[a:c]
+        if name == "_pyBytesConcat":
+            return bytes(args[0]) + bytes(args[1])
+        if name == "_pyBytesFromByte":
+            x = int(args[0]) & 0xFF
+            return bytes([x])
+
+        # U32 primitives: wrap to 32-bit unsigned range
+        mask = 0xFFFFFFFF
+        if name == "_pyU32Wrap":
+            return int(args[0]) & mask
+        if name == "_pyU32And":
+            return (int(args[0]) & int(args[1])) & mask
+        if name == "_pyU32Or":
+            return (int(args[0]) | int(args[1])) & mask
+        if name == "_pyU32Xor":
+            return (int(args[0]) ^ int(args[1])) & mask
+        if name == "_pyU32Not":
+            return (~int(args[0])) & mask
+        if name == "_pyU32Shl":
+            return (int(args[0]) << (int(args[1]) & 31)) & mask
+        if name == "_pyU32Shr":
+            return (int(args[0]) >> (int(args[1]) & 31)) & mask
+
+        raise RuntimeError(f"unsupported pure bridge primitive: {name}")
+
     # Resolve `_bridge_python` sector symbol.
     bridge_sector_id: SymbolId | None = None
     for s in res.symbols:
@@ -296,6 +371,26 @@ def run_hir_program(
                         # Backward compatibility: treat as positional arg.
                         payload.append((yield from eval_expr_gen(a, env, current_sector, env_event_types)))
                 return make_sum(name, payload)
+
+            # Pure bridge primitive call.
+            if isinstance(callee_v, VarExpr) and is_pure_bridge_sym(callee_v.sym):
+                sym = sym_by_id.get(callee_v.sym)
+                fn_name = sym.name if sym is not None else str(callee_v.sym)
+                args_pos2: list[Any] = []
+                for a in e.args:
+                    if isinstance(a, CallArgPos):
+                        args_pos2.append((yield from eval_expr_gen(a.value, env, current_sector, env_event_types)))
+                    elif isinstance(a, CallArgStar):
+                        args_pos2.extend(list_to_py((yield from eval_expr_gen(a.value, env, current_sector, env_event_types))))
+                    elif isinstance(a, CallArgKw):
+                        # ignore keyword args in MVP runtime
+                        args_pos2.append((yield from eval_expr_gen(a.value, env, current_sector, env_event_types)))
+                    elif isinstance(a, CallArgStarStar):
+                        # ignore in MVP runtime
+                        pass
+                    else:
+                        args_pos2.append((yield from eval_expr_gen(a, env, current_sector, env_event_types)))
+                return eval_pure_bridge(fn_name, args_pos2)
 
             # function call
             if isinstance(callee_v, VarExpr) and callee_v.sym in fn_by_sym:

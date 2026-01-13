@@ -64,12 +64,21 @@ sector s:
     let r8 = compile("(ab|cd)e")
     let _m8 = isMatch(r8, "cde")
 
+    let _rc0 = compileChecked("(ab|cd)e")
+    let _sp0 = findFirstSpan(r8, "xxcdeyy")
+    let _all0 = findAllSpans(compile("a*"), "aa")
+
     let s = surround("x", "[", "]")
     let t = concat3("a", "b", "c")
     call consoleIO.println(stringfmt.concat(s, t))
 
     let named = mapPut(mapEmpty(), "name", "Alice")
+    let _getOr = mapGetOr(named, "missing", "Z")
+    let _mm = mapMerge(named, mapPut(mapEmpty(), "name", "Bob"))
+    let _mt = mapToList(named)
+    let _mf = mapFromList(_mt)
     let _mix = formatWith("hi {name} {} {0}", Cons("X", Nil), named)
+    let _fm = formatMap("hi {name}", named)
 
     let info0 = enumInfoEmpty()
     let info1 = enumInfoAdd(info0, enumCase("A", 1))
@@ -78,6 +87,11 @@ sector s:
     let info2 = enumInfoAddAuto(info1, "B")
     let _d = enumFindByName(info2, "A")
     let _next = enumNextTag(info2)
+    let _t0 = enumTagByName(info2, "A")
+    let _n0 = enumNameByTag(info2, 1)
+    let _rq = enumRequireByName(info2, "A")
+    let _rc = enumInfoAddChecked(info2, enumCase("C", 9))
+    let _vv = enumInfoValidate(info2)
 
     let _b64 = encode(b"hi")
     let _raw = decode(_b64)
@@ -160,6 +174,9 @@ sector s:
     let q2 = queueFromList(xs2)
     let _q3 = queuePushAll(q2, Cons(4, Nil))
     let _qp = queuePop(q2)
+    let _qpo = queuePopOr(q0, 9)
+    let _qko = queuePeekOr(q0, 9)
+    let _qc = queueConcat(q1, q2)
 
     let h0 = heapEmpty()
     let h1 = heapInsert(2, heapInsert(1, heapInsert(3, h0)))
@@ -169,6 +186,9 @@ sector s:
     let _hl = heapToSortedList(h1)
     let _hm = heapMinOr(h0, 9)
     let _hf = heapFromList(xs2)
+    let _hpo = heapPopOr(h0, 9)
+    let _hko = heapPeekOr(h0, 9)
+    let _hia = heapInsertAll(xs2, h0)
 
     let ss0 = setEmpty()
     let s1 = setAdd(ss0, 1)
@@ -176,9 +196,13 @@ sector s:
     let _ss = setSize(s1)
     let _sl2 = setToList(s1)
     let s2 = setAdd(setEmpty(), 2)
+    let _sf = setFromList(xs2)
+    let _sa = setAddAll(ss0, xs2)
     let _su = setUnion(s1, s2)
     let _si2 = setIntersect(s1, s2)
     let _sd2 = setDiff(s1, s2)
+    let _sub = setIsSubset(s1, _su)
+    let _eq = setEquals(s1, s1)
 
     let _oz = unwrapOrZeroInt(None)
     let _oe = std.option.unwrapOrEmptyStr(None)

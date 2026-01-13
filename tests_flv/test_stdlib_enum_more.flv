@@ -1,0 +1,23 @@
+use flvtest
+use enum
+use collections.list
+use std.result
+
+test "enum-lookup" -> do:
+  let info0 = enumInfoEmpty()
+  let info1 = enumInfoAdd(info0, enumCase("A", 1))
+  let info2 = enumInfoAddAuto(info1, "B")
+  assertTrue(isSome(enumFindByName(info2, "A")))?
+  assertTrue(isSome(enumFindByTag(info2, 1)))?
+  assertEq(enumTagByName(info2, "A"), Some(1))?
+  assertEq(enumNameByTag(info2, 1), Some("A"))?
+  assertTrue(isOk(enumRequireByName(info2, "A")))?
+
+test "enum-checked" -> do:
+  let info0 = enumInfoFromNames(Cons("A", Cons("B", Nil)))
+  let ok0 = enumInfoAddAutoChecked(info0, "C")
+  assertTrue(isOk(ok0))?
+  let bad0 = enumInfoAddAutoChecked(info0, "A")
+  assertEq(bad0, Err("duplicate enum name"))?
+  let bad1 = enumInfoAddChecked(info0, enumCase("X", 0))
+  assertEq(bad1, Err("duplicate enum case"))?

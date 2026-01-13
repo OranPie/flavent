@@ -14,6 +14,10 @@ fn mapGet[K, V](m: Map[K, V], k: K) -> Option[V] = match m:
     else:
       return mapGet(rest, k)
 
+fn mapGetOr[K, V](m: Map[K, V], k: K, default: V) -> V = match mapGet(m, k):
+  None -> default
+  Some(v) -> v
+
 fn mapPut[K, V](m: Map[K, V], k: K, v: V) -> Map[K, V] = match m:
   Nil -> Cons({ key = k, value = v }, Nil)
   Cons(e, rest) -> do:
@@ -30,6 +34,12 @@ fn mapRemove[K, V](m: Map[K, V], k: K) -> Map[K, V] = match m:
     else:
       return Cons(e, mapRemove(rest, k))
 
+fn mapPutAll[K, V](m: Map[K, V], entries: List[MapEntry[K, V]]) -> Map[K, V] = match entries:
+  Nil -> m
+  Cons(e, rest) -> mapPutAll(mapPut(m, e.key, e.value), rest)
+
+fn mapMerge[K, V](a: Map[K, V], b: Map[K, V]) -> Map[K, V] = mapPutAll(a, b)
+
 fn mapHasKey[K, V](m: Map[K, V], k: K) -> Bool = match mapGet(m, k):
   Some(_) -> true
   None -> false
@@ -43,3 +53,7 @@ fn mapValues[K, V](m: Map[K, V]) -> List[V] = match m:
   Cons(e, rest) -> Cons(e.value, mapValues(rest))
 
 fn mapSize[K, V](m: Map[K, V]) -> Int = length(m)
+
+fn mapToList[K, V](m: Map[K, V]) -> List[MapEntry[K, V]] = m
+
+fn mapFromList[K, V](xs: List[MapEntry[K, V]]) -> Map[K, V] = xs

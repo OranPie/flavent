@@ -160,3 +160,9 @@ The collections standard library is implemented in Flavent (no builtin `List`/`M
 
 ### 8.3 `_bridge_python`
 For capabilities that cannot be self-hosted (system time, IO, etc.), stdlib may call an internal sector `_bridge_python` via `rpc/call`.
+
+### 8.4 Python bridge safety rules (strict)
+- **User code must not `use _bridge_python`.** This is enforced at compile-time.
+- **User code must not reference any `_bridge_python` symbol directly**, including pure bridge shims like `_pyBytesLen` and effectful calls like `rpc _bridge_python.fsReadFileStr(...)`. This is enforced at compile-time even if those symbols are pulled in by stdlib expansion.
+- **Use stdlib wrappers instead.** Example: use `bytelib.bytesLen` rather than `_pyBytesLen`, and use `fslib`/`file` rather than calling `_bridge_python.fs*`.
+- **Error handling:** any stdlib API that can fail (notably I/O) must return `Result[Ok, Str]` and callers should propagate with `?`.

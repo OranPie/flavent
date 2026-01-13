@@ -649,6 +649,12 @@ def _expand_std_uses(prog: ast.Program) -> ast.Program:
     # Expand uses at program root.
     for it in prog.items:
         if isinstance(it, ast.UseStmt):
+            # `_bridge_python` is an internal capability boundary.
+            # User programs must not import it directly.
+            if qname_str(it.name) == "_bridge_python":
+                file_norm = prog.span.file.replace("\\", "/")
+                if "/stdlib/" not in file_norm and not file_norm.endswith("/stdlib/_bridge_python.flv"):
+                    raise ResolveError("Direct use of _bridge_python is not allowed", it.span)
             visit_module(qname_str(it.name), it.span)
 
     # Keep original items, minus use declarations.

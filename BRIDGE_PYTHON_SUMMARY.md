@@ -97,3 +97,14 @@ These are effectful host interop calls and should be accessed via `rpc/call`.
 ## 4) Host work remaining
 
 If/when an actual evaluator/runtime is added, the host must provide implementations for the above bridge declarations.
+
+## 5) Enforcement and safety
+
+### Compile-time enforcement
+- User programs are **not allowed** to `use _bridge_python`.
+- User programs are **not allowed** to reference or call any `_bridge_python` symbol directly (pure shims like `_pyU32Wrap` included).
+- The only supported way to access these capabilities is through **stdlib wrapper modules** (e.g. `time`, `consoleIO`, `fslib`, `file`, `bytelib`, `u32`).
+
+### Resource safety / cleanup expectations
+- Any bridge-backed capability that can fail must surface errors as `Result[..., Str]` in stdlib wrappers.
+- Any future bridge API that allocates resources (files/handles/sockets/etc.) must provide an explicit close/release API, and stdlib should expose a structured “acquire/use/release” pattern so callers cannot leak resources.

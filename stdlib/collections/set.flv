@@ -21,6 +21,10 @@ fn _setAddAll[T](s: Set[T], xs: List[T]) -> Set[T] = match xs:
   Nil -> s
   Cons(x, rest) -> _setAddAll(setAdd(s, x), rest)
 
+fn setAddAll[T](s: Set[T], xs: List[T]) -> Set[T] = _setAddAll(s, xs)
+
+fn setFromList[T](xs: List[T]) -> Set[T] = setAddAll(setEmpty(), xs)
+
 fn setUnion[T](a: Set[T], b: Set[T]) -> Set[T] = _setAddAll(a, setToList(b))
 
 fn _setKeepIfIn[T](a: Set[T], b: Set[T], xs: List[T]) -> Set[T] = match xs:
@@ -38,3 +42,13 @@ fn _setKeepIfNotIn[T](a: Set[T], b: Set[T], xs: List[T]) -> Set[T] = match xs:
     false -> setAdd(_setKeepIfNotIn(a, b, rest), x)
 
 fn setDiff[T](a: Set[T], b: Set[T]) -> Set[T] = _setKeepIfNotIn(a, b, setToList(a))
+
+fn _setAllIn[T](xs: List[T], b: Set[T]) -> Bool = match xs:
+  Nil -> true
+  Cons(x, rest) -> match setHas(b, x):
+    true -> _setAllIn(rest, b)
+    false -> false
+
+fn setIsSubset[T](a: Set[T], b: Set[T]) -> Bool = _setAllIn(setToList(a), b)
+
+fn setEquals[T](a: Set[T], b: Set[T]) -> Bool = setIsSubset(a, b) and setIsSubset(b, a)

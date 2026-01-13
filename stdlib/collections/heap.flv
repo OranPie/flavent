@@ -29,6 +29,14 @@ fn heapPop(h: Heap) -> Option[HeapPop] = match h:
   Empty -> None
   Node(x, l, r) -> Some({ value = x, rest = heapMerge(l, r) })
 
+fn heapPeekOr(h: Heap, default: Int) -> Int = match heapPeek(h):
+  None -> default
+  Some(x) -> x
+
+fn heapPopOr(h: Heap, default: Int) -> HeapPop = match heapPop(h):
+  None -> { value = default, rest = h }
+  Some(p) -> p
+
 fn heapSize(h: Heap) -> Int = match h:
   Empty -> 0
   Node(_, l, r) -> 1 + heapSize(l) + heapSize(r)
@@ -36,6 +44,10 @@ fn heapSize(h: Heap) -> Int = match h:
 fn heapFromList(xs: List[Int]) -> Heap = match xs:
   Nil -> heapEmpty()
   Cons(x, rest) -> heapInsert(x, heapFromList(rest))
+
+fn heapInsertAll(xs: List[Int], h: Heap) -> Heap = match xs:
+  Nil -> h
+  Cons(x, rest) -> heapInsertAll(rest, heapInsert(x, h))
 
 fn _heapToListAcc(h: Heap, acc: List[Int]) -> List[Int] = match heapPop(h):
   None -> acc

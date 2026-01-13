@@ -1,5 +1,6 @@
 use collections.list
 use std.option
+use std.result
 
 // Enum helpers (very minimal).
 //
@@ -54,3 +55,43 @@ fn enumFindByTag(info: EnumInfo, tag: Int) -> Option[EnumCase] = match info.case
   Cons(c, rest) -> match c.tag == tag:
     true -> Some(c)
     false -> enumFindByTag({ cases = rest }, tag)
+
+fn enumTagByName(info: EnumInfo, name: Str) -> Option[Int] = match enumFindByName(info, name):
+  None -> None
+  Some(c) -> Some(c.tag)
+
+fn enumNameByTag(info: EnumInfo, tag: Int) -> Option[Str] = match enumFindByTag(info, tag):
+  None -> None
+  Some(c) -> Some(c.name)
+
+fn enumRequireByName(info: EnumInfo, name: Str) -> Result[EnumCase, Str] = match enumFindByName(info, name):
+  None -> Err("unknown enum name")
+  Some(c) -> Ok(c)
+
+fn enumRequireByTag(info: EnumInfo, tag: Int) -> Result[EnumCase, Str] = match enumFindByTag(info, tag):
+  None -> Err("unknown enum tag")
+  Some(c) -> Ok(c)
+
+fn enumHasName(info: EnumInfo, name: Str) -> Bool = isSome(enumFindByName(info, name))
+
+fn enumHasTag(info: EnumInfo, tag: Int) -> Bool = isSome(enumFindByTag(info, tag))
+
+fn enumInfoAddChecked(info: EnumInfo, c: EnumCase) -> Result[EnumInfo, Str] = match enumHasName(info, c.name) or enumHasTag(info, c.tag):
+  true -> Err("duplicate enum case")
+  false -> Ok(enumInfoAdd(info, c))
+
+fn enumInfoAddAutoChecked(info: EnumInfo, name: Str) -> Result[EnumInfo, Str] = match enumHasName(info, name):
+  true -> Err("duplicate enum name")
+  false -> Ok(enumInfoAddAuto(info, name))
+
+fn _enumValidateAcc(xs: List[EnumCase], seenNames: List[Str], seenTags: List[Int]) -> Result[Unit, Str] = match xs:
+  Nil -> Ok(())
+  Cons(c, rest) -> match c.tag < 0:
+    true -> Err("negative enum tag")
+    false -> match contains(seenNames, c.name):
+      true -> Err("duplicate enum name")
+      false -> match contains(seenTags, c.tag):
+        true -> Err("duplicate enum tag")
+        false -> _enumValidateAcc(rest, Cons(c.name, seenNames), Cons(c.tag, seenTags))
+
+fn enumInfoValidate(info: EnumInfo) -> Result[Unit, Str] = _enumValidateAcc(info.cases, Nil, Nil)

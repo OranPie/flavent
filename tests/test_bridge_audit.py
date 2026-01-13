@@ -35,3 +35,20 @@ run()
     # Must include at least one bridge sector call.
     counts = report["counts"]
     assert any(k.startswith("call:") or k.startswith("rpc:") for k in counts), json.dumps(report, indent=2)
+
+
+def test_bridge_policy_rejects_direct_bridge_symbol_use_from_user_code():
+    import pytest
+
+    from flavent.diagnostics import EffectError
+
+    src = """use bytelib
+
+fn f() -> Int = _pyBytesLen(b"hi")
+"""
+
+    prog = parse_program(lex("test.flv", src))
+    res = resolve_program_with_stdlib(prog, use_stdlib=True)
+    hir = lower_resolved(res)
+    with pytest.raises(EffectError):
+        check_program(hir, res)

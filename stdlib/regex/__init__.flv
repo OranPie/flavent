@@ -12,10 +12,42 @@ use collections.list
 
 type Regex = { pat: Str }
 
+type RxSpan = { start: Int, end: Int }
+
 fn regex(pat: Str) -> Regex = { pat = pat }
 
 // Alias for now.
 fn compile(pat: Str) -> Regex = regex(pat)
+
+fn _rxValidate(pat: Str, i: Int, end: Int, depth: Int) -> Result[Unit, Str] = match i >= end:
+  true -> match depth == 0:
+    true -> Ok(())
+    false -> Err("unterminated group")
+  false -> do:
+    let c = _rxCodeAt(pat, i)
+    return match c == 92:
+      true -> match i + 1 < end:
+        true -> _rxValidate(pat, i + 2, end, depth)
+        false -> Err("dangling escape")
+      false -> match c == 91:
+        true -> do:
+          let j = _rxFindClassEnd(pat, i + 1, end)
+          return match j < 0:
+            true -> Err("unterminated class")
+            false -> _rxValidate(pat, j + 1, end, depth)
+        false -> match c == 40:
+          true -> _rxValidate(pat, i + 1, end, depth + 1)
+          false -> match c == 41:
+            true -> match depth <= 0:
+              true -> Err("unmatched )")
+              false -> _rxValidate(pat, i + 1, end, depth - 1)
+            false -> _rxValidate(pat, i + 1, end, depth)
+
+fn compileChecked(pat: Str) -> Result[Regex, Str] = do:
+  let v = _rxValidate(pat, 0, _rxLen(pat), 0)
+  return match v:
+    Err(e) -> Err(e)
+    Ok(_) -> Ok(regex(pat))
 
 type _RxRange = { lo: Int, hi: Int }
 
@@ -354,6 +386,67 @@ fn _rxFindFirstFrom(pat: Str, s: Str, si: Int) -> Option[Int] = do:
     false -> match si >= slen:
       true -> None
       false -> _rxFindFirstFrom(pat, s, si + 1)
+
+fn _rxMinEnd(ends: List[Int], cur: Int) -> Int = match ends:
+  Nil -> cur
+  Cons(x, rest) -> match x < cur:
+    true -> _rxMinEnd(rest, x)
+    false -> _rxMinEnd(rest, cur)
+
+fn _rxMinEnd0(ends: List[Int]) -> Int = match ends:
+  Nil -> 0 - 1
+  Cons(x, rest) -> _rxMinEnd(rest, x)
+
+fn _rxFindFirstSpanFrom(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> Option[RxSpan] = do:
+  let slen = _rxLen(s)
+  let ends = _rxMatchEnds(pat, pi, end, s, si)
+  return match _rxHasAny(ends):
+    true -> do:
+      let e = _rxMinEnd0(ends)
+      return Some({ start = si, end = e })
+    false -> match si >= slen:
+      true -> None
+      false -> _rxFindFirstSpanFrom(pat, pi, end, s, si + 1)
+
+fn findFirstSpan(r: Regex, s: Str) -> Option[RxSpan] = do:
+  let pat = r.pat
+  let plen = _rxLen(pat)
+  return match plen > 0 and _rxCodeAt(pat, 0) == 94:
+    true -> do:
+      let ends = _rxMatchEnds(pat, 1, plen, s, 0)
+      return match _rxHasAny(ends):
+        true -> Some({ start = 0, end = _rxMinEnd0(ends) })
+        false -> None
+    false -> _rxFindFirstSpanFrom(pat, 0, plen, s, 0)
+
+fn _rxFindAllSpansAcc(pat: Str, pi: Int, end: Int, s: Str, si: Int, acc: List[RxSpan]) -> List[RxSpan] = do:
+  let slen = _rxLen(s)
+  return match si > slen:
+    true -> reverse(acc)
+    false -> do:
+      let ends = _rxMatchEnds(pat, pi, end, s, si)
+      return match _rxHasAny(ends):
+        true -> do:
+          let e = _rxMinEnd0(ends)
+          let acc2 = Cons({ start = si, end = e }, acc)
+          let nextSi = match e > si:
+            true -> e
+            false -> si + 1
+          return _rxFindAllSpansAcc(pat, pi, end, s, nextSi, acc2)
+        false -> match si >= slen:
+          true -> reverse(acc)
+          false -> _rxFindAllSpansAcc(pat, pi, end, s, si + 1, acc)
+
+fn findAllSpans(r: Regex, s: Str) -> List[RxSpan] = do:
+  let pat = r.pat
+  let plen = _rxLen(pat)
+  return match plen > 0 and _rxCodeAt(pat, 0) == 94:
+    true -> do:
+      let ends = _rxMatchEnds(pat, 1, plen, s, 0)
+      return match _rxHasAny(ends):
+        true -> Cons({ start = 0, end = _rxMinEnd0(ends) }, Nil)
+        false -> Nil
+    false -> _rxFindAllSpansAcc(pat, 0, plen, s, 0, Nil)
 
 fn findFirst(r: Regex, s: Str) -> Option[Int] = do:
   let pat = r.pat
