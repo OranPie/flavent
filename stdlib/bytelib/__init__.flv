@@ -13,7 +13,7 @@ fn bytesFromByte(x: Int) -> Bytes = _pyBytesFromByte(x)
 
 fn _bytesEqAt(h: Bytes, hi: Int, hn: Int, needle: Bytes, ni: Int, nn: Int) -> Bool = match ni >= nn:
   true -> true
-  false -> match hi + ni >= hn:
+  false -> match (hi + ni) >= hn:
     true -> false
     false -> match bytesGet(h, hi + ni) == bytesGet(needle, ni):
       true -> _bytesEqAt(h, hi, hn, needle, ni + 1, nn)

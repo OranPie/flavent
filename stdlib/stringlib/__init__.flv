@@ -3,7 +3,7 @@ use collections.list
 
 fn _strEqAt(h: Str, hi: Int, hn: Int, needle: Str, ni: Int, nn: Int) -> Bool = match ni >= nn:
   true -> true
-  false -> match hi + ni >= hn:
+  false -> match (hi + ni) >= hn:
     true -> false
     false -> match strCodeAt(h, hi + ni) == strCodeAt(needle, ni):
       true -> _strEqAt(h, hi, hn, needle, ni + 1, nn)
