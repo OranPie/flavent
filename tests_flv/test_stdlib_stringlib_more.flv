@@ -1,0 +1,27 @@
+use flvtest
+use stringlib
+use collections.list
+
+test "stringlib-basic" -> do:
+  assertEq(strFind("abcabc", "bc", 0), 1)?
+  assertEq(strFind("abcabc", "bc", 2), 4)?
+  assertEq(strFind("abc", "z", 0), 0 - 1)?
+
+  assertTrue(strContains("hello", "ell"))?
+  assertTrue(not strContains("hello", "zzz"))?
+
+  assertTrue(startsWith("hello", "he"))?
+  assertTrue(not startsWith("hello", "ha"))?
+
+  assertTrue(endsWith("hello", "lo"))?
+  assertTrue(not endsWith("hello", "la"))?
+
+test "stringlib-trim" -> do:
+  assertEq(trimLeftSpaces("  x"), "x")?
+  assertEq(trimRightSpaces("x  "), "x")?
+  assertEq(trimSpaces("  x  "), "x")?
+
+test "stringlib-split-join" -> do:
+  let xs = split("a,b,c", ",")
+  assertEq(xs, Cons("a", Cons("b", Cons("c", Nil))))?
+  assertEq(join(xs, ","), "a,b,c")?

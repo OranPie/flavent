@@ -15,6 +15,7 @@ def _check(src: str):
 def test_stdlib_misc_modules_typecheck():
     src = """use regex
 use stringfmt
+use stringlib
 use enum
 use consoleIO
 use base64
@@ -123,6 +124,10 @@ sector s:
     let _httpPost = rpc httplib.post("example.com", 80, "/", b"hi")
     let _httpPostW = rpc httplib.postWith("example.com", 80, "/", Nil, b"hi")
     let _br = buildRequest("GET", "example.com", "/", Nil, b"")
+
+    let _sf0 = stringlib.strFind("abcabc", "bc", 0)
+    let _sf1 = startsWith("hello", "he")
+    let _sf2 = trimSpaces("  x  ")
 
     let a = wrap(0 - 1)
     let b = wrap(1)

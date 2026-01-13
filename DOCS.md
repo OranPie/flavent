@@ -207,6 +207,7 @@ Flavent's standard library is designed to be minimal but extensible, with a focu
 ### 11.2 System & Utilities
 - **`bytelib`**: Low-level `Bytes` manipulation.
 - **`u32`**: 32-bit unsigned integer arithmetic (wrapped).
+- **`stringlib`**: Basic string utilities (find/prefix/suffix/trim/split/join).
 - **`stringfmt`**: String formatting with positional and named placeholders.
 - **`regex`**: Regular expression matching (pure Flavent backtracking).
 - **`struct`**: Binary data packing/unpacking (compatible with Python `struct`).

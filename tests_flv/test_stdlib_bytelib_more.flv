@@ -1,0 +1,17 @@
+use flvtest
+use bytelib
+use collections.list
+
+test "bytelib-bytesFind" -> do:
+  let h = bytesFromList(Cons(1, Cons(2, Cons(3, Cons(2, Cons(3, Nil))))))
+  let n = bytesFromList(Cons(2, Cons(3, Nil)))
+  assertEq(bytesFind(h, n, 0), 1)?
+  assertEq(bytesFind(h, n, 2), 3)?
+  assertEq(bytesFind(h, bytesFromList(Cons(9, Nil)), 0), 0 - 1)?
+
+test "bytelib-prefix-suffix" -> do:
+  let h = bytesFromList(Cons(10, Cons(20, Cons(30, Nil))))
+  assertTrue(bytesStartsWith(h, bytesFromList(Cons(10, Cons(20, Nil)))))?
+  assertTrue(not bytesStartsWith(h, bytesFromList(Cons(20, Nil))))?
+  assertTrue(bytesEndsWith(h, bytesFromList(Cons(20, Cons(30, Nil)))))?
+  assertTrue(not bytesEndsWith(h, bytesFromList(Cons(10, Nil))))?
