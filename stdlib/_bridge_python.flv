@@ -30,14 +30,6 @@ fn _pyU32Shl(a: Int, n: Int) -> Int = 0
 
 fn _pyU32Shr(a: Int, n: Int) -> Int = 0
 
-fn _pyBase64Encode(b: Bytes) -> Str = ""
-
-fn _pyBase64Decode(s: Str) -> Bytes = b""
-
-fn _pyBase64UrlEncode(b: Bytes) -> Str = ""
-
-fn _pyBase64UrlDecode(s: Str) -> Bytes = b""
-
 fn _pyMd5Digest(b: Bytes) -> Bytes = b""
 
 fn _pyMd5Hex(b: Bytes) -> Str = ""
@@ -46,13 +38,13 @@ fn _pySha1Digest(b: Bytes) -> Bytes = b""
 
 fn _pySha1Hex(b: Bytes) -> Str = ""
 
-fn _pySha256Digest(b: Bytes) -> Bytes = b""
-
-fn _pySha256Hex(b: Bytes) -> Str = ""
-
 fn _pySha512Digest(b: Bytes) -> Bytes = b""
 
 fn _pySha512Hex(b: Bytes) -> Str = ""
+
+type BridgeSockPeer = { host: Str, port: Int }
+
+type BridgeSockAccept = { sock: Int, peer: BridgeSockPeer }
 
 use collections.list
 
@@ -82,3 +74,12 @@ sector _bridge_python:
   fn consolePrintlnErr(s: Str) -> Unit = ()
   fn consoleReadLine() -> Str = ""
   fn consoleFlush() -> Unit = ()
+
+  fn sockTcpConnect(host: Str, port: Int) -> Result[Int, Str] = Err("")
+  fn sockTcpListen(host: Str, port: Int, backlog: Int) -> Result[Int, Str] = Err("")
+  fn sockTcpAccept(s: Int) -> Result[BridgeSockAccept, Str] = Err("")
+  fn sockSend(s: Int, data: Bytes) -> Result[Int, Str] = Err("")
+  fn sockRecv(s: Int, n: Int) -> Result[Bytes, Str] = Err("")
+  fn sockClose(s: Int) -> Result[Unit, Str] = Err("")
+  fn sockShutdown(s: Int) -> Result[Unit, Str] = Err("")
+  fn sockSetTimeoutMillis(s: Int, ms: Int) -> Result[Unit, Str] = Err("")

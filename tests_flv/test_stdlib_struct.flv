@@ -1,0 +1,76 @@
+use flvtest
+use struct
+use bytelib
+
+test "struct-pack-unpack-B" -> do:
+  let b = packB(0x12)
+  assertEq(bytesLen(b), 1)?
+  assertEq(bytesGet(b, 0), 0x12)?
+  let v = unpackB(b, 0)?
+  assertEq(v, 0x12)?
+
+test "struct-pack-unpack-H" -> do:
+  let b = packH(0x1234)
+  assertEq(bytesLen(b), 2)?
+  // Little endian
+  assertEq(bytesGet(b, 0), 0x34)?
+  assertEq(bytesGet(b, 1), 0x12)?
+  let v = unpackH(b, 0)?
+  assertEq(v, 0x1234)?
+
+test "struct-pack-unpack-I" -> do:
+  let b = packI(0x12345678)
+  assertEq(bytesLen(b), 4)?
+  assertEq(bytesGet(b, 0), 0x78)?
+  assertEq(bytesGet(b, 3), 0x12)?
+  let v = unpackI(b, 0)?
+  assertEq(v, 0x12345678)?
+
+test "struct-errors" -> do:
+  let b = packB(1)
+  let e1 = unpackH(b, 0)
+  assertTrue(isErr(e1))?
+  let e2 = unpackI(b, 0)
+  assertTrue(isErr(e2))?
+  let e3 = unpackB(b, 1)
+  assertTrue(isErr(e3))?
+
+test "struct-format-calcsize" -> do:
+  assertEq(calcsize("B")?, 1)?
+  assertEq(calcsize("H")?, 2)?
+  assertEq(calcsize("I")?, 4)?
+  assertEq(calcsize("2B")?, 2)?
+  assertEq(calcsize("3xB")?, 4)?
+  assertTrue(isErr(calcsize("2")))?
+
+test "struct-format-pack-unpack" -> do:
+  let b = pack("BH", Cons(0x12, Cons(0x3456, Nil)))?
+  assertEq(bytesLen(b), 3)?
+  assertEq(bytesGet(b, 0), 0x12)?
+  // H little-endian
+  assertEq(bytesGet(b, 1), 0x56)?
+  assertEq(bytesGet(b, 2), 0x34)?
+  let vs = unpack("BH", b)?
+  assertEq(vs, Cons(0x12, Cons(0x3456, Nil)))?
+
+test "struct-format-endian" -> do:
+  let b0 = pack("<H", Cons(0x1234, Nil))?
+  let b1 = pack(">H", Cons(0x1234, Nil))?
+  assertEq(bytesGet(b0, 0), 0x34)?
+  assertEq(bytesGet(b1, 0), 0x12)?
+
+test "struct-format-repeat" -> do:
+  let br = pack("2B", Cons(1, Cons(2, Nil)))?
+  assertEq(br, bytesFromList(Cons(1, Cons(2, Nil))))?
+
+test "struct-format-padding" -> do:
+  let bp = pack("2xB", Cons(9, Nil))?
+  assertEq(bytesLen(bp), 3)?
+  assertEq(bytesGet(bp, 0), 0)?
+  assertEq(bytesGet(bp, 1), 0)?
+  assertEq(bytesGet(bp, 2), 9)?
+
+test "struct-format-unpackFrom-offset" -> do:
+  let b = bytesConcat(bytesFromList(Cons(255, Cons(255, Nil))), pack("B", Cons(7, Nil))?)
+  let v = unpackFrom("B", b, 2)?
+  assertEq(v, Cons(7, Nil))?

@@ -32,6 +32,9 @@ use uuid
 use glob
 use tempfile
 use json
+use struct
+use socket
+use httplib
 use std.option
 use std.result
 
@@ -104,6 +107,17 @@ sector s:
     let _cat = bytesConcat(b"h", b"i")
     let _lst = bytesToList(b"hi")
     let _b2 = bytesFromList(Cons(104, Cons(105, Nil)))
+
+    let _stsz = calcsize("BH")
+    let _pb = pack("BH", Cons(1, Cons(2, Nil)))
+    let _ub = unpack("BH", b"\x01\x02\x00")
+
+    let _sc = rpc socket.tcpConnect("127.0.0.1", 80)
+    let _sl = rpc socket.tcpListen("127.0.0.1", 0, 8)
+
+    let _req = buildGetRequest("example.com", "/")
+    let _pr = parseResponse(_req)
+    let _hg = rpc httplib.get("example.com", 80, "/")
 
     let a = wrap(0 - 1)
     let b = wrap(1)

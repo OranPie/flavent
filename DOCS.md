@@ -161,8 +161,62 @@ The collections standard library is implemented in Flavent (no builtin `List`/`M
 ### 8.3 `_bridge_python`
 For capabilities that cannot be self-hosted (system time, IO, etc.), stdlib may call an internal sector `_bridge_python` via `rpc/call`.
 
-### 8.4 Python bridge safety rules (strict)
-- **User code must not `use _bridge_python`.** This is enforced at compile-time.
-- **User code must not reference any `_bridge_python` symbol directly**, including pure bridge shims like `_pyBytesLen` and effectful calls like `rpc _bridge_python.fsReadFileStr(...)`. This is enforced at compile-time even if those symbols are pulled in by stdlib expansion.
-- **Use stdlib wrappers instead.** Example: use `bytelib.bytesLen` rather than `_pyBytesLen`, and use `fslib`/`file` rather than calling `_bridge_python.fs*`.
-- **Error handling:** any stdlib API that can fail (notably I/O) must return `Result[Ok, Str]` and callers should propagate with `?`.
+## 9. Grammar Specification
+
+Flavent grammar is indentation-sensitive, similar to Python.
+
+### 9.1 Program Structure
+A program consists of imports (`use`), type definitions, sector definitions, and an optional entry call (`run()`).
+
+```antlr
+program: statement* 'run' '(' ')'
+statement: use_stmt | type_def | sector_def | fn_def | mixin_def
+```
+
+### 9.2 Expressions & Operators
+- **Arithmetic**: `+`, `-`, `*`, `/`, `%`
+- **Comparison**: `==`, `!=`, `<`, `<=`, `>`, `>=`
+- **Logical**: `and`, `or`, `not`
+- **Special**: `?` (try-suffix for Result/Option propagation)
+
+### 9.3 Definitions
+- **Functions**: `fn name(args) -> RetType = expr` or `fn name(args) -> RetType = do: ...`
+- **Sectors**: `sector Name: [definitions]`
+- **Types**: `type Name = { field: Type, ... }` or `type Name = A | B(T)`
+
+## 10. Module Specification
+
+### 10.1 Name Resolution
+- Modules are resolved relative to `stdlib/` or current workspace.
+- `use a.b` maps to `a/b.flv` or `a/b/__init__.flv`.
+- Symbols within a module are public by default.
+
+### 10.2 Namespaces
+- Imported modules create a namespace. `use collections.list` allows using `list.Nil` or just `Nil` if it doesn't conflict.
+- Function calls can be qualified: `math.sin(x)`.
+
+## 11. Standard Library Introduction
+
+Flavent's standard library is designed to be minimal but extensible, with a focus on safety and pure-Flavent implementations where possible.
+
+### 11.1 Core Modules
+- **`std.option`**: `Option[T]` (Some/None) for nullable values.
+- **`std.result`**: `Result[T, E]` (Ok/Err) for error handling.
+- **`collections`**: Persistent data structures (`list`, `map`, `set`, `queue`, `heap`).
+
+### 11.2 System & Utilities
+- **`bytelib`**: Low-level `Bytes` manipulation.
+- **`u32`**: 32-bit unsigned integer arithmetic (wrapped).
+- **`stringfmt`**: String formatting with positional and named placeholders.
+- **`regex`**: Regular expression matching (pure Flavent backtracking).
+- **`struct`**: Binary data packing/unpacking (compatible with Python `struct`).
+- **`httplib`**: Minimal HTTP/1.1 client helpers (request build + response parse), built on `socket`.
+
+### 11.3 Side Effects (Bridge)
+- **`fslib` / `file`**: Filesystem operations (returns `Result`).
+- **`consoleIO`**: Terminal input/output.
+- **`time`**: System clock and sleep.
+- **`random`**: Deterministic PRNG with explicit state.
+- **`socket`**: TCP sockets (connect/listen/accept/send/recv) via host bridge.
+
+---

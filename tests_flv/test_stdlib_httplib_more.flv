@@ -1,0 +1,45 @@
+use flvtest
+use httplib
+use bytelib
+use collections.list
+
+fn _mkResp() -> Bytes = do:
+  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  let l1 = asciiToBytes("HTTP/1.1 200 OK")
+  let l2 = asciiToBytes("Content-Length: 5")
+  let l3 = asciiToBytes("X-Test: 1")
+  let a = bytesConcat(l1, crlf)
+  let b = bytesConcat(l2, crlf)
+  let c = bytesConcat(l3, crlf)
+  let head = bytesConcat(bytesConcat(bytesConcat(a, b), c), crlf)
+  let body = bytesFromList(Cons(104, Cons(101, Cons(108, Cons(108, Cons(111, Nil))))))
+  return bytesConcat(head, body)
+
+test "httplib-buildGetRequest" -> do:
+  let b = buildGetRequest("example.com", "/")
+  assertTrue(bytesLen(b) > 0)?
+  // Starts with 'GET '
+  assertEq(bytesGet(b, 0), 71)?
+  assertEq(bytesGet(b, 1), 69)?
+  assertEq(bytesGet(b, 2), 84)?
+  assertEq(bytesGet(b, 3), 32)?
+
+test "httplib-parseResponse" -> do:
+  let raw = _mkResp()
+  let r = parseResponse(raw)?
+  assertEq(r.status, 200)?
+  assertEq(r.reason, "OK")?
+  assertEq(bytesLen(r.body), 5)?
+  assertEq(bytesGet(r.body, 0), 104)?
+  assertEq(bytesGet(r.body, 4), 111)?
+
+  // Check header parsing finds at least 2 headers
+  assertTrue(length(r.headers) >= 2)?
+
+  // ascii helpers roundtrip
+  let s = asciiFromBytes(bytesFromList(Cons(65, Cons(66, Nil))))
+  assertEq(s, "AB")?
+  let b2 = asciiToBytes("AB")
+  assertEq(bytesLen(b2), 2)?
+  assertEq(bytesGet(b2, 0), 65)?
+  assertEq(bytesGet(b2, 1), 66)?

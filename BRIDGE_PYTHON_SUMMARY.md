@@ -33,16 +33,8 @@ These are declared as pure Flavent functions but are intended to be implemented 
 - `_pyMd5Hex(b: Bytes) -> Str`
 - `_pySha1Digest(b: Bytes) -> Bytes`
 - `_pySha1Hex(b: Bytes) -> Str`
-- `_pySha256Digest(b: Bytes) -> Bytes` (stdlib now prefers native sha256)
-- `_pySha256Hex(b: Bytes) -> Str` (stdlib now prefers native sha256)
 - `_pySha512Digest(b: Bytes) -> Bytes`
 - `_pySha512Hex(b: Bytes) -> Str`
-
-### Base64 primitives (historical; stdlib now prefers native base64)
-- `_pyBase64Encode(b: Bytes) -> Str`
-- `_pyBase64Decode(s: Str) -> Bytes`
-- `_pyBase64UrlEncode(b: Bytes) -> Str`
-- `_pyBase64UrlDecode(s: Str) -> Bytes`
 
 ## 2) Effectful bridge API (`sector _bridge_python` in `stdlib/_bridge_python.flv`)
 
@@ -78,6 +70,16 @@ These are effectful host interop calls and should be accessed via `rpc/call`.
 ### UUID
 - `uuid4Bytes() -> Bytes`  (used by `stdlib/uuid`)
 
+### Sockets (used by `stdlib/socket`)
+- `sockTcpConnect(host: Str, port: Int) -> Result[Int, Str]`
+- `sockTcpListen(host: Str, port: Int, backlog: Int) -> Result[Int, Str]`
+- `sockTcpAccept(s: Int) -> Result[BridgeSockAccept, Str]`
+- `sockSend(s: Int, data: Bytes) -> Result[Int, Str]`
+- `sockRecv(s: Int, n: Int) -> Result[Bytes, Str]`
+- `sockClose(s: Int) -> Result[Unit, Str]`
+- `sockShutdown(s: Int) -> Result[Unit, Str]`
+- `sockSetTimeoutMillis(s: Int, ms: Int) -> Result[Unit, Str]`
+
 ## 3) Stdlib modules built on the bridge
 
 ### Pure stdlib wrappers
@@ -89,6 +91,7 @@ These are effectful host interop calls and should be accessed via `rpc/call`.
 - `stdlib/time`: wraps time functions
 - `stdlib/fslib`: wraps filesystem functions
 - `stdlib/tempfile`: wraps `fslib.tempFile/tempDir`
+- `stdlib/socket`: wraps host TCP sockets
 
 ### Self-hosted stdlib (mostly native)
 - `stdlib/base64`: now implemented in pure Flavent (`base64/core.flv`) using `bytelib` + string primitives

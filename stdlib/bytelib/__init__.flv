@@ -23,6 +23,10 @@ fn _btFromList(xs: List[Int]) -> Bytes = match xs:
 
 fn bytesFromList(xs: List[Int]) -> Bytes = _btFromList(xs)
 
+fn bytesConcatAll(xs: List[Bytes]) -> Bytes = match xs:
+  Nil -> b""
+  Cons(x, rest) -> bytesConcat(x, bytesConcatAll(rest))
+
 type ByteArray = List[Int]
 
 fn byteArrayEmpty() -> ByteArray = Nil

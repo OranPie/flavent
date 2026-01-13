@@ -1,0 +1,44 @@
+use _bridge_python
+use bytelib
+
+// Opaque socket handle allocated by the host runtime.
+// Represented as Int.
+
+type Socket = Int
+
+type TcpPeer = BridgeSockPeer
+
+type TcpAccept = BridgeSockAccept
+
+fn tcpPeer(host: Str, port: Int) -> TcpPeer = { host = host, port = port }
+
+sector socket:
+  fn tcpConnect(host: Str, port: Int) -> Result[Socket, Str] = rpc _bridge_python.sockTcpConnect(host, port)
+
+  fn tcpListen(host: Str, port: Int, backlog: Int) -> Result[Socket, Str] = rpc _bridge_python.sockTcpListen(host, port, backlog)
+
+  fn tcpAccept(s: Socket) -> Result[TcpAccept, Str] = rpc _bridge_python.sockTcpAccept(s)
+
+  fn send(s: Socket, data: Bytes) -> Result[Int, Str] = rpc _bridge_python.sockSend(s, data)
+
+  fn recv(s: Socket, n: Int) -> Result[Bytes, Str] = rpc _bridge_python.sockRecv(s, n)
+
+  fn close(s: Socket) -> Result[Unit, Str] = rpc _bridge_python.sockClose(s)
+
+  fn shutdown(s: Socket) -> Result[Unit, Str] = rpc _bridge_python.sockShutdown(s)
+
+  fn setTimeoutMillis(s: Socket, ms: Int) -> Result[Unit, Str] = rpc _bridge_python.sockSetTimeoutMillis(s, ms)
+
+  fn sendAll(s: Socket, data: Bytes) -> Result[Unit, Str] = do:
+    let n = send(s, data)?
+    return match n >= bytesLen(data):
+      true -> Ok(())
+      false -> sendAll(s, bytesSlice(data, n, bytesLen(data)))
+
+  fn recvAll(s: Socket, chunk: Int) -> Result[Bytes, Str] = do:
+    let part = recv(s, chunk)?
+    return match bytesLen(part) == 0:
+      true -> Ok(b"")
+      false -> do:
+        let rest = recvAll(s, chunk)?
+        return Ok(bytesConcat(part, rest))

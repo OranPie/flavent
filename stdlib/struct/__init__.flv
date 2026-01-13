@@ -1,0 +1,269 @@
+use _bridge_python
+use collections.list
+use bytelib
+use u32
+
+// Minimal struct-like packing/unpacking for Flavent.
+// Supported formats: 
+// B: 1-byte unsigned
+// H: 2-byte unsigned (little endian)
+// I: 4-byte unsigned (little endian)
+// Q: 8-byte unsigned (little endian) - represented as Float if needed, but here we stick to Int
+
+fn _stGetByte(v: Int, shift: Int) -> Int = u32And(u32Shr(v, shift), 255)
+
+fn packB(v: Int) -> Bytes = bytesFromByte(u32And(v, 255))
+
+fn packH(v: Int) -> Bytes = do:
+  let b0 = _stGetByte(v, 0)
+  let b1 = _stGetByte(v, 8)
+  return bytesConcat(bytesFromByte(b0), bytesFromByte(b1))
+
+fn packI(v: Int) -> Bytes = do:
+  let b0 = _stGetByte(v, 0)
+  let b1 = _stGetByte(v, 8)
+  let b2 = _stGetByte(v, 16)
+  let b3 = _stGetByte(v, 24)
+  let out01 = bytesConcat(bytesFromByte(b0), bytesFromByte(b1))
+  let out23 = bytesConcat(bytesFromByte(b2), bytesFromByte(b3))
+  return bytesConcat(out01, out23)
+
+fn unpackB(b: Bytes, offset: Int) -> Result[Int, Str] = do:
+  if bytesLen(b) < offset + 1:
+    return Err("buffer too small for B")
+  return Ok(bytesGet(b, offset))
+
+fn unpackH(b: Bytes, offset: Int) -> Result[Int, Str] = do:
+  if bytesLen(b) < offset + 2:
+    return Err("buffer too small for H")
+  let b0 = bytesGet(b, offset)
+  let b1 = bytesGet(b, offset + 1)
+  return Ok(u32Or(b0, u32Shl(b1, 8)))
+
+fn unpackI(b: Bytes, offset: Int) -> Result[Int, Str] = do:
+  if bytesLen(b) < offset + 4:
+    return Err("buffer too small for I")
+  let b0 = bytesGet(b, offset)
+  let b1 = bytesGet(b, offset + 1)
+  let b2 = bytesGet(b, offset + 2)
+  let b3 = bytesGet(b, offset + 3)
+  let low = u32Or(b0, u32Shl(b1, 8))
+  let high = u32Or(b2, u32Shl(b3, 8))
+  return Ok(u32Or(low, u32Shl(high, 16)))
+
+type Endian = Little | Big
+
+type _StParseRes = { value: Int, next: Int }
+
+type _StEndianInfo = { endian: Endian, start: Int }
+
+type _StUnpackRes = { value: Int, next: Int }
+
+fn _stIsDigit(c: Int) -> Bool = c >= 48 and c <= 57
+
+fn _stParseUIntAcc(fmt: Str, i: Int, n: Int, acc: Int) -> _StParseRes = match i >= n:
+  true -> { value = acc, next = i }
+  false -> do:
+    let c = strCodeAt(fmt, i)
+    return match _stIsDigit(c):
+      false -> { value = acc, next = i }
+      true -> _stParseUIntAcc(fmt, i + 1, n, acc * 10 + (c - 48))
+
+fn _stParseUInt(fmt: Str, i: Int, n: Int) -> _StParseRes = _stParseUIntAcc(fmt, i, n, 0)
+
+fn _stOneSize(code: Int) -> Result[Int, Str] = do:
+  if code == 66:
+    return Ok(1)
+  if code == 72:
+    return Ok(2)
+  if code == 73:
+    return Ok(4)
+  if code == 120:
+    return Ok(1)
+  return Err("unsupported format")
+
+fn _stCalcAcc(fmt: Str, i: Int, n: Int, acc: Int) -> Result[Int, Str] = match i >= n:
+  true -> Ok(acc)
+  false -> do:
+    let c = strCodeAt(fmt, i)
+    return match c == 60 or c == 62:
+      true -> _stCalcAcc(fmt, i + 1, n, acc)
+      false -> do:
+        let p = _stParseUInt(fmt, i, n)
+        let rep = match p.value <= 0:
+          true -> 1
+          false -> p.value
+        return match p.next >= n:
+          true -> Err("dangling count")
+          false -> do:
+            let code = strCodeAt(fmt, p.next)
+            let sz = _stOneSize(code)
+            return match sz:
+              Err(e) -> Err(e)
+              Ok(one) -> _stCalcAcc(fmt, p.next + 1, n, acc + rep * one)
+
+fn calcsize(fmt: Str) -> Result[Int, Str] = _stCalcAcc(fmt, 0, strLen(fmt), 0)
+
+fn _stEndian(fmt: Str) -> _StEndianInfo = do:
+  let n = strLen(fmt)
+  if n > 0:
+    let c0 = strCodeAt(fmt, 0)
+    if c0 == 62:
+      return { endian = Big, start = 1 }
+    if c0 == 60:
+      return { endian = Little, start = 1 }
+  return { endian = Little, start = 0 }
+
+fn _stPackHBig(v: Int) -> Bytes = do:
+  let b0 = _stGetByte(v, 8)
+  let b1 = _stGetByte(v, 0)
+  return bytesConcat(bytesFromByte(b0), bytesFromByte(b1))
+
+fn _stPackIBig(v: Int) -> Bytes = do:
+  let b0 = _stGetByte(v, 24)
+  let b1 = _stGetByte(v, 16)
+  let b2 = _stGetByte(v, 8)
+  let b3 = _stGetByte(v, 0)
+  let out01 = bytesConcat(bytesFromByte(b0), bytesFromByte(b1))
+  let out23 = bytesConcat(bytesFromByte(b2), bytesFromByte(b3))
+  return bytesConcat(out01, out23)
+
+fn _stUnpackHBig(b: Bytes, offset: Int) -> Result[Int, Str] = do:
+  if bytesLen(b) < offset + 2:
+    return Err("buffer too small for H")
+  let b0 = bytesGet(b, offset)
+  let b1 = bytesGet(b, offset + 1)
+  return Ok(u32Or(u32Shl(b0, 8), b1))
+
+fn _stUnpackIBig(b: Bytes, offset: Int) -> Result[Int, Str] = do:
+  if bytesLen(b) < offset + 4:
+    return Err("buffer too small for I")
+  let b0 = bytesGet(b, offset)
+  let b1 = bytesGet(b, offset + 1)
+  let b2 = bytesGet(b, offset + 2)
+  let b3 = bytesGet(b, offset + 3)
+  let hi = u32Or(u32Shl(b0, 8), b1)
+  let lo = u32Or(u32Shl(b2, 8), b3)
+  return Ok(u32Or(u32Shl(hi, 16), lo))
+
+fn _stPackOne(endian: Endian, code: Int, v: Int) -> Result[Bytes, Str] = do:
+  if code == 66:
+    return Ok(packB(v))
+  if code == 72:
+    return match endian:
+      Little -> Ok(packH(v))
+      Big -> Ok(_stPackHBig(v))
+  if code == 73:
+    return match endian:
+      Little -> Ok(packI(v))
+      Big -> Ok(_stPackIBig(v))
+  if code == 120:
+    return Ok(bytesFromByte(0))
+  return Err("unsupported format")
+
+fn _stPackFmtAcc(fmt: Str, i: Int, n: Int, endian: Endian, vs: List[Int], out: List[Bytes]) -> Result[List[Bytes], Str] = match i >= n:
+  true -> match vs:
+    Nil -> Ok(reverse(out))
+    Cons(_, _) -> Err("too many values")
+  false -> do:
+    let c = strCodeAt(fmt, i)
+    return match c == 60 or c == 62:
+      true -> do:
+        let endian2 = match c == 62:
+          true -> Big
+          false -> Little
+        return _stPackFmtAcc(fmt, i + 1, n, endian2, vs, out)
+      false -> do:
+        let p = _stParseUInt(fmt, i, n)
+        let rep = match p.value <= 0:
+          true -> 1
+          false -> p.value
+        return match p.next >= n:
+          true -> Err("dangling count")
+          false -> do:
+            let code = strCodeAt(fmt, p.next)
+            return _stPackFmtRep(fmt, p.next + 1, n, endian, code, rep, vs, out)
+
+fn _stPackFmtRep(fmt: Str, i: Int, n: Int, endian: Endian, code: Int, rep: Int, vs: List[Int], out: List[Bytes]) -> Result[List[Bytes], Str] = match rep <= 0:
+  true -> _stPackFmtAcc(fmt, i, n, endian, vs, out)
+  false -> match code == 120:
+    true -> do:
+      let b = _stPackOne(endian, code, 0)
+      return match b:
+        Err(e) -> Err(e)
+        Ok(bb) -> _stPackFmtRep(fmt, i, n, endian, code, rep - 1, vs, Cons(bb, out))
+    false -> match vs:
+      Nil -> Err("not enough values")
+      Cons(v, rest) -> do:
+        let b = _stPackOne(endian, code, v)
+        return match b:
+          Err(e) -> Err(e)
+          Ok(bb) -> _stPackFmtRep(fmt, i, n, endian, code, rep - 1, rest, Cons(bb, out))
+
+fn pack(fmt: Str, values: List[Int]) -> Result[Bytes, Str] = do:
+  let e = _stEndian(fmt)
+  let parts = _stPackFmtAcc(fmt, e.start, strLen(fmt), e.endian, values, Nil)
+  return match parts:
+    Err(msg) -> Err(msg)
+    Ok(xs) -> Ok(bytesConcatAll(xs))
+
+fn _stUnpackAcc(fmt: Str, i: Int, n: Int, endian: Endian, b: Bytes, off: Int, acc: List[Int]) -> Result[List[Int], Str] = match i >= n:
+  true -> Ok(reverse(acc))
+  false -> do:
+    let c = strCodeAt(fmt, i)
+    return match c == 60 or c == 62:
+      true -> do:
+        let endian2 = match c == 62:
+          true -> Big
+          false -> Little
+        return _stUnpackAcc(fmt, i + 1, n, endian2, b, off, acc)
+      false -> do:
+        let p = _stParseUInt(fmt, i, n)
+        let rep = match p.value <= 0:
+          true -> 1
+          false -> p.value
+        return match p.next >= n:
+          true -> Err("dangling count")
+          false -> do:
+            let code = strCodeAt(fmt, p.next)
+            return _stUnpackRep(fmt, p.next + 1, n, endian, code, rep, b, off, acc)
+
+fn _stUnpackOne(endian: Endian, code: Int, b: Bytes, off: Int) -> Result[_StUnpackRes, Str] = do:
+  if code == 66:
+    let v = unpackB(b, off)
+    return match v:
+      Err(e) -> Err(e)
+      Ok(x) -> Ok({ value = x, next = off + 1 })
+  if code == 72:
+    let v = match endian:
+      Little -> unpackH(b, off)
+      Big -> _stUnpackHBig(b, off)
+    return match v:
+      Err(e) -> Err(e)
+      Ok(x) -> Ok({ value = x, next = off + 2 })
+  if code == 73:
+    let v = match endian:
+      Little -> unpackI(b, off)
+      Big -> _stUnpackIBig(b, off)
+    return match v:
+      Err(e) -> Err(e)
+      Ok(x) -> Ok({ value = x, next = off + 4 })
+  if code == 120:
+    return Ok({ value = 0, next = off + 1 })
+  return Err("unsupported format")
+
+fn _stUnpackRep(fmt: Str, i: Int, n: Int, endian: Endian, code: Int, rep: Int, b: Bytes, off: Int, acc: List[Int]) -> Result[List[Int], Str] = match rep <= 0:
+  true -> _stUnpackAcc(fmt, i, n, endian, b, off, acc)
+  false -> do:
+    let r = _stUnpackOne(endian, code, b, off)
+    return match r:
+      Err(e) -> Err(e)
+      Ok(rr) -> match code == 120:
+        true -> _stUnpackRep(fmt, i, n, endian, code, rep - 1, b, rr.next, acc)
+        false -> _stUnpackRep(fmt, i, n, endian, code, rep - 1, b, rr.next, Cons(rr.value, acc))
+
+fn unpackFrom(fmt: Str, b: Bytes, offset: Int) -> Result[List[Int], Str] = do:
+  let e = _stEndian(fmt)
+  return _stUnpackAcc(fmt, e.start, strLen(fmt), e.endian, b, offset, Nil)
+
+fn unpack(fmt: Str, b: Bytes) -> Result[List[Int], Str] = unpackFrom(fmt, b, 0)
