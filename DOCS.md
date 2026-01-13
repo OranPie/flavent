@@ -222,18 +222,33 @@ Flavent's standard library is designed to be minimal but extensible, with a focu
 
 ---
 
-## 12. Stdlib library structure (recommended)
+## 12. Library Call Standard & Conventions
 
-For larger libraries, Flavent stdlib prefers splitting into multiple files while keeping the public import stable.
+To ensure consistency across the Flavent ecosystem, all standard libraries and third-party modules should adhere to the following standards.
 
-- **Public entrypoint**: `stdlib/<lib>/__init__.flv`
-  - Should typically contain only `use <lib>.<submodule>` statements.
-  - This keeps `use <lib>` stable even if internals are refactored.
-- **Common split**:
-  - `<lib>.types`: type aliases / record types / constructors.
-  - `<lib>.core`: pure helpers (parsing, formatting, algorithms).
-  - `<lib>.api`: main public API (often effectful sector wrappers).
-  - `<lib>.client`: higher-level client workflows built on `.api`.
+### 12.1 Naming Conventions
+- **Modules**: Lowercase, singular where appropriate (e.g., `socket`, `json`, `stringlib`). Use dot notation for hierarchy (e.g., `collections.list`).
+- **Functions**: `camelCase` (e.g., `parseResponse`, `strFind`).
+- **Types**: `PascalCase` (e.g., `HttpResponse`, `Option[T]`).
+- **Internal Helpers**: Prefix with underscore `_` (e.g., `_strEqAt`).
+
+### 12.2 Argument Ordering
+1. **The "Subject" first**: For functions operating on a specific type, the primary object should be the first argument.
+   - `strFind(haystack, needle, ...)`
+   - `mapPut(map, key, value)`
+2. **Options/Configs last**: If a function takes optional configuration or non-primary arguments, place them at the end.
+
+### 12.3 Error Handling
+- **Pure functions**: Return `Option[T]` if the failure is "expected" (e.g., `list.head`) or `Result[T, Str]` if the failure needs explanation (e.g., `json.loads`).
+- **Effectful functions**: **Must** return `Result[T, Str]` if they perform I/O that can fail (e.g., `socket.tcpConnect`). Use the `?` operator to propagate errors.
+
+### 12.4 Module Structure (The Barrel Pattern)
+- **`__init__.flv`**: Acts as a public API surface. It should mostly contain `use` statements to export sub-modules.
+- **`.types`**: Dedicated file for shared type definitions.
+- **`.core`**: Pure logic, parsing, and data transformations.
+- **`.api` / `.client`**: Effectful sectors and high-level workflows.
+
+---
 
 ## 13. Library docs: `socket`
 
@@ -271,34 +286,183 @@ Sector API (`sector socket`):
 - Always call `socket.close(sock)` once you are done.
 - Prefer `sendAll` for request-like protocols (HTTP) to avoid partial writes.
 
-## 14. Library docs: `httplib`
+---
+
+## 14. Library docs: `stringlib`
 
 ### 14.1 Overview
+`stringlib` provides basic string manipulation utilities for ASCII strings.
+
+### 14.2 Public API
+Import:
+```flavent
+use stringlib
+```
+
+Functions:
+- `strFind(haystack, needle, start) -> Int`: Returns the index of the first occurrence of `needle` in `haystack` starting from `start`, or `-1` if not found.
+- `strContains(haystack, needle) -> Bool`: Returns `true` if `needle` is present in `haystack`.
+- `startsWith(haystack, prefix) -> Bool`: Returns `true` if `haystack` starts with `prefix`.
+- `endsWith(haystack, suffix) -> Bool`: Returns `true` if `haystack` ends with `suffix`.
+- `trimLeftSpaces(s) -> Str`: Removes leading spaces.
+- `trimRightSpaces(s) -> Str`: Removes trailing spaces.
+- `trimSpaces(s) -> Str`: Removes both leading and trailing spaces.
+- `split(s, sep) -> List[Str]`: Splits string `s` into a list of substrings based on the separator `sep`.
+- `join(xs, sep) -> Str`: Joins a list of strings `xs` into a single string using separator `sep`.
+
+---
+
+## 15. Library docs: `bytelib`
+
+### 15.1 Overview
+`bytelib` provides low-level manipulation of the `Bytes` type.
+
+### 15.2 Public API
+Import:
+```flavent
+use bytelib
+```
+
+Functions:
+- `bytesLen(b) -> Int`: Returns the number of bytes.
+- `bytesGet(b, i) -> Int`: Returns the byte value at index `i`.
+- `bytesSlice(b, start, end) -> Bytes`: Returns a sub-slice of bytes.
+- `bytesConcat(a, b) -> Bytes`: Concatenates two byte sequences.
+- `bytesFind(haystack, needle, start) -> Int`: Returns the index of `needle` in `haystack`.
+- `bytesStartsWith(haystack, prefix) -> Bool`: Returns `true` if `haystack` starts with `prefix`.
+- `bytesEndsWith(haystack, suffix) -> Bool`: Returns `true` if `haystack` ends with `suffix`.
+- `bytesToList(b) -> List[Int]`: Converts bytes to a list of integers.
+- `bytesFromList(xs) -> Bytes`: Converts a list of integers to bytes.
+
+---
+
+## 17. Library docs: `json`
+
+### 17.1 Overview
+`json` provides encoding and decoding for JSON data, mapping between JSON strings and the `JsonValue` ADT.
+
+### 17.2 Public API
+Import:
+```flavent
+use json
+```
+
+Types:
+- `JsonValue`: Sum type representing JSON structures:
+  - `JNull`
+  - `JBool(Bool)`
+  - `JInt(Int)`
+  - `JFloat(Float)`
+  - `JStr(Str)`
+  - `JArr(List[JsonValue])`
+  - `JObj(Map[Str, JsonValue])`
+
+Functions:
+- `loads(s: Str) -> Result[JsonValue, Str]`: Parses a JSON string.
+- `dumps(v: JsonValue) -> Str`: Serializes a `JsonValue` to string.
+- `jNull() -> JsonValue`: Helper for `JNull`.
+
+---
+
+## 18. Library docs: `regex`
+
+### 18.1 Overview
+`regex` is a pure Flavent implementation of regular expression matching using a backtracking engine.
+
+### 18.2 Public API
+Import:
+```flavent
+use regex
+```
+
+Functions:
+- `compile(pattern: Str) -> Result[Regex, Str]`: Compiles a regex string.
+- `isMatch(re: Regex, s: Str) -> Bool`: Returns true if the pattern matches anywhere in `s`.
+- `findFirst(re: Regex, s: Str) -> Option[Str]`: Returns the first substring that matches.
+
+---
+
+## 19. Library docs: `hashlib`
+
+### 19.1 Overview
+`hashlib` provides common cryptographic hashing algorithms (MD5, SHA1, SHA256) via the host bridge.
+
+### 19.2 Public API
+Import:
+```flavent
+use hashlib
+```
+
+Functions:
+- `md5(data: Bytes) -> Str`: Hex digest of MD5 hash.
+- `sha1(data: Bytes) -> Str`: Hex digest of SHA1 hash.
+- `sha256(data: Bytes) -> Str`: Hex digest of SHA256 hash.
+
+---
+
+## 20. Library docs: `struct`
+
+### 20.1 Overview
+`struct` provides binary data packing and unpacking, compatible with Python's `struct` module.
+
+### 20.2 Public API
+Import:
+```flavent
+use struct
+```
+
+Functions:
+- `pack(fmt: Str, args: List[Any]) -> Result[Bytes, Str]`: Packs values into bytes according to format.
+- `unpack(fmt: Str, data: Bytes) -> Result[List[Any], Str]`: Unpacks bytes into a list of values.
+- `calcsize(fmt: Str) -> Result[Int, Str]`: Returns the size of the structure.
+
+---
+
+## 21. Library docs: `random`
+
+### 21.1 Overview
+`random` provides deterministic pseudo-random number generation.
+
+### 21.2 Public API
+Import:
+```flavent
+use random
+```
+
+Functions:
+- `seed(n: Int) -> Unit`: Seeds the global PRNG.
+- `randomInt(min: Int, max: Int) -> Int`: Returns a random integer between `min` and `max`.
+- `randomFloat() -> Float`: Returns a random float in `[0.0, 1.0)`.
+
+---
+
+## 22. Library docs: `httplib`
+
+### 22.1 Overview
 `httplib` is a minimal HTTP/1.1 client built in Flavent. It is split into:
 - `httplib.core`: pure request building and response parsing.
 - `httplib.client`: effectful `sector httplib` that performs I/O via `socket`.
 
 Import:
-
 ```flavent
 use httplib
 ```
 
-### 14.2 Pure helpers (`httplib.core`)
+### 22.2 Pure helpers (`httplib.core`)
 - `buildGetRequest(host, path) -> Bytes`
 - `buildGetRequestWith(host, path, headers) -> Bytes`
 - `buildPostRequest(host, path, headers, body) -> Bytes`
 - `buildRequest(method, host, path, headers, body) -> Bytes`
 - `parseResponse(raw) -> Result[HttpResponse, Str]`
 
-### 14.3 Effectful client (`sector httplib`)
+### 22.3 Effectful client (`sector httplib`)
 - `request(host, port, method, path, headers, body) -> Result[HttpResponse, Str]`
 - `get(host, port, path) -> Result[HttpResponse, Str]`
 - `getWith(host, port, path, headers) -> Result[HttpResponse, Str]`
 - `post(host, port, path, body) -> Result[HttpResponse, Str]`
 - `postWith(host, port, path, headers, body) -> Result[HttpResponse, Str]`
 
-### 14.4 Notes / limitations
+### 22.4 Notes / limitations
 - Response parsing is intentionally minimal: it splits headers/body on the first `\r\n\r\n` marker and parses the status line and headers.
 - Chunked transfer encoding, streaming bodies, and TLS are not implemented.
 - Request builder automatically adds default headers if missing:
@@ -306,3 +470,105 @@ use httplib
   - `User-Agent` (default `flavent-httplib/0`)
   - `Connection: close`
   - `Content-Length` (when body is non-empty)
+
+---
+
+## 23. Library docs: `fslib` & `file`
+
+### 23.1 Overview
+`fslib` provides low-level filesystem operations, while `file` provides a more convenient interface for reading and writing files.
+
+### 23.2 `fslib` Public API
+- `exists(path: Str) -> Result[Bool, Str]`
+- `isDir(path: Str) -> Result[Bool, Str]`
+- `isFile(path: Str) -> Result[Bool, Str]`
+- `mkdir(path: Str) -> Result[Unit, Str]`
+- `mkdirs(path: Str) -> Result[Unit, Str]`
+- `remove(path: Str) -> Result[Unit, Str]`
+- `rmdir(path: Str) -> Result[Unit, Str]`
+- `rename(src: Str, dst: Str) -> Result[Unit, Str]`
+
+### 23.3 `file` Public API
+- `readText(path: Str) -> Result[Str, Str]`
+- `readBytes(path: Str) -> Result[Bytes, Str]`
+- `writeText(path: Str, content: Str) -> Result[Unit, Str]`
+- `writeBytes(path: Str, content: Bytes) -> Result[Unit, Str]`
+
+---
+
+## 24. Library docs: `time`
+
+### 24.1 Overview
+`time` provides access to the system clock and sleeping.
+
+### 24.2 Public API
+- `now() -> Float`: Returns current Unix timestamp.
+- `sleep(seconds: Float) -> Unit`: Suspends execution for the given duration.
+
+---
+
+## 25. Library docs: `uuid`
+
+### 25.1 Overview
+`uuid` provides UUID generation.
+
+### 25.2 Public API
+- `uuid4() -> Bytes`: Generates a random UUID v4.
+- `toString(u: Bytes) -> Str`: Converts UUID bytes to standard string representation.
+- `parse(s: Str) -> Result[Bytes, Str]`: Parses a UUID string into bytes.
+
+---
+
+## 26. Library docs: `glob` & `tempfile`
+
+### 26.1 `glob` API
+- `glob(pattern: Str) -> Result[List[Str], Str]`: Returns a list of paths matching a pattern.
+
+---
+
+## 27. Library docs: `u32`
+
+### 27.1 Overview
+`u32` provides 32-bit unsigned integer arithmetic, which is useful for low-level bitwise operations.
+
+### 27.2 Public API
+- `u32And(a: Int, b: Int) -> Int`: Bitwise AND.
+- `u32Or(a: Int, b: Int) -> Int`: Bitwise OR.
+- `u32Xor(a: Int, b: Int) -> Int`: Bitwise XOR.
+- `u32Not(a: Int) -> Int`: Bitwise NOT.
+- `u32Shl(a: Int, n: Int) -> Int`: Shift left.
+- `u32Shr(a: Int, n: Int) -> Int`: Shift right (logical).
+
+---
+
+## 28. Library docs: `statistics`
+
+### 28.1 Overview
+`statistics` provides basic mathematical statistical functions.
+
+### 28.2 Public API
+- `mean(xs: List[Float]) -> Float`: Arithmetic mean.
+- `median(xs: List[Float]) -> Float`: Median value.
+- `stdev(xs: List[Float]) -> Float`: Standard deviation.
+
+---
+
+## 29. Library docs: `consoleIO`
+
+### 29.1 Overview
+`consoleIO` provides standard terminal input and output operations.
+
+### 29.2 Public API
+- `print(s: Str) -> Unit`: Prints a string followed by a newline.
+- `readLine() -> Result[Str, Str]`: Reads a line of input from the user.
+
+---
+
+## 30. Library docs: `base64`
+
+### 30.1 Overview
+`base64` provides encoding and decoding of binary data to Base64 strings.
+
+### 30.2 Public API
+- `encode(data: Bytes) -> Str`: Encodes bytes to a Base64 string.
+- `decode(s: Str) -> Result[Bytes, Str]`: Decodes a Base64 string back to bytes.
