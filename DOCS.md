@@ -220,3 +220,88 @@ Flavent's standard library is designed to be minimal but extensible, with a focu
 - **`socket`**: TCP sockets (connect/listen/accept/send/recv) via host bridge.
 
 ---
+
+## 12. Stdlib library structure (recommended)
+
+For larger libraries, Flavent stdlib prefers splitting into multiple files while keeping the public import stable.
+
+- **Public entrypoint**: `stdlib/<lib>/__init__.flv`
+  - Should typically contain only `use <lib>.<submodule>` statements.
+  - This keeps `use <lib>` stable even if internals are refactored.
+- **Common split**:
+  - `<lib>.types`: type aliases / record types / constructors.
+  - `<lib>.core`: pure helpers (parsing, formatting, algorithms).
+  - `<lib>.api`: main public API (often effectful sector wrappers).
+  - `<lib>.client`: higher-level client workflows built on `.api`.
+
+## 13. Library docs: `socket`
+
+### 13.1 Overview
+`socket` provides a Python-style **TCP socket** interface through the host bridge. All operations that can fail return `Result[..., Str]`.
+
+### 13.2 Public API (stable)
+Import:
+
+```flavent
+use socket
+```
+
+Types:
+- `Socket`: opaque handle (`Int`)
+- `TcpPeer`: `{ host: Str, port: Int }`
+- `TcpAccept`: `{ sock: Socket, peer: TcpPeer }`
+
+Functions:
+- `tcpPeer(host, port) -> TcpPeer`
+
+Sector API (`sector socket`):
+- `tcpConnect(host, port) -> Result[Socket, Str]`
+- `tcpListen(host, port, backlog) -> Result[Socket, Str]`
+- `tcpAccept(sock) -> Result[TcpAccept, Str]`
+- `send(sock, data) -> Result[Int, Str]`
+- `recv(sock, n) -> Result[Bytes, Str]`
+- `sendAll(sock, data) -> Result[Unit, Str]`
+- `recvAll(sock, chunk) -> Result[Bytes, Str]`
+- `shutdown(sock) -> Result[Unit, Str]`
+- `close(sock) -> Result[Unit, Str]`
+- `setTimeoutMillis(sock, ms) -> Result[Unit, Str]`
+
+### 13.3 Resource safety
+- Always call `socket.close(sock)` once you are done.
+- Prefer `sendAll` for request-like protocols (HTTP) to avoid partial writes.
+
+## 14. Library docs: `httplib`
+
+### 14.1 Overview
+`httplib` is a minimal HTTP/1.1 client built in Flavent. It is split into:
+- `httplib.core`: pure request building and response parsing.
+- `httplib.client`: effectful `sector httplib` that performs I/O via `socket`.
+
+Import:
+
+```flavent
+use httplib
+```
+
+### 14.2 Pure helpers (`httplib.core`)
+- `buildGetRequest(host, path) -> Bytes`
+- `buildGetRequestWith(host, path, headers) -> Bytes`
+- `buildPostRequest(host, path, headers, body) -> Bytes`
+- `buildRequest(method, host, path, headers, body) -> Bytes`
+- `parseResponse(raw) -> Result[HttpResponse, Str]`
+
+### 14.3 Effectful client (`sector httplib`)
+- `request(host, port, method, path, headers, body) -> Result[HttpResponse, Str]`
+- `get(host, port, path) -> Result[HttpResponse, Str]`
+- `getWith(host, port, path, headers) -> Result[HttpResponse, Str]`
+- `post(host, port, path, body) -> Result[HttpResponse, Str]`
+- `postWith(host, port, path, headers, body) -> Result[HttpResponse, Str]`
+
+### 14.4 Notes / limitations
+- Response parsing is intentionally minimal: it splits headers/body on the first `\r\n\r\n` marker and parses the status line and headers.
+- Chunked transfer encoding, streaming bodies, and TLS are not implemented.
+- Request builder automatically adds default headers if missing:
+  - `Host`
+  - `User-Agent` (default `flavent-httplib/0`)
+  - `Connection: close`
+  - `Content-Length` (when body is non-empty)

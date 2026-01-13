@@ -1,0 +1,205 @@
+use _bridge_python
+use collections.list
+use bytelib
+
+type Header = { key: Str, value: Str }
+
+type HttpResponse = { status: Int, reason: Str, headers: List[Header], body: Bytes }
+
+type _StatusInfo = { status: Int, reason: Str }
+
+type _BytesPair = { a: Bytes, b: Bytes }
+
+fn header(key: Str, value: Str) -> Header = { key = key, value = value }
+
+fn _headerHas(xs: List[Header], key: Str) -> Bool = match xs:
+  Nil -> false
+  Cons(h, rest) -> match h.key == key:
+    true -> true
+    false -> _headerHas(rest, key)
+
+fn headersHas(xs: List[Header], key: Str) -> Bool = _headerHas(xs, key)
+
+fn _headersAddIfMissing(xs: List[Header], key: Str, value: Str) -> List[Header] = match headersHas(xs, key):
+  true -> xs
+  false -> Cons(header(key, value), xs)
+
+fn defaultUserAgent() -> Str = "flavent-httplib/0"
+
+fn _intToStrAcc(n: Int, acc: Str) -> Str = match n == 0:
+  true -> acc
+  false -> do:
+    let q = n / 10
+    let d = n - q * 10
+    let ch = strFromCode(48 + d)
+    return _intToStrAcc(q, ch + acc)
+
+fn intToStr(n: Int) -> Str = match n == 0:
+  true -> "0"
+  false -> _intToStrAcc(n, "")
+
+fn _headersToBytesAcc(xs: List[Header], crlf: Bytes, acc: Bytes) -> Bytes = match xs:
+  Nil -> acc
+  Cons(h, rest) -> do:
+    let line = asciiToBytes(h.key + ": " + h.value)
+    let acc2 = bytesConcat(acc, bytesConcat(line, crlf))
+    return _headersToBytesAcc(rest, crlf, acc2)
+
+fn headersToBytes(xs: List[Header]) -> Bytes = do:
+  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  return _headersToBytesAcc(xs, crlf, b"")
+
+fn buildRequest(method: Str, host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = do:
+  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  let startLine = asciiToBytes(method + " " + path + " HTTP/1.1")
+  let hs0 = _headersAddIfMissing(headers, "Host", host)
+  let hs1 = _headersAddIfMissing(hs0, "User-Agent", defaultUserAgent())
+  let hs2 = _headersAddIfMissing(hs1, "Connection", "close")
+  let hs3 = match bytesLen(body) > 0:
+    true -> _headersAddIfMissing(hs2, "Content-Length", intToStr(bytesLen(body)))
+    false -> hs2
+  let head = bytesConcat(startLine, crlf)
+  let hdrBytes = _headersToBytesAcc(hs3, crlf, b"")
+  let end = crlf
+  return bytesConcat(bytesConcat(head, bytesConcat(hdrBytes, end)), body)
+
+fn _asciiFromBytesAcc(b: Bytes, i: Int, n: Int, acc: Str) -> Str = match i >= n:
+  true -> acc
+  false -> _asciiFromBytesAcc(b, i + 1, n, acc + strFromCode(bytesGet(b, i)))
+
+fn asciiFromBytes(b: Bytes) -> Str = _asciiFromBytesAcc(b, 0, bytesLen(b), "")
+
+fn _asciiCodesAcc(s: Str, i: Int, n: Int, acc: List[Int]) -> List[Int] = match i >= n:
+  true -> reverse(acc)
+  false -> _asciiCodesAcc(s, i + 1, n, Cons(strCodeAt(s, i), acc))
+
+fn asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLen(s), Nil))
+
+fn _strFindAt(h: Str, hi: Int, n: Int, needle: Str, ni: Int, nn: Int) -> Bool = match ni >= nn:
+  true -> true
+  false -> match hi + ni >= n:
+    true -> false
+    false -> match strCodeAt(h, hi + ni) == strCodeAt(needle, ni):
+      true -> _strFindAt(h, hi, n, needle, ni + 1, nn)
+      false -> false
+
+fn _strFindFrom(h: Str, needle: Str, i: Int, n: Int, nn: Int) -> Int = match i + nn > n:
+  true -> 0 - 1
+  false -> match _strFindAt(h, i, n, needle, 0, nn):
+    true -> i
+    false -> _strFindFrom(h, needle, i + 1, n, nn)
+
+fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
+  let n = strLen(h)
+  let nn = strLen(needle)
+  return match nn == 0:
+    true -> start
+    false -> _strFindFrom(h, needle, start, n, nn)
+
+fn _parseIntDigitsAcc(s: Str, i: Int, n: Int, acc: Int) -> Int = match i >= n:
+  true -> acc
+  false -> do:
+    let c = strCodeAt(s, i)
+    return match c >= 48 and c <= 57:
+      true -> _parseIntDigitsAcc(s, i + 1, n, acc * 10 + (c - 48))
+      false -> acc
+
+fn parseIntDigits(s: Str) -> Int = _parseIntDigitsAcc(s, 0, strLen(s), 0)
+
+fn _bytesEqAt(h: Bytes, hi: Int, hn: Int, needle: Bytes, ni: Int, nn: Int) -> Bool = match ni >= nn:
+  true -> true
+  false -> match hi + ni >= hn:
+    true -> false
+    false -> match bytesGet(h, hi + ni) == bytesGet(needle, ni):
+      true -> _bytesEqAt(h, hi, hn, needle, ni + 1, nn)
+      false -> false
+
+fn _bytesFindFrom(h: Bytes, needle: Bytes, i: Int, hn: Int, nn: Int) -> Int = match i + nn > hn:
+  true -> 0 - 1
+  false -> match _bytesEqAt(h, i, hn, needle, 0, nn):
+    true -> i
+    false -> _bytesFindFrom(h, needle, i + 1, hn, nn)
+
+fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
+  let hn = bytesLen(h)
+  let nn = bytesLen(needle)
+  return match nn == 0:
+    true -> start
+    false -> _bytesFindFrom(h, needle, start, hn, nn)
+
+fn _splitLineBytes(b: Bytes) -> _BytesPair = do:
+  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  let i = bytesFind(b, crlf, 0)
+  return match i < 0:
+    true -> { a = b, b = b"" }
+    false -> { a = bytesSlice(b, 0, i), b = bytesSlice(b, i + 2, bytesLen(b)) }
+
+fn _trimLeftSpacesAcc(s: Str, i: Int, n: Int) -> Str = match i >= n:
+  true -> ""
+  false -> match strCodeAt(s, i) == 32:
+    true -> _trimLeftSpacesAcc(s, i + 1, n)
+    false -> strSlice(s, i, n)
+
+fn trimLeftSpaces(s: Str) -> Str = _trimLeftSpacesAcc(s, 0, strLen(s))
+
+fn _parseHeaderLine(line: Str) -> Option[Header] = do:
+  let i = strFind(line, ":", 0)
+  return match i < 0:
+    true -> None
+    false -> do:
+      let k = strSlice(line, 0, i)
+      let v0 = strSlice(line, i + 1, strLen(line))
+      let v = trimLeftSpaces(v0)
+      return Some({ key = k, value = v })
+
+fn _parseHeadersBytesAcc(b: Bytes, acc: List[Header]) -> List[Header] = match bytesLen(b) == 0:
+  true -> reverse(acc)
+  false -> do:
+    let sp = _splitLineBytes(b)
+    let lineB = sp.a
+    let restB = sp.b
+    return match bytesLen(lineB) == 0:
+      true -> reverse(acc)
+      false -> do:
+        let line = asciiFromBytes(lineB)
+        let h = _parseHeaderLine(line)
+        return match h:
+          Some(v) -> _parseHeadersBytesAcc(restB, Cons(v, acc))
+          None -> _parseHeadersBytesAcc(restB, acc)
+
+fn parseHeadersBytes(b: Bytes) -> List[Header] = _parseHeadersBytesAcc(b, Nil)
+
+fn _parseStatusLine(line: Str) -> _StatusInfo = do:
+  let i1 = strFind(line, " ", 0)
+  return match i1 < 0:
+    true -> { status = 0, reason = "" }
+    false -> do:
+      let i2 = strFind(line, " ", i1 + 1)
+      return match i2 < 0:
+        true -> { status = parseIntDigits(strSlice(line, i1 + 1, strLen(line))), reason = "" }
+        false -> do:
+          let codeStr = strSlice(line, i1 + 1, i2)
+          let reason = strSlice(line, i2 + 1, strLen(line))
+          return { status = parseIntDigits(codeStr), reason = reason }
+
+fn buildGetRequest(host: Str, path: Str) -> Bytes = do:
+  return buildRequest("GET", host, path, Nil, b"")
+
+fn buildGetRequestWith(host: Str, path: Str, headers: List[Header]) -> Bytes = buildRequest("GET", host, path, headers, b"")
+
+fn buildPostRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = buildRequest("POST", host, path, headers, body)
+
+fn parseResponse(raw: Bytes) -> Result[HttpResponse, Str] = do:
+  let sep = bytesFromList(Cons(13, Cons(10, Cons(13, Cons(10, Nil)))))
+  let p = bytesFind(raw, sep, 0)
+  return match p < 0:
+    true -> Err("bad http response")
+    false -> do:
+      let headBytes = bytesSlice(raw, 0, p)
+      let body = bytesSlice(raw, p + 4, bytesLen(raw))
+      let sp = _splitLineBytes(headBytes)
+      let statusLine = asciiFromBytes(sp.a)
+      let restB = sp.b
+      let st = _parseStatusLine(statusLine)
+      let headers = parseHeadersBytes(restB)
+      return Ok({ status = st.status, reason = st.reason, headers = headers, body = body })

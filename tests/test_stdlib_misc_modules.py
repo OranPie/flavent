@@ -118,6 +118,11 @@ sector s:
     let _req = buildGetRequest("example.com", "/")
     let _pr = parseResponse(_req)
     let _hg = rpc httplib.get("example.com", 80, "/")
+    let _hr = rpc httplib.request("example.com", 80, "GET", "/", Nil, b"")
+    let _hgw = rpc httplib.getWith("example.com", 80, "/", Cons(header("X", "1"), Nil))
+    let _httpPost = rpc httplib.post("example.com", 80, "/", b"hi")
+    let _httpPostW = rpc httplib.postWith("example.com", 80, "/", Nil, b"hi")
+    let _br = buildRequest("GET", "example.com", "/", Nil, b"")
 
     let a = wrap(0 - 1)
     let b = wrap(1)

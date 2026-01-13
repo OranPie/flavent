@@ -1,0 +1,12 @@
+use _bridge_python
+
+// Opaque socket handle allocated by the host runtime.
+// Represented as Int.
+
+type Socket = Int
+
+type TcpPeer = BridgeSockPeer
+
+type TcpAccept = BridgeSockAccept
+
+fn tcpPeer(host: Str, port: Int) -> TcpPeer = { host = host, port = port }

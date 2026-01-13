@@ -43,3 +43,18 @@ test "httplib-parseResponse" -> do:
   assertEq(bytesLen(b2), 2)?
   assertEq(bytesGet(b2, 0), 65)?
   assertEq(bytesGet(b2, 1), 66)?
+
+test "httplib-buildRequest-default-UA" -> do:
+  let req = buildRequest("GET", "example.com", "/", Nil, b"")
+  let s = asciiFromBytes(req)
+  // check start line
+  assertTrue(strFind(s, "GET / HTTP/1.1", 0) >= 0)?
+  // default UA should be present
+  assertTrue(strFind(s, "User-Agent: ", 0) >= 0)?
+
+test "httplib-buildRequest-content-length" -> do:
+  let body = bytesFromList(Cons(1, Cons(2, Cons(3, Nil))))
+  let req = buildRequest("POST", "example.com", "/x", Nil, body)
+  let s = asciiFromBytes(req)
+  assertTrue(strFind(s, "POST /x HTTP/1.1", 0) >= 0)?
+  assertTrue(strFind(s, "Content-Length: 3", 0) >= 0)?
