@@ -57,3 +57,47 @@ python3 -m pytest
 
 - [Language Specification & Library Docs](DOCS.md)
 - [Bridge API Summary](BRIDGE_PYTHON_SUMMARY.md)
+- [Stdlib Docs (one page per module)](docs/en/stdlib/index.md)
+
+## Package Management (flm)
+
+Flavent projects can be managed with a JSON manifest `flm.json`.
+
+Common commands:
+
+```bash
+flavent pkg init
+flavent pkg add mylib --path ../mylib
+flavent pkg add netlib --git ssh://git@codeberg.org/OrangePie/netlib.git --rev <rev>
+flavent pkg install
+flavent pkg list
+```
+
+See:
+
+- [FLM Spec](FLM_SPEC.md)
+
+## Python Adapters (v2: subprocess isolation)
+
+Python integration is **not** done by direct imports. Instead, Flavent calls Python through a strict adapter interface and a single controlled bridge entrypoint.
+
+Workflow:
+
+1. Declare adapters in `flm.json` under `pythonAdapters`.
+2. Run `flavent pkg install`.
+3. Import and call generated wrappers:
+
+```flavent
+use pyadapters.demo
+
+// demo.echo(payload) -> Result[Bytes, Str]
+let r = rpc demo.echo(b"hello")
+```
+
+## 中文文档 (Chinese)
+
+- [docs/zh/README.md](docs/zh/README.md)
+- [docs/zh/FLM_SPEC.md](docs/zh/FLM_SPEC.md)
+- [docs/zh/DOCS.md](docs/zh/DOCS.md)
+- [docs/zh/COMPILER.md](docs/zh/COMPILER.md)
+- [docs/zh/stdlib/index.md](docs/zh/stdlib/index.md)

@@ -14,7 +14,7 @@ The design goals are:
 - **`flm.json`**: Human-authored manifest.
 - **`flm.lock.json`**: Machine-generated lockfile.
 - **`vendor/`**: Installed source dependencies.
-- **`.flavent/`** (optional): Cache directory for downloads/build artifacts.
+- **`.flavent/`**: Cache directory for downloads/build artifacts (git cache, etc.).
 
 ---
 
@@ -93,6 +93,10 @@ Notes:
 - `resolved` should contain only **fully resolved** specs.
 - For git dependencies, the `rev` should be a pinned commit hash.
 
+Implementation note (current):
+- `flavent pkg install` clones git deps into `.flavent/git/<name>` and writes `vendor/<name>` as a symlink to that cached repo.
+- Lockfile pins `rev` to the checked-out commit hash (`git rev-parse HEAD`).
+
 ---
 
 ## 4. Module Loading Rules (Resolver Integration)
@@ -125,8 +129,12 @@ This makes it possible for installed dependencies in `vendor/<dep>/...` to be im
 ### 5.4 `flavent pkg install`
 - Populates `vendor/<name>`:
   - `path`: creates a symlink to the source.
-  - `git`: clones repo and checks out requested `rev`.
+  - `git`: clones repo into `.flavent/git/<name>`, checks out requested `rev` (if any), then symlinks `vendor/<name>` to the cache.
 - Writes `flm.lock.json`.
+
+Also generates python adapter wrappers (if `pythonAdapters` is present):
+- `vendor/pyadapters/<adapter>.flv`
+- `vendor/pyadapters/__init__.flv`
 
 ### 5.5 `flavent pkg export <out>`
 - Writes a combined export JSON for debugging/inspection.
@@ -180,7 +188,7 @@ The runtime starts a Python subprocess for each adapter (or a shared host proces
 
 Request:
 ```json
-{"id": 1, "fn": "mean", "payload_b64": "..."}
+{"id": 1, "method": "mean", "payload_b64": "..."}
 ```
 
 Response:
@@ -193,10 +201,15 @@ Error:
 {"id": 1, "ok": false, "error": "message"}
 ```
 
+Metadata query:
+- `method = "__meta__"` returns JSON bytes describing the adapter:
+  - `plugin_id`, `api_version`, `capabilities`, `exports`
+
 ### 6.5 Enforcement
 
 - Flavent can only call functions in `allow` for that adapter.
 - Adapter declared `CAPABILITIES` must be explicitly granted in `flm.json`.
+- Runtime validates that manifest `allow` is a subset of adapter `EXPORTS`.
 - The adapter runs in a separate process to reduce blast radius.
 
 ---

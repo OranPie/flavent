@@ -572,3 +572,40 @@ use httplib
 ### 30.2 Public API
 - `encode(data: Bytes) -> Str`: Encodes bytes to a Base64 string.
 - `decode(s: Str) -> Result[Bytes, Str]`: Decodes a Base64 string back to bytes.
+
+---
+
+## 31. Library docs: `py` (Python adapters)
+
+### 31.1 Overview
+`py` is the **only** stdlib entry point for calling Python adapters.
+
+It does **not** allow direct Python imports. Calls are routed through a single controlled bridge RPC (`_bridge_python.pyAdapterCall`) and are intended to be used together with `flm.json` + `flavent pkg install`.
+
+### 31.2 Public API
+Import:
+
+```flavent
+use py
+```
+
+Functions:
+- `invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str]`
+
+### 31.3 Generated wrappers: `pyadapters`
+After running `flavent pkg install`, wrapper modules may be generated under:
+
+- `vendor/pyadapters/<adapter>.flv`
+- `vendor/pyadapters/__init__.flv`
+
+Example:
+
+```flavent
+use pyadapters.demo
+
+// demo.echo(payload) -> Result[Bytes, Str]
+let r = rpc demo.echo(b"hi")
+```
+
+Current wrapper convention:
+- Each allowlisted method becomes `fn <method>(payload: Bytes) -> Result[Bytes, Str]`.
