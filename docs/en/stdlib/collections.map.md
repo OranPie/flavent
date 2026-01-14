@@ -1,13 +1,21 @@
 # `collections.map`
 
-Import:
+## Overview
+(Edit this page freely. The generator only updates the marked API blocks.)
+
+## Import
 ```flavent
 use collections.map
 ```
 
-Selected API:
-- `mapEmpty`
-- `mapPut`
-- `mapGet`
-- `mapHasKey`
-- `mapKeys`, `mapValues`, `mapSize`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

@@ -1,12 +1,22 @@
 # `glob`
 
 ## Overview
-Glob pattern matching (filesystem).
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import:
+## Import
 ```flavent
 use glob
 ```
 
-## API
-- `glob(pattern: Str) -> Result[List[Str], Str]`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn glob(pat: Str) -> Result[List[Str], Str] = do:
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

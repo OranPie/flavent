@@ -1,23 +1,30 @@
 # `std.option`
 
 ## Overview
-`Option[T]` for nullable values.
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import:
+## Import
 ```flavent
 use std.option
 ```
 
-## Type
-- `Option[T] = Some(T) | None`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+type Option[T] = Some(T) | None
+```
+<!-- AUTO-GEN:END TYPES -->
 
-## API
-- `unwrapOr(o, default) -> T`
-- `isSome(o) -> Bool`
-- `isNone(o) -> Bool`
-- `orElse(o, other) -> Option[T]`
-- `okOr(o, err) -> Result[T, E]`
-- `unwrapOrZeroInt(o: Option[Int]) -> Int`
-- `unwrapOrEmptyStr(o: Option[Str]) -> Str`
-- `toList(o) -> List[T]`
-- `fromBool(cond, v) -> Option[T]`
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn unwrapOr[T](o: Option[T], default: T) -> T = match o:
+fn isSome[T](o: Option[T]) -> Bool = match o:
+fn isNone[T](o: Option[T]) -> Bool = match o:
+fn orElse[T](o: Option[T], other: Option[T]) -> Option[T] = match o:
+fn unwrapOrZeroInt(o: Option[Int]) -> Int = unwrapOr(o, 0)
+fn unwrapOrEmptyStr(o: Option[Str]) -> Str = unwrapOr(o, "")
+fn toList[T](o: Option[T]) -> List[T] = match o:
+fn fromBool[T](cond: Bool, v: T) -> Option[T] = match cond:
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

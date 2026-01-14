@@ -1,12 +1,15 @@
 # `glob`
 
 ## 概述
-文件系统 glob 匹配。
+（自动生成的 API 参考页。可在此基础上补充示例与行为/边界说明。）
 
-导入：
+## 导入
 ```flavent
 use glob
 ```
 
-## API
-- `glob(pattern: Str) -> Result[List[Str], Str]`
+## 函数
+```flavent
+fn glob(pat: Str) -> Result[List[Str], Str] = do:
+```
+

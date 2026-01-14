@@ -1,17 +1,20 @@
 # `consoleIO`
 
 ## 概述
-通过宿主桥（host bridge）进行终端输入输出。
+（自动生成的 API 参考页。可在此基础上补充示例与行为/边界说明。）
 
-导入：
+## 导入
 ```flavent
 use consoleIO
 ```
 
-## API
-- `print(s: Str) -> Unit`
-- `println(s: Str) -> Unit`
-- `printErr(s: Str) -> Unit`
-- `printlnErr(s: Str) -> Unit`
-- `readLine() -> Str`
-- `flush() -> Unit`
+## 函数
+```flavent
+fn print(s: Str) -> Unit = call _bridge_python.consolePrint(s)
+fn println(s: Str) -> Unit = call _bridge_python.consolePrintln(s)
+fn printErr(s: Str) -> Unit = call _bridge_python.consolePrintErr(s)
+fn printlnErr(s: Str) -> Unit = call _bridge_python.consolePrintlnErr(s)
+fn readLine() -> Str = rpc _bridge_python.consoleReadLine()
+fn flush() -> Unit = call _bridge_python.consoleFlush()
+```
+

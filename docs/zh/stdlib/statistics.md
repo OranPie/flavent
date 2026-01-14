@@ -1,14 +1,18 @@
 # `statistics`
 
 ## 概述
-基础统计函数。
+（自动生成的 API 参考页。可在此基础上补充示例与行为/边界说明。）
 
-导入：
+## 导入
 ```flavent
 use statistics
 ```
 
-## API
-- `mean(xs: List[Float]) -> Float`
-- `median(xs: List[Float]) -> Float`
-- `stdev(xs: List[Float]) -> Float`
+## 函数
+```flavent
+fn mean(xs: List[Float]) -> Float = do:
+fn median(xs: List[Float]) -> Float = do:
+fn variance(xs: List[Float]) -> Float = do:
+fn stdev(xs: List[Float]) -> Float = sqrt(variance(xs))
+```
+

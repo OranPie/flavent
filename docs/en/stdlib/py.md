@@ -1,25 +1,30 @@
-# `py` (Python adapters)
+# `py`
 
 ## Overview
-`py` is the **only** stdlib entry point for calling Python adapters.
+Single entry point for Python adapters (v2: subprocess isolation).
 
-- No direct Python imports from Flavent.
-- Calls are routed through `_bridge_python.pyAdapterCall`.
-- Intended to be used together with `flm.json` + `flavent pkg install`.
+Rules:
+- Flavent code must not import Python directly.
+- Calls go through `py.invoke(adapter, method, payload)`.
+- Prefer using generated wrappers in `pyadapters`.
 
-Import:
+See also:
+- `docs/en/stdlib/pyadapters.md`
+
+## Import
 ```flavent
 use py
 ```
 
-## API
-- `invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str]`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
 
-## Protocol (v2)
-- The adapter runs in a subprocess.
-- Parent process queries `__meta__` and enforces:
-  - requested `capabilities` ⊆ adapter `CAPABILITIES`
-  - requested `allow` ⊆ adapter `EXPORTS`
-
-See also:
-- `FLM_SPEC.md` at repo root.
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str] = rpc _bridge_python.pyAdapterCall(adapter, method, payload)
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

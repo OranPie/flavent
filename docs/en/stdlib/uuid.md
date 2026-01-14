@@ -1,14 +1,25 @@
 # `uuid`
 
 ## Overview
-UUID v4 generation and parsing.
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import:
+## Import
 ```flavent
 use uuid
 ```
 
-## API
-- `uuid4() -> Bytes`
-- `toString(u: Bytes) -> Str`
-- `parse(s: Str) -> Result[Bytes, Str]`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+type UUID = { bytes: Bytes }
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn parse(s: Str) -> Option[UUID] = do:
+fn toString(u: UUID) -> Str = _uStrAcc(bytesToList(u.bytes), 0, "")
+fn uuid4() -> UUID = do:
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

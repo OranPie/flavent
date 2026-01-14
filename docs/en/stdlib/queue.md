@@ -1,3 +1,21 @@
 # `queue`
 
-This is an alias-style module in stdlib; prefer `collections.queue`.
+## Overview
+(Edit this page freely. The generator only updates the marked API blocks.)
+
+## Import
+```flavent
+use queue
+```
+
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

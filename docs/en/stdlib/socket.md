@@ -1,28 +1,48 @@
 # `socket`
 
 ## Overview
-`socket` provides TCP sockets via the host bridge. All fallible operations return `Result[..., Str]`.
+TCP sockets via the host bridge.
 
-Import:
+Treat `socket` as the umbrella module. The actual definitions live in:
+- `socket.types`
+- `socket.api`
+
+This page focuses on usage patterns and pitfalls. The API signature blocks below are maintained by `scripts/docgen_stdlib.py`.
+
+## Import
 ```flavent
 use socket
 ```
 
-## Types
-- `Socket`
-- `TcpPeer`
-- `TcpAccept`
+## Common patterns
 
-## API (sector `socket`)
-- `tcpConnect(host, port) -> Result[Socket, Str]`
-- `tcpListen(host, port, backlog) -> Result[Socket, Str]`
-- `tcpAccept(listenSock) -> Result[TcpAccept, Str]`
-- `sendAll(sock, data) -> Result[Unit, Str]`
-- `recvAll(sock, chunk) -> Result[Bytes, Str]`
-- `shutdown(sock) -> Result[Unit, Str]`
-- `close(sock) -> Result[Unit, Str]`
-- `setTimeoutMillis(sock, ms) -> Result[Unit, Str]`
+### Connect + sendAll + recvAll
+
+```flavent
+use socket
+
+sector main:
+  fn run() -> Unit = do:
+    let s = rpc socket.tcpConnect("127.0.0.1", 8080)?
+    let _ = rpc socket.sendAll(s, b"hello")?
+    let resp = rpc socket.recvAll(s, 4096)?
+    let _ = rpc socket.close(s)
+    return ()
+```
 
 ## Notes
-- Always `close(sock)`.
-- Prefer `sendAll` for request/response protocols.
+- Always try to `close(s)` on both success and error paths.
+- `recvAll` reads until the peer closes the connection (empty bytes).
+- Use `setTimeoutMillis` to avoid blocking indefinitely.
+
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

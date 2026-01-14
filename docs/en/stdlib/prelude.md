@@ -1,3 +1,21 @@
 # `prelude`
 
-Stdlib prelude imported by default when using stdlib.
+## Overview
+(Edit this page freely. The generator only updates the marked API blocks.)
+
+## Import
+```flavent
+use prelude
+```
+
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

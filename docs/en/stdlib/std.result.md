@@ -1,23 +1,23 @@
 # `std.result`
 
 ## Overview
-`Result[T, E]` for fallible operations.
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import:
+## Import
 ```flavent
 use std.result
 ```
 
-## Type
-- `Result[T, E] = Ok(T) | Err(E)`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
 
-## API
-- `isOk(r) -> Bool`
-- `isErr(r) -> Bool`
-- `unwrapOr(r, default) -> T`
-- `unwrapOrErr(r, default) -> T`
-- `toOption(r) -> Option[T]`
-- `toOptionErr(r) -> Option[E]`
-- `errOr(r, default) -> E`
-- `unwrapOrEmptyStr(r: Result[Str, E]) -> Str`
-- `isOkAndBool(r: Result[Bool, E]) -> Bool`
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn unwrapOrEmptyStr[E](r: Result[Str, E]) -> Str = unwrapOr(r, "")
+fn isOkAndBool[E](r: Result[Bool, E]) -> Bool = match r:
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

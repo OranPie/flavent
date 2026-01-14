@@ -1,22 +1,37 @@
 # `bytelib`
 
 ## Overview
-Low-level `Bytes` manipulation.
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import:
+## Import
 ```flavent
 use bytelib
 ```
 
-## API
-- `bytesLen(b) -> Int`
-- `bytesGet(b, i) -> Int`
-- `bytesSlice(b, start, end) -> Bytes`
-- `bytesConcat(a, b) -> Bytes`
-- `bytesFromList(xs: List[Int]) -> Bytes`
-- `bytesToList(b) -> List[Int]`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+type ByteArray = List[Int]
+```
+<!-- AUTO-GEN:END TYPES -->
 
-Search helpers:
-- `bytesFind(haystack, needle, start) -> Int`
-- `bytesStartsWith(haystack, prefix) -> Bool`
-- `bytesEndsWith(haystack, suffix) -> Bool`
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn bytesLen(b: Bytes) -> Int = _pyBytesLen(b)
+fn bytesGet(b: Bytes, i: Int) -> Int = _pyBytesGet(b, i)
+fn bytesSlice(b: Bytes, start: Int, end: Int) -> Bytes = _pyBytesSlice(b, start, end)
+fn bytesConcat(a: Bytes, b: Bytes) -> Bytes = _pyBytesConcat(a, b)
+fn bytesFromByte(x: Int) -> Bytes = _pyBytesFromByte(x)
+fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
+fn bytesStartsWith(h: Bytes, prefix: Bytes) -> Bool = do:
+fn bytesEndsWith(h: Bytes, suffix: Bytes) -> Bool = do:
+fn bytesToList(b: Bytes) -> List[Int] = _btToListAcc(b, 0, bytesLen(b))
+fn bytesFromList(xs: List[Int]) -> Bytes = _btFromList(xs)
+fn bytesConcatAll(xs: List[Bytes]) -> Bytes = match xs:
+fn byteArrayEmpty() -> ByteArray = Nil
+fn byteArrayPush(a: ByteArray, x: Int) -> ByteArray = append(a, Cons(x, Nil))
+fn byteArrayToBytes(a: ByteArray) -> Bytes = bytesFromList(a)
+fn bytesToByteArray(b: Bytes) -> ByteArray = bytesToList(b)
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

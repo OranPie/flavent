@@ -1,30 +1,53 @@
 # `socket`
 
 ## 概述
-`socket` 通过宿主桥（host bridge）提供 TCP socket。
+TCP socket（通过 host bridge）。
 
-所有可能失败的操作都返回 `Result[..., Str]`。
+推荐把 `socket` 当成“聚合入口”，实际 API 定义在：
+- `socket.types`
+- `socket.api`
 
-导入：
+本页提供整体使用说明与示例；签名列表由文档生成器写入下方的 AUTO-GEN 区块。
+
+## 导入
 ```flavent
 use socket
 ```
 
+## 常见用法
+
+### 连接 + 发送 + 接收
+
+```flavent
+use socket
+
+sector main:
+  fn run() -> Unit = do:
+    let s = rpc socket.tcpConnect("127.0.0.1", 8080)?
+    let _ = rpc socket.sendAll(s, b"hello")?
+    let resp = rpc socket.recvAll(s, 4096)?
+    let _ = rpc socket.close(s)
+    return ()
+```
+
+## 注意事项
+- **必须 close**：成功/失败路径都尽量确保 `rpc socket.close(s)`。
+- `recvAll` 会一直读到对端关闭连接（收到空 bytes）。
+- 如需避免阻塞，可使用 `setTimeoutMillis`。
+
+## 关联页面
+- `socket.types`
+- `socket.api`
+
 ## 类型
-- `Socket`
-- `TcpPeer`
-- `TcpAccept`
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
 
-## API（sector `socket`）
-- `tcpConnect(host, port) -> Result[Socket, Str]`
-- `tcpListen(host, port, backlog) -> Result[Socket, Str]`
-- `tcpAccept(listenSock) -> Result[TcpAccept, Str]`
-- `sendAll(sock, data) -> Result[Unit, Str]`
-- `recvAll(sock, chunk) -> Result[Bytes, Str]`
-- `shutdown(sock) -> Result[Unit, Str]`
-- `close(sock) -> Result[Unit, Str]`
-- `setTimeoutMillis(sock, ms) -> Result[Unit, Str]`
+## 函数
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+```
+<!-- AUTO-GEN:END FUNCTIONS -->
 
-## 注意
-- 使用完必须 `close(sock)`。
-- 请求/响应协议（如 HTTP）建议用 `sendAll`。

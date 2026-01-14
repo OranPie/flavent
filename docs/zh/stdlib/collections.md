@@ -1,20 +1,10 @@
-# `collections.*`
+# `collections`
 
 ## 概述
-持久化数据结构。
+（自动生成的 API 参考页。可在此基础上补充示例与行为/边界说明。）
 
-导入示例：
+## 导入
 ```flavent
-use collections.list
-use collections.map
-use collections.set
-use collections.queue
-use collections.heap
+use collections
 ```
 
-子模块页面（后续可继续细拆）：
-- `collections.list`
-- `collections.map`
-- `collections.set`
-- `collections.queue`
-- `collections.heap`

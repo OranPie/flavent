@@ -1,20 +1,21 @@
-# `collections.*`
+# `collections`
 
 ## Overview
-Persistent data structures.
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import examples:
+## Import
 ```flavent
-use collections.list
-use collections.map
-use collections.set
-use collections.queue
-use collections.heap
+use collections
 ```
 
-Pages:
-- [collections.list](./collections.list.md)
-- [collections.map](./collections.map.md)
-- [collections.set](./collections.set.md)
-- [collections.queue](./collections.queue.md)
-- [collections.heap](./collections.heap.md)
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
+
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

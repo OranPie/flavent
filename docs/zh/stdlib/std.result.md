@@ -1,23 +1,16 @@
 # `std.result`
 
 ## 概述
-`Result[T, E]` 用于表达“可能失败”的操作。
+（自动生成的 API 参考页。可在此基础上补充示例与行为/边界说明。）
 
-导入：
+## 导入
 ```flavent
 use std.result
 ```
 
-## 类型
-- `Result[T, E] = Ok(T) | Err(E)`
+## 函数
+```flavent
+fn unwrapOrEmptyStr[E](r: Result[Str, E]) -> Str = unwrapOr(r, "")
+fn isOkAndBool[E](r: Result[Bool, E]) -> Bool = match r:
+```
 
-## API
-- `isOk(r) -> Bool`
-- `isErr(r) -> Bool`
-- `unwrapOr(r, default) -> T`
-- `unwrapOrErr(r, default) -> T`
-- `toOption(r) -> Option[T]`
-- `toOptionErr(r) -> Option[E]`
-- `errOr(r, default) -> E`
-- `unwrapOrEmptyStr(r: Result[Str, E]) -> Str`
-- `isOkAndBool(r: Result[Bool, E]) -> Bool`

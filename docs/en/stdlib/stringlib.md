@@ -1,23 +1,30 @@
 # `stringlib`
 
 ## Overview
-Basic ASCII string helpers.
+(Edit this page freely. The generator only updates the marked API blocks.)
 
-Import:
+## Import
 ```flavent
 use stringlib
 ```
 
-## API
-- `strFind(haystack, needle, start) -> Int`
-- `strContains(haystack, needle) -> Bool`
-- `startsWith(haystack, prefix) -> Bool`
-- `endsWith(haystack, suffix) -> Bool`
-- `trimLeftSpaces(s) -> Str`
-- `trimRightSpaces(s) -> Str`
-- `trimSpaces(s) -> Str`
-- `split(s, sep) -> List[Str]`
-- `join(xs, sep) -> Str`
+## Types
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
 
-Notes:
-- `trim*Spaces` only treats ASCII space (code 32) as whitespace.
+## Functions
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
+fn strContains(h: Str, needle: Str) -> Bool = strFind(h, needle, 0) >= 0
+fn startsWith(h: Str, prefix: Str) -> Bool = do:
+fn endsWith(h: Str, suffix: Str) -> Bool = do:
+fn trimLeftSpaces(s: Str) -> Str = do:
+fn trimRightSpaces(s: Str) -> Str = do:
+fn trimSpaces(s: Str) -> Str = trimRightSpaces(trimLeftSpaces(s))
+fn split(s: Str, sep: Str) -> List[Str] = do:
+fn join(xs: List[Str], sep: Str) -> Str = _joinAcc(xs, sep, "")
+```
+<!-- AUTO-GEN:END FUNCTIONS -->

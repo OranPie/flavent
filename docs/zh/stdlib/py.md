@@ -1,24 +1,35 @@
-# `py`（Python 适配器）
+# `py`
 
 ## 概述
-`py` 是 Flavent 调用 Python 的**唯一**标准库入口。
+Python 适配器统一入口（v2：子进程隔离）。
 
+规则：
 - Flavent 代码不能直接 import Python。
-- 只能通过 `_bridge_python.pyAdapterCall` 这一个受控闸门。
-- 建议配合 `flm.json` + `flavent pkg install` 使用。
+- 只能通过 `py.invoke(adapter, method, payload)` 走受控桥接。
+- 建议配合 `flm.json` 的 `pythonAdapters` + `flavent pkg install` 自动生成的 `pyadapters` wrappers 使用。
 
-导入：
+## 导入
 ```flavent
 use py
 ```
 
-## API
-- `invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str]`
+## 类型
+<!-- AUTO-GEN:START TYPES -->
+```flavent
+```
+<!-- AUTO-GEN:END TYPES -->
 
-## v2 安全模型（子进程隔离）
-- adapter 在独立子进程中运行。
-- 运行时会调用 `__meta__` 读取 adapter 元信息，并进行强校验：
-  - `capabilities` 必须是 adapter `CAPABILITIES` 的子集
-  - `allow` 必须是 adapter `EXPORTS` 的子集
+## 函数
+<!-- AUTO-GEN:START FUNCTIONS -->
+```flavent
+fn invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str] = rpc _bridge_python.pyAdapterCall(adapter, method, payload)
+```
+<!-- AUTO-GEN:END FUNCTIONS -->
 
-更多请参考仓库根目录的 `FLM_SPEC.md` 与 `docs/zh/FLM_SPEC.md`。
+## 示例
+
+```flavent
+use pyadapters.demo
+let r = rpc demo.echo(b"hi")
+```
+
