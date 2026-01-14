@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .diagnostics import Diagnostic, EffectError, LowerError, ParseError, ResolveError, TypeError, format_diagnostic
 from .bridge_audit import audit_bridge_usage, format_bridge_warnings
+from .flm import FlmError, add_dependency, export_manifest, find_project_root, init_project, install, list_dependencies
 from .lexer import lex
 from .parser import parse_program
 from .ast import node_to_dict
@@ -18,6 +19,30 @@ from .typecheck import check_program
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="flavent")
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    p_pkg = sub.add_parser("pkg")
+    pkg_sub = p_pkg.add_subparsers(dest="pkg_cmd", required=True)
+
+    p_pkg_init = pkg_sub.add_parser("init")
+    p_pkg_init.add_argument("path", nargs="?", default=".")
+
+    p_pkg_add = pkg_sub.add_parser("add")
+    p_pkg_add.add_argument("name")
+    p_pkg_add.add_argument("--git", default="")
+    p_pkg_add.add_argument("--rev", default="")
+    p_pkg_add.add_argument("--path", default="")
+    p_pkg_add.add_argument("--dev", action="store_true")
+    p_pkg_add.add_argument("--root", default="")
+
+    p_pkg_list = pkg_sub.add_parser("list")
+    p_pkg_list.add_argument("--root", default="")
+
+    p_pkg_install = pkg_sub.add_parser("install")
+    p_pkg_install.add_argument("--root", default="")
+
+    p_pkg_export = pkg_sub.add_parser("export")
+    p_pkg_export.add_argument("out")
+    p_pkg_export.add_argument("--root", default="")
 
     p_lex = sub.add_parser("lex")
     p_lex.add_argument("file")
@@ -40,6 +65,53 @@ def main(argv: list[str] | None = None) -> int:
     p_check.add_argument("--bridge-warn", action="store_true", help="Print warnings for deprecated bridge shims")
 
     args = p.parse_args(argv)
+
+    if args.cmd == "pkg":
+        try:
+            if args.pkg_cmd == "init":
+                mf = init_project(Path(args.path))
+                print(str(mf))
+                return 0
+
+            root = Path(args.root) if getattr(args, "root", "") else None
+            if root is None:
+                root = find_project_root(Path.cwd())
+            if root is None:
+                raise FlmError("not in a flm project (missing flm.json); pass --root or run `flavent pkg init`")
+
+            if args.pkg_cmd == "add":
+                add_dependency(
+                    root,
+                    name=args.name,
+                    git=args.git or None,
+                    rev=args.rev or None,
+                    path=args.path or None,
+                    dev=bool(args.dev),
+                )
+                print("OK")
+                return 0
+
+            if args.pkg_cmd == "list":
+                for name, spec in list_dependencies(root):
+                    print(f"{name}\t{json.dumps(spec, ensure_ascii=False)}")
+                return 0
+
+            if args.pkg_cmd == "install":
+                install(root)
+                print("OK")
+                return 0
+
+            if args.pkg_cmd == "export":
+                export_manifest(root, out_path=Path(args.out))
+                print("OK")
+                return 0
+
+            raise FlmError(f"unknown pkg subcommand: {args.pkg_cmd}")
+
+        except FlmError as e:
+            print(f"PkgError: {e}")
+            return 2
+
     path = Path(args.file)
     src = path.read_text(encoding="utf-8")
 
@@ -64,7 +136,13 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         use_stdlib = not getattr(args, "no_stdlib", False)
-        res = resolve_program_with_stdlib(prog, use_stdlib=use_stdlib)
+        proj_root = find_project_root(path)
+        module_roots = None
+        if proj_root is not None:
+            module_roots = [proj_root / "src", proj_root / "vendor", proj_root]
+        else:
+            module_roots = [path.parent]
+        res = resolve_program_with_stdlib(prog, use_stdlib=use_stdlib, module_roots=module_roots)
         if args.cmd == "resolve":
             out = {
                 "program": node_to_dict(res.program),
@@ -118,6 +196,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     except EffectError as e:
         print(_fmt_err("EffectError", e))
+        return 2
+    except FlmError as e:
+        print(f"PkgError: {e}")
         return 2
     except Exception as e:
         raise

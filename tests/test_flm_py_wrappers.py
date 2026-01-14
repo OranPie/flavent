@@ -1,0 +1,68 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from flavent.flm import init_project, install
+from flavent.lexer import lex
+from flavent.lower import lower_resolved
+from flavent.parser import parse_program
+from flavent.resolve import resolve_program_with_stdlib
+from flavent.typecheck import check_program
+
+
+def test_flm_install_generates_pyadapter_wrappers(tmp_path: Path):
+    root = tmp_path / "proj"
+    init_project(root)
+
+    (root / "flm.json").write_text(
+        json.dumps(
+            {
+                "flmVersion": 1,
+                "package": {"name": "proj", "version": "0.1.0", "entry": "src/main.flv"},
+                "toolchain": {"flavent": ">=0.1.0"},
+                "dependencies": {},
+                "devDependencies": {},
+                "pythonAdapters": [
+                    {
+                        "name": "demo",
+                        "source": {"path": "vendor/py_demo"},
+                        "capabilities": ["pure_math"],
+                        "allow": ["echo"],
+                    }
+                ],
+                "extensions": {},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    install(root)
+
+    assert (root / "vendor" / "pyadapters" / "demo.flv").exists()
+    assert (root / "vendor" / "pyadapters" / "__init__.flv").exists()
+
+    src = (
+        "use flvtest\n"
+        "use pyadapters.demo\n"
+        "use bytelib\n\n"
+        "type Event.Test = {}\n\n"
+        "sector main:\n"
+        "  on Event.Test -> do:\n"
+        "    let r = rpc demo.echo(b\"hi\")\n"
+        "    match r:\n"
+        "      Ok(b) -> do:\n"
+        "        assertTrue(bytesLen(b) >= 0)?\n"
+        "      Err(e) -> do:\n"
+        "        assertTrue(true)?\n"
+        "    stop()\n\n"
+        "run()\n"
+    )
+
+    p = root / "src" / "main.flv"
+    prog = parse_program(lex(str(p), src))
+    res = resolve_program_with_stdlib(prog, use_stdlib=True, module_roots=[root / "src", root / "vendor", root])
+    hir = lower_resolved(res)
+    check_program(hir, res)

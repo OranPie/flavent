@@ -1,0 +1,4 @@
+use _bridge_python
+
+sector py:
+  fn invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str] = rpc _bridge_python.pyAdapterCall(adapter, method, payload)

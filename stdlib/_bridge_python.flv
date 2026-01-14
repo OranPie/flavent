@@ -83,3 +83,5 @@ sector _bridge_python:
   fn sockClose(s: Int) -> Result[Unit, Str] = Err("")
   fn sockShutdown(s: Int) -> Result[Unit, Str] = Err("")
   fn sockSetTimeoutMillis(s: Int, ms: Int) -> Result[Unit, Str] = Err("")
+
+  fn pyAdapterCall(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str] = Err("")

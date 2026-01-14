@@ -49,6 +49,47 @@ _STDLIB_PRELUDE: ast.Program | None = None
 _STDLIB_MODULES: dict[str, ast.Program] = {}
 
 
+def _find_module_path_in_roots(qname: str, roots: list[Path]) -> Path | None:
+    parts = qname.split(".")
+    for root in roots:
+        mod_path = root.joinpath(*parts).with_suffix(".flv")
+        if mod_path.exists():
+            return mod_path
+        pkg_path = root.joinpath(*parts) / "__init__.flv"
+        if pkg_path.exists():
+            return pkg_path
+    return None
+
+
+def _load_module_any(
+    qname: str,
+    *,
+    fallback_span: Span,
+    module_roots: list[Path] | None,
+    cache: dict[str, ast.Program],
+) -> ast.Program:
+    cached = cache.get(qname)
+    if cached is not None:
+        return cached
+
+    # Project/vendor modules (if enabled)
+    if module_roots:
+        mod_path = _find_module_path_in_roots(qname, module_roots)
+        if mod_path is not None:
+            try:
+                src = mod_path.read_text(encoding="utf-8")
+            except FileNotFoundError:
+                raise ResolveError(f"Missing module: {qname}", fallback_span)
+            prog = parse_program(lex(str(mod_path), src))
+            cache[qname] = prog
+            return prog
+
+    # Stdlib fallback
+    prog = _load_stdlib_module(qname, fallback_span=fallback_span)
+    cache[qname] = prog
+    return prog
+
+
 def _mixin_key(name: ast.QualifiedName, version: int) -> str:
     return f"{_qname_str(name)}@v{version}"
 
@@ -617,11 +658,12 @@ def _load_stdlib_module(qname: str, *, fallback_span: Span) -> ast.Program:
     return prog
 
 
-def _expand_std_uses(prog: ast.Program) -> ast.Program:
+def _expand_uses(prog: ast.Program, *, module_roots: list[Path] | None) -> ast.Program:
     # DFS expansion with cycle detection and de-dup.
     visited: set[str] = set()
     stack: list[str] = []
     out_items: list[ast.TopItem] = []
+    cache: dict[str, ast.Program] = {}
 
     def qname_str(qn: ast.QualifiedName) -> str:
         return ".".join(p.name for p in qn.parts)
@@ -633,7 +675,7 @@ def _expand_std_uses(prog: ast.Program) -> ast.Program:
             cycle = " -> ".join([*stack, qname])
             raise ResolveError(f"Cyclic use: {cycle}", span)
         stack.append(qname)
-        mprog = _load_stdlib_module(qname, fallback_span=span)
+        mprog = _load_module_any(qname, fallback_span=span, module_roots=module_roots, cache=cache)
         # First expand nested uses.
         for it in mprog.items:
             if isinstance(it, ast.UseStmt):
@@ -652,7 +694,7 @@ def _expand_std_uses(prog: ast.Program) -> ast.Program:
             # `_bridge_python` is an internal capability boundary.
             # User programs must not import it directly.
             if qname_str(it.name) == "_bridge_python":
-                file_norm = prog.span.file.replace("\\", "/")
+                file_norm = it.span.file.replace("\\", "/")
                 if "/stdlib/" not in file_norm and not file_norm.endswith("/stdlib/_bridge_python.flv"):
                     raise ResolveError("Direct use of _bridge_python is not allowed", it.span)
             visit_module(qname_str(it.name), it.span)
@@ -664,17 +706,22 @@ def _expand_std_uses(prog: ast.Program) -> ast.Program:
     return ast.Program(items=[*out_items, *kept], run=prog.run, span=prog.span)
 
 
-def resolve_program_with_stdlib(prog: ast.Program, *, use_stdlib: bool) -> Resolution:
+def resolve_program_with_stdlib(
+    prog: ast.Program,
+    *,
+    use_stdlib: bool,
+    module_roots: list[Path] | None = None,
+) -> Resolution:
     if use_stdlib:
         # Prevent stdlib prelude from including itself when users run `flavent check stdlib/prelude.flv`.
         if prog.span.file.replace("\\", "/").endswith("stdlib/prelude.flv"):
-            return resolve_program_with_stdlib(prog, use_stdlib=False)
+            return resolve_program_with_stdlib(prog, use_stdlib=False, module_roots=module_roots)
         prelude = _load_stdlib_prelude(fallback_span=prog.span)
         combined = ast.Program(items=[*prelude.items, *prog.items], run=prog.run, span=prog.span)
-        return resolve_program_with_stdlib(combined, use_stdlib=False)
+        return resolve_program_with_stdlib(combined, use_stdlib=False, module_roots=module_roots)
 
     # Expand module uses (stdlib only for now).
-    prog = _expand_std_uses(prog)
+    prog = _expand_uses(prog, module_roots=module_roots)
     # Apply mixins by rewriting the AST into plain sector/type items.
     prog = _apply_mixins(prog)
 
