@@ -6,6 +6,10 @@ fn strSlice(s: Str, start: Int, end: Int) -> Str = ""
 
 fn strFromCode(code: Int) -> Str = ""
 
+fn strToFloat(s: Str) -> Float = 0.0
+
+fn floatToStr(x: Float) -> Str = ""
+
 fn _pyBytesLen(b: Bytes) -> Int = 0
 
 fn _pyBytesGet(b: Bytes, i: Int) -> Int = 0

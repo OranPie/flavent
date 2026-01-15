@@ -154,11 +154,21 @@ Also generates python adapter wrappers (if `pythonAdapters` is present):
       "name": "numpy_like",
       "source": { "path": "vendor/flavent-py-numpy" },
       "capabilities": ["pure_math"],
-      "allow": ["dot", "mean"]
+      "allow": ["dot", "mean"],
+      "wrappers": [
+        "dot",
+        { "name": "mean", "codec": "json", "args": ["Float"], "ret": "Float" }
+      ]
     }
   ]
 }
 ```
+
+Notes:
+- `allow` controls runtime permission (must be a subset of adapter `EXPORTS`).
+- `wrappers` is optional and only affects generated `pyadapters` signatures.
+- If `wrappers` is omitted, wrappers default to `(Bytes) -> Bytes`.
+- Wrapper entries can be strings (same as bytes codec) or objects with `name`, `codec`, `args`, `ret`.
 
 ### 6.2 Adapter package layout
 
@@ -211,6 +221,28 @@ Metadata query:
 - Adapter declared `CAPABILITIES` must be explicitly granted in `flm.json`.
 - Runtime validates that manifest `allow` is a subset of adapter `EXPORTS`.
 - The adapter runs in a separate process to reduce blast radius.
+
+### 6.6 Wrapper codecs (for generated `pyadapters`)
+
+Supported `codec` values:
+- `bytes` (default): `(Bytes) -> Bytes`
+- `text`: `(Str) -> Str` (ASCII encoding)
+- `json`: arguments are packed into a JSON array, return is a JSON value
+
+`json` codec supports these types in `args`/`ret`:
+- `Int`, `Float`, `Bool`, `Str`, `JsonValue`, `Unit`
+
+Example:
+```json
+{
+  "name": "demo",
+  "allow": ["sum", "echoText"],
+  "wrappers": [
+    { "name": "sum", "codec": "json", "args": ["Int", "Int"], "ret": "Int" },
+    { "name": "echoText", "codec": "text", "args": ["Str"], "ret": "Str" }
+  ]
+}
+```
 
 ---
 

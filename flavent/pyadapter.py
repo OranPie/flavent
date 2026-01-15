@@ -170,11 +170,35 @@ def load_python_adapters(project_root: Path) -> list[PythonAdapterDecl]:
 
         caps_any = it.get("capabilities", [])
         allow_any = it.get("allow", [])
-        if not isinstance(caps_any, list) or not isinstance(allow_any, list):
-            raise FlmError(f"bad pythonAdapters[{name}]: capabilities/allow must be lists")
+        wrappers_any = it.get("wrappers", [])
+        if not isinstance(caps_any, list):
+            raise FlmError(f"bad pythonAdapters[{name}]: capabilities must be a list")
+        allow: list[str] = []
+        if isinstance(allow_any, list):
+            for entry in allow_any:
+                if isinstance(entry, str):
+                    allow.append(entry)
+                elif isinstance(entry, dict):
+                    name_entry = str(entry.get("name", ""))
+                    if not name_entry:
+                        raise FlmError(f"bad pythonAdapters[{name}]: allow entry missing name")
+                    allow.append(name_entry)
+        elif allow_any is not None:
+            raise FlmError(f"bad pythonAdapters[{name}]: allow must be a list")
+
+        if not allow and wrappers_any is not None:
+            if not isinstance(wrappers_any, list):
+                raise FlmError(f"bad pythonAdapters[{name}]: wrappers must be a list")
+            for entry in wrappers_any:
+                if isinstance(entry, str):
+                    allow.append(entry)
+                elif isinstance(entry, dict):
+                    name_entry = str(entry.get("name", ""))
+                    if not name_entry:
+                        raise FlmError(f"bad pythonAdapters[{name}]: wrappers entry missing name")
+                    allow.append(name_entry)
 
         caps = [str(x) for x in caps_any]
-        allow = [str(x) for x in allow_any]
         out.append(PythonAdapterDecl(name=name, source_path=source_path, capabilities=caps, allow=allow))
 
     return out

@@ -4,17 +4,18 @@
 JSON encoding/decoding.
 
 Notes:
-- `loads` returns `Option[Json]` (parse failure is `None`).
-- Numbers are currently **integers only** (`JInt`).
+- `loads` returns `Result[JsonValue, Str]`.
+- Numbers support integers (`JInt`) and floats (`JFloat`), including scientific notation.
+- String escapes include `\\uXXXX` (basic Unicode).
 - Whitespace is skipped (space / tab / newline / carriage return).
 
 ## Example
 
 ```flavent
 use json
-use std.option
+use std.result
 
-let v = loads("{\"a\": 1}")
+let r = loads("{\"a\": 1}")
 ```
 
 ## Import
@@ -25,15 +26,15 @@ use json
 ## Types
 <!-- AUTO-GEN:START TYPES -->
 ```flavent
-type Json = JNull | JBool(Bool) | JInt(Int) | JStr(Str) | JArr(List[Json]) | JObj(Map[Str, Json])
+type JsonValue = JNull | JBool(Bool) | JInt(Int) | JFloat(Float) | JStr(Str) | JArr(List[JsonValue]) | JObj(Map[Str, JsonValue])
 ```
 <!-- AUTO-GEN:END TYPES -->
 
 ## Functions
 <!-- AUTO-GEN:START FUNCTIONS -->
 ```flavent
-fn jNull() -> Json = JNull
-fn dumps(j: Json) -> Str = match j:
-fn loads(s: Str) -> Option[Json] = do:
+fn jNull() -> JsonValue = JNull
+fn dumps(j: JsonValue) -> Str = match j:
+fn loads(s: Str) -> Result[JsonValue, Str] = do:
 ```
 <!-- AUTO-GEN:END FUNCTIONS -->

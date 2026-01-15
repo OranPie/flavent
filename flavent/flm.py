@@ -215,6 +215,88 @@ def _ensure_ident(s: str, *, what: str) -> str:
     return s
 
 
+def _adapter_names_from_list(items: Any, *, what: str) -> list[str]:
+    if items is None:
+        return []
+    if not isinstance(items, list):
+        raise FlmError(f"bad {what}: must be a list")
+    names: list[str] = []
+    for it in items:
+        if isinstance(it, str):
+            if it:
+                _ensure_ident(it, what=what)
+                names.append(it)
+            continue
+        if isinstance(it, dict):
+            name = str(it.get("name", ""))
+            if not name:
+                raise FlmError(f"bad {what}: missing name")
+            _ensure_ident(name, what=what)
+            names.append(name)
+            continue
+    return names
+
+
+def _normalize_args(args_any: Any, *, adapter: str, method: str, codec: str) -> list[tuple[str, str]]:
+    if args_any is None:
+        if codec == "bytes":
+            return [("payload", "Bytes")]
+        raise FlmError(f"bad pythonAdapters[{adapter}].wrappers[{method}]: args must be a list")
+    if not isinstance(args_any, list):
+        raise FlmError(f"bad pythonAdapters[{adapter}].wrappers[{method}]: args must be a list")
+
+    out: list[tuple[str, str]] = []
+    for i, arg in enumerate(args_any):
+        if isinstance(arg, str):
+            out.append((f"arg{i}", str(arg)))
+            continue
+        if isinstance(arg, dict):
+            name = str(arg.get("name", ""))
+            typ = str(arg.get("type", ""))
+            if not name or not typ:
+                raise FlmError(
+                    f"bad pythonAdapters[{adapter}].wrappers[{method}]: args[{i}] requires name and type"
+                )
+            _ensure_ident(name, what=f"pythonAdapters[{adapter}].wrappers[{method}].args[{i}].name")
+            out.append((name, typ))
+            continue
+        raise FlmError(f"bad pythonAdapters[{adapter}].wrappers[{method}]: args[{i}] invalid")
+    return out
+
+
+def _json_expr_for_type(arg_name: str, typ: str, *, adapter: str, method: str) -> str:
+    if typ == "Int":
+        return f"JInt({arg_name})"
+    if typ == "Float":
+        return f"JFloat({arg_name})"
+    if typ == "Bool":
+        return f"JBool({arg_name})"
+    if typ == "Str":
+        return f"JStr({arg_name})"
+    if typ == "JsonValue":
+        return arg_name
+    if typ == "Unit":
+        return "JNull"
+    raise FlmError(f"bad pythonAdapters[{adapter}].wrappers[{method}]: unsupported json arg type: {typ}")
+
+
+def _json_decode_match(typ: str, *, adapter: str, method: str) -> list[str]:
+    err = f"pyadapters.{adapter}.{method}: expected {typ}"
+    if typ == "Int":
+        return ["      JInt(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+    if typ == "Float":
+        return ["      JFloat(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+    if typ == "Bool":
+        return ["      JBool(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+    if typ == "Str":
+        return ["      JStr(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+    if typ == "JsonValue":
+        return ["      _ -> Ok(j)\n"]
+    if typ == "Unit":
+        return ["      JNull -> Ok(())\n", f"      _ -> Err(\"{err}\")\n"]
+    raise FlmError(f"bad pythonAdapters[{adapter}].wrappers[{method}]: unsupported json ret type: {typ}")
+
+
 def _generate_py_wrappers(root: Path, adapters_any: list[Any]) -> None:
     out_dir = root / "vendor" / "pyadapters"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -228,24 +310,95 @@ def _generate_py_wrappers(root: Path, adapters_any: list[Any]) -> None:
             continue
         _ensure_ident(name, what="pythonAdapters.name")
         allow_any = it.get("allow", [])
-        if allow_any is None:
-            allow_any = []
-        if not isinstance(allow_any, list):
-            raise FlmError(f"bad pythonAdapters[{name}]: allow must be a list")
-        allow = [str(x) for x in allow_any]
+        wrappers_any = it.get("wrappers")
+        allow = _adapter_names_from_list(allow_any, what=f"pythonAdapters[{name}].allow")
+        if wrappers_any is None:
+            wrappers_any = allow_any
 
         # Generate: vendor/pyadapters/<name>.flv
         mod_path = out_dir / f"{name}.flv"
         lines: list[str] = []
         lines.append("use py\n")
+        uses_json = False
+        uses_list = False
+        wrapper_specs: list[dict[str, Any]] = []
+
+        if wrappers_any is None:
+            wrappers_any = []
+        if not isinstance(wrappers_any, list):
+            raise FlmError(f"bad pythonAdapters[{name}].wrappers: must be a list")
+        for entry in wrappers_any:
+            if isinstance(entry, str):
+                wrapper_specs.append({"name": entry, "codec": "bytes"})
+                continue
+            if isinstance(entry, dict):
+                wrapper_specs.append(entry)
+                continue
+        for spec in wrapper_specs:
+            codec = str(spec.get("codec", "bytes"))
+            if codec == "json":
+                uses_json = True
+                uses_list = True
+        if uses_json:
+            lines.append("use json\n")
+        if uses_list:
+            lines.append("use collections.list\n")
         lines.append("\n")
         lines.append(f"sector {name}:\n")
-        for m in allow:
-            _ensure_ident(m, what=f"pythonAdapters[{name}].allow")
-            # All adapters are bytes-in/bytes-out for now.
-            lines.append(
-                f"  fn {m}(payload: Bytes) -> Result[Bytes, Str] = rpc py.invoke(\"{name}\", \"{m}\", payload)\n"
-            )
+        for spec in wrapper_specs:
+            m = str(spec.get("name", ""))
+            if not m:
+                raise FlmError(f"bad pythonAdapters[{name}].wrappers: missing name")
+            _ensure_ident(m, what=f"pythonAdapters[{name}].wrappers[{m}].name")
+            if allow and m not in allow:
+                raise FlmError(f"bad pythonAdapters[{name}].wrappers[{m}]: not in allow list")
+            codec = str(spec.get("codec", "bytes"))
+            args = _normalize_args(spec.get("args"), adapter=name, method=m, codec=codec)
+            ret = str(spec.get("ret", "Bytes" if codec == "bytes" else "Str" if codec == "text" else "JsonValue"))
+
+            if codec == "bytes":
+                if len(args) != 1 or args[0][1] != "Bytes" or ret != "Bytes":
+                    raise FlmError(
+                        f"bad pythonAdapters[{name}].wrappers[{m}]: bytes codec requires (Bytes) -> Bytes"
+                    )
+                arg_name = args[0][0]
+                lines.append(
+                    f"  fn {m}({arg_name}: Bytes) -> Result[Bytes, Str] = rpc py.invoke(\"{name}\", \"{m}\", {arg_name})\n"
+                )
+                continue
+
+            if codec == "text":
+                if len(args) != 1 or args[0][1] != "Str" or ret != "Str":
+                    raise FlmError(f"bad pythonAdapters[{name}].wrappers[{m}]: text codec requires (Str) -> Str")
+                arg_name = args[0][0]
+                lines.append(
+                    f"  fn {m}({arg_name}: Str) -> Result[Str, Str] = rpc py.invokeText(\"{name}\", \"{m}\", {arg_name})\n"
+                )
+                continue
+
+            if codec == "json":
+                arg_list: list[str] = []
+                for arg_name, typ in args:
+                    arg_list.append(f"{arg_name}: {typ}")
+                args_sig = ", ".join(arg_list)
+                exprs = [_json_expr_for_type(n, t, adapter=name, method=m) for n, t in args]
+                list_expr = "Nil"
+                for expr in reversed(exprs):
+                    list_expr = f"Cons({expr}, {list_expr})"
+                payload_expr = f"JArr({list_expr})"
+                lines.append(f"  fn {m}({args_sig}) -> Result[{ret}, Str] = do:\n")
+                lines.append(f"    let payload = {payload_expr}\n")
+                if ret == "JsonValue":
+                    lines.append(f"    return rpc py.invokeJson(\"{name}\", \"{m}\", payload)\n")
+                else:
+                    lines.append(f"    let res = rpc py.invokeJson(\"{name}\", \"{m}\", payload)\n")
+                    lines.append("    return match res:\n")
+                    lines.append("      Ok(j) -> match j:\n")
+                    lines.extend(_json_decode_match(ret, adapter=name, method=m))
+                    lines.append("      Err(e) -> Err(e)\n")
+                continue
+
+            raise FlmError(f"bad pythonAdapters[{name}].wrappers[{m}]: unknown codec {codec}")
         mod_path.write_text("".join(lines), encoding="utf-8")
         names.append(name)
 

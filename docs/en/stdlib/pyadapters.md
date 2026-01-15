@@ -8,7 +8,7 @@ Generated files:
 - `vendor/pyadapters/__init__.flv`
 
 ## Wrapper convention
-For each adapter `name` and each allowlisted method `<m>`:
+For each adapter `name` and each wrapper `<m>`:
 
 ```flavent
 sector <name>:
@@ -20,3 +20,32 @@ Usage:
 use pyadapters.demo
 let r = rpc demo.echo(b"hi")
 ```
+
+## Wrapper settings
+`pyadapters` can be customized via `flm.json`:
+
+```json
+{
+  "pythonAdapters": [
+    {
+      "name": "demo",
+      "allow": ["echo", "echoText", "sum"],
+      "wrappers": [
+        "echo",
+        { "name": "echoText", "codec": "text", "args": ["Str"], "ret": "Str" },
+        { "name": "sum", "codec": "json", "args": ["Int", "Int"], "ret": "Int" }
+      ]
+    }
+  ]
+}
+```
+
+Supported `codec` values:
+- `bytes` (default): `(Bytes) -> Bytes`
+- `text`: `(Str) -> Str` (ASCII encoding)
+- `json`: arguments are packed into a JSON array, return is a JSON value
+
+`json` codec supports `Int`, `Float`, `Bool`, `Str`, `JsonValue`, `Unit`.
+
+Wrapper entries can be strings (bytes codec) or objects with `name`/`codec`/`args`/`ret`.
+If `wrappers` is omitted, entries are derived from `allow` with the bytes codec.

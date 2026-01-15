@@ -15,6 +15,8 @@ use _bridge_python
 use collections.list
 use collections.map
 
+type FmtArg = FmtStr(Str) | FmtInt(Int) | FmtFloat(Float) | FmtBool(Bool)
+
 fn _sfLen(s: Str) -> Int = strLen(s)
 
 fn _sfCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
@@ -23,13 +25,21 @@ fn _sfChar(code: Int) -> Str = strFromCode(code)
 
 fn _sfSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
 
-fn _sfArgAt(args: List[Str], idx: Int) -> Str = match idx < 0:
-  true -> ""
+fn _sfArgAt(args: List[FmtArg], idx: Int) -> FmtArg = match idx < 0:
+  true -> FmtStr("")
   false -> match args:
-    Nil -> ""
+    Nil -> FmtStr("")
     Cons(x, rest) -> match idx == 0:
       true -> x
       false -> _sfArgAt(rest, idx - 1)
+
+fn _sfArgsFromStr(xs: List[Str]) -> List[FmtArg] = match xs:
+  Nil -> Nil
+  Cons(x, rest) -> Cons(FmtStr(x), _sfArgsFromStr(rest))
+
+fn _sfMapArgsFromStr(m: Map[Str, Str]) -> Map[Str, FmtArg] = match m:
+  Nil -> Nil
+  Cons(e, rest) -> Cons({ key = e.key, value = FmtStr(e.value) }, _sfMapArgsFromStr(rest))
 
 fn _sfParseUIntAcc(s: Str, i: Int, acc: Int) -> Int = match i >= _sfLen(s):
   true -> acc
@@ -43,7 +53,133 @@ fn _sfParseUInt(s: Str) -> Int = _sfParseUIntAcc(s, 0, 0)
 
 type _SfFmtAcc = { pieces: List[Str], next: Int }
 
-fn _sfScan(tmpl: Str, i: Int, args: List[Str], next: Int, pieces: List[Str]) -> _SfFmtAcc = do:
+type _SfSpecParts = { key: Str, fmt: Str }
+
+type _SfSpec = { ok: Bool, fill: Str, align: Int, width: Int, ty: Int }
+
+fn _sfFindChar(s: Str, i: Int, code: Int) -> Int = match i >= _sfLen(s):
+  true -> 0 - 1
+  false -> match _sfCodeAt(s, i) == code:
+    true -> i
+    false -> _sfFindChar(s, i + 1, code)
+
+fn _sfSplitSpec(spec: Str) -> _SfSpecParts = do:
+  let p = _sfFindChar(spec, 0, 58)
+  return match p < 0:
+    true -> { key = spec, fmt = "" }
+    false -> { key = _sfSlice(spec, 0, p), fmt = _sfSlice(spec, p + 1, _sfLen(spec)) }
+
+fn _sfParseSpec(fmt: Str) -> _SfSpec = do:
+  let n = _sfLen(fmt)
+  let ty = match n > 0:
+    true -> do:
+      let last = _sfCodeAt(fmt, n - 1)
+      return match last == 115 or last == 100 or last == 102 or last == 98:
+        true -> last
+        false -> 0
+    false -> 0
+  let fmt2 = match ty == 0:
+    true -> fmt
+    false -> _sfSlice(fmt, 0, n - 1)
+  let n2 = _sfLen(fmt2)
+  let align0 = match n2 > 0:
+    true -> _sfCodeAt(fmt2, 0)
+    false -> 0
+  let align1 = match n2 > 1:
+    true -> _sfCodeAt(fmt2, 1)
+    false -> 0
+  let hasFillAlign = align1 == 60 or align1 == 62 or align1 == 94
+  let hasAlign = align0 == 60 or align0 == 62 or align0 == 94
+  let fill = match hasFillAlign:
+    true -> _sfChar(align0)
+    false -> " "
+  let align = match hasFillAlign:
+    true -> match align1 == 60:
+      true -> 0
+      false -> match align1 == 62:
+        true -> 1
+        false -> 2
+    false -> match hasAlign:
+      true -> match align0 == 60:
+        true -> 0
+        false -> match align0 == 62:
+          true -> 1
+          false -> 2
+      false -> 0 - 1
+  let start = match hasFillAlign:
+    true -> 2
+    false -> match hasAlign:
+      true -> 1
+      false -> 0
+  let width = match start >= n2:
+    true -> 0
+    false -> _sfParseUInt(_sfSlice(fmt2, start, n2))
+  let ok = match start >= n2:
+    true -> true
+    false -> width >= 0
+  return { ok = ok, fill = fill, align = align, width = width, ty = ty }
+
+fn _sfRepeatChar(ch: Str, n: Int) -> Str = match n <= 0:
+  true -> ""
+  false -> ch + _sfRepeatChar(ch, n - 1)
+
+fn _sfPad(s: Str, width: Int, align: Int, fill: Str) -> Str = do:
+  let n = _sfLen(s)
+  return match n >= width:
+    true -> s
+    false -> do:
+      let pad = width - n
+      let left = match align == 2:
+        true -> pad / 2
+        false -> match align == 1:
+          true -> pad
+          false -> 0
+      let right = pad - left
+      let lpad = _sfRepeatChar(fill, left)
+      let rpad = _sfRepeatChar(fill, right)
+      return lpad + s + rpad
+
+fn _sfIntToStrPosAcc(x: Int, acc: List[Str]) -> Str = match x <= 0:
+  true -> _sfConcatPieces(reverse(acc))
+  false -> do:
+    let d = x - (x / 10) * 10
+    let ch = _sfChar(48 + d)
+    return _sfIntToStrPosAcc(x / 10, Cons(ch, acc))
+
+fn _sfIntToStr(x: Int) -> Str = match x < 0:
+  true -> "-" + _sfIntToStrPosAcc(0 - x, Nil)
+  false -> _sfIntToStrPosAcc(x, Nil)
+
+fn _sfBoolToStr(b: Bool) -> Str = match b:
+  true -> "true"
+  false -> "false"
+
+fn _sfArgToStr(a: FmtArg, spec: _SfSpec) -> Str = match a:
+  FmtStr(s) -> s
+  FmtInt(n) -> _sfIntToStr(n)
+  FmtFloat(f) -> floatToStr(f)
+  FmtBool(b) -> _sfBoolToStr(b)
+
+fn _sfDefaultAlign(a: FmtArg) -> Int = match a:
+  FmtStr(_) -> 0
+  FmtInt(_) -> 1
+  FmtFloat(_) -> 1
+  FmtBool(_) -> 0
+
+fn _sfFormatArg(a: FmtArg, fmt: Str) -> Str = do:
+  let spec = _sfParseSpec(fmt)
+  let raw = _sfArgToStr(a, spec)
+  let align = match spec.align < 0:
+    true -> _sfDefaultAlign(a)
+    false -> spec.align
+  let fill = match _sfLen(spec.fill) == 0:
+    true -> " "
+    false -> _sfSlice(spec.fill, 0, 1)
+  return match spec.ok:
+    true -> _sfPad(raw, spec.width, align, fill)
+    false -> raw
+
+fn _sfScan(tmpl: Str, i: Int, posArgs: List[FmtArg], namedArgs: Map[Str, FmtArg], next: Int, pieces: List[Str]) -> _SfFmtAcc = do:
   let n = _sfLen(tmpl)
   return match i >= n:
     true -> { pieces = pieces, next = next }
@@ -51,29 +187,34 @@ fn _sfScan(tmpl: Str, i: Int, args: List[Str], next: Int, pieces: List[Str]) -> 
       let c = _sfCodeAt(tmpl, i)
       return match c == 123:
         true -> match (i + 1 < n) and (_sfCodeAt(tmpl, i + 1) == 123):
-          true -> _sfScan(tmpl, i + 2, args, next, Cons("{", pieces))
+          true -> _sfScan(tmpl, i + 2, posArgs, namedArgs, next, Cons("{", pieces))
           false -> do:
             let j = _sfFindClose(tmpl, i + 1)
             return match j < 0:
-              true -> _sfScan(tmpl, i + 1, args, next, Cons("{", pieces))
+              true -> _sfScan(tmpl, i + 1, posArgs, namedArgs, next, Cons("{", pieces))
               false -> do:
-                let spec = _sfSlice(tmpl, i + 1, j)
-                let idx0 = match _sfLen(spec) == 0:
+                let specRaw = _sfSlice(tmpl, i + 1, j)
+                let parts = _sfSplitSpec(specRaw)
+                let idx0 = match _sfLen(parts.key) == 0:
                   true -> next
-                  false -> _sfParseUInt(spec)
+                  false -> _sfParseUInt(parts.key)
+                let isName = (_sfLen(parts.key) > 0) and (idx0 < 0)
                 let idx = match idx0 < 0:
                   true -> next
                   false -> idx0
-                let next2 = match _sfLen(spec) == 0:
+                let next2 = match _sfLen(parts.key) == 0:
                   true -> next + 1
                   false -> next
-                let arg = _sfArgAt(args, idx)
-                return _sfScan(tmpl, j + 1, args, next2, Cons(arg, pieces))
+                let arg = match isName:
+                  true -> _sfMapGetOrEmpty(namedArgs, parts.key)
+                  false -> _sfArgAt(posArgs, idx)
+                let out = _sfFormatArg(arg, parts.fmt)
+                return _sfScan(tmpl, j + 1, posArgs, namedArgs, next2, Cons(out, pieces))
         false -> match c == 125:
           true -> match (i + 1 < n) and (_sfCodeAt(tmpl, i + 1) == 125):
-            true -> _sfScan(tmpl, i + 2, args, next, Cons("}", pieces))
-            false -> _sfScan(tmpl, i + 1, args, next, Cons("}", pieces))
-          false -> _sfScan(tmpl, i + 1, args, next, Cons(_sfChar(c), pieces))
+            true -> _sfScan(tmpl, i + 2, posArgs, namedArgs, next, Cons("}", pieces))
+            false -> _sfScan(tmpl, i + 1, posArgs, namedArgs, next, Cons("}", pieces))
+          false -> _sfScan(tmpl, i + 1, posArgs, namedArgs, next, Cons(_sfChar(c), pieces))
 
 fn _sfFindClose(tmpl: Str, i: Int) -> Int = do:
   let n = _sfLen(tmpl)
@@ -87,9 +228,11 @@ fn _sfConcatPieces(xs: List[Str]) -> Str = match xs:
   Nil -> ""
   Cons(x, rest) -> x + _sfConcatPieces(rest)
 
-fn format(tmpl: Str, args: List[Str]) -> Str = do:
-  let acc = _sfScan(tmpl, 0, args, 0, Nil)
+fn formatArgs(tmpl: Str, args: List[FmtArg]) -> Str = do:
+  let acc = _sfScan(tmpl, 0, args, mapEmpty(), 0, Nil)
   return _sfConcatPieces(reverse(acc.pieces))
+
+fn format(tmpl: Str, args: List[Str]) -> Str = formatArgs(tmpl, _sfArgsFromStr(args))
 
 fn format1(tmpl: Str, a0: Str) -> Str = format(tmpl, Cons(a0, Nil))
 
@@ -97,73 +240,20 @@ fn format2(tmpl: Str, a0: Str, a1: Str) -> Str = format(tmpl, Cons(a0, Cons(a1, 
 
 fn format3(tmpl: Str, a0: Str, a1: Str, a2: Str) -> Str = format(tmpl, Cons(a0, Cons(a1, Cons(a2, Nil))))
 
-fn _sfScanWith(tmpl: Str, i: Int, posArgs: List[Str], namedArgs: Map[Str, Str], next: Int, pieces: List[Str]) -> _SfFmtAcc = do:
-  let n = _sfLen(tmpl)
-  return match i >= n:
-    true -> { pieces = pieces, next = next }
-    false -> do:
-      let c = _sfCodeAt(tmpl, i)
-      return match c == 123:
-        true -> match (i + 1 < n) and (_sfCodeAt(tmpl, i + 1) == 123):
-          true -> _sfScanWith(tmpl, i + 2, posArgs, namedArgs, next, Cons("{", pieces))
-          false -> do:
-            let j = _sfFindClose(tmpl, i + 1)
-            return match j < 0:
-              true -> _sfScanWith(tmpl, i + 1, posArgs, namedArgs, next, Cons("{", pieces))
-              false -> do:
-                let spec = _sfSlice(tmpl, i + 1, j)
-                let idx0 = match _sfLen(spec) == 0:
-                  true -> next
-                  false -> _sfParseUInt(spec)
-                let isName = (_sfLen(spec) > 0) and (idx0 < 0)
-                let idx = match idx0 < 0:
-                  true -> next
-                  false -> idx0
-                let next2 = match _sfLen(spec) == 0:
-                  true -> next + 1
-                  false -> next
-                let arg = match isName:
-                  true -> _sfMapGetOrEmpty(namedArgs, spec)
-                  false -> _sfArgAt(posArgs, idx)
-                return _sfScanWith(tmpl, j + 1, posArgs, namedArgs, next2, Cons(arg, pieces))
-        false -> match c == 125:
-          true -> match (i + 1 < n) and (_sfCodeAt(tmpl, i + 1) == 125):
-            true -> _sfScanWith(tmpl, i + 2, posArgs, namedArgs, next, Cons("}", pieces))
-            false -> _sfScanWith(tmpl, i + 1, posArgs, namedArgs, next, Cons("}", pieces))
-          false -> _sfScanWith(tmpl, i + 1, posArgs, namedArgs, next, Cons(_sfChar(c), pieces))
-
-fn formatWith(tmpl: Str, posArgs: List[Str], namedArgs: Map[Str, Str]) -> Str = do:
-  let acc = _sfScanWith(tmpl, 0, posArgs, namedArgs, 0, Nil)
+fn formatWithArgs(tmpl: Str, posArgs: List[FmtArg], namedArgs: Map[Str, FmtArg]) -> Str = do:
+  let acc = _sfScan(tmpl, 0, posArgs, namedArgs, 0, Nil)
   return _sfConcatPieces(reverse(acc.pieces))
 
-fn _sfMapGetOrEmpty(m: Map[Str, Str], k: Str) -> Str = match mapGet(m, k):
-  None -> ""
+fn _sfMapGetOrEmpty(m: Map[Str, FmtArg], k: Str) -> FmtArg = match mapGet(m, k):
+  None -> FmtStr("")
   Some(v) -> v
 
-fn _sfScanMap(tmpl: Str, i: Int, args: Map[Str, Str], pieces: List[Str]) -> List[Str] = do:
-  let n = _sfLen(tmpl)
-  return match i >= n:
-    true -> pieces
-    false -> do:
-      let c = _sfCodeAt(tmpl, i)
-      return match c == 123:
-        true -> match (i + 1 < n) and (_sfCodeAt(tmpl, i + 1) == 123):
-          true -> _sfScanMap(tmpl, i + 2, args, Cons("{", pieces))
-          false -> do:
-            let j = _sfFindClose(tmpl, i + 1)
-            return match j < 0:
-              true -> _sfScanMap(tmpl, i + 1, args, Cons("{", pieces))
-              false -> do:
-                let spec = _sfSlice(tmpl, i + 1, j)
-                let v = _sfMapGetOrEmpty(args, spec)
-                return _sfScanMap(tmpl, j + 1, args, Cons(v, pieces))
-        false -> match c == 125:
-          true -> match (i + 1 < n) and (_sfCodeAt(tmpl, i + 1) == 125):
-            true -> _sfScanMap(tmpl, i + 2, args, Cons("}", pieces))
-            false -> _sfScanMap(tmpl, i + 1, args, Cons("}", pieces))
-          false -> _sfScanMap(tmpl, i + 1, args, Cons(_sfChar(c), pieces))
+fn formatWith(tmpl: Str, posArgs: List[Str], namedArgs: Map[Str, Str]) -> Str =
+  formatWithArgs(tmpl, _sfArgsFromStr(posArgs), _sfMapArgsFromStr(namedArgs))
 
-fn formatMap(tmpl: Str, args: Map[Str, Str]) -> Str = _sfConcatPieces(reverse(_sfScanMap(tmpl, 0, args, Nil)))
+fn formatMapArgs(tmpl: Str, args: Map[Str, FmtArg]) -> Str =
+  formatWithArgs(tmpl, Nil, args)
+
+fn formatMap(tmpl: Str, args: Map[Str, Str]) -> Str = formatMapArgs(tmpl, _sfMapArgsFromStr(args))
 
 fn formatKV(tmpl: Str, k0: Str, v0: Str) -> Str = formatMap(tmpl, mapPut(mapEmpty(), k0, v0))
-

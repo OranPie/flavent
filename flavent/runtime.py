@@ -114,6 +114,16 @@ def run_hir_program(
                 return chr(code)
             except Exception:
                 return ""
+        if name == "strToFloat":
+            try:
+                return float(str(args[0]))
+            except Exception:
+                return 0.0
+        if name == "floatToStr":
+            try:
+                return str(float(args[0]))
+            except Exception:
+                return "0.0"
 
         # Bytes primitives (Bytes represented as python bytes)
         if name == "_pyBytesLen":

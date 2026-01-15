@@ -99,11 +99,21 @@
       "name": "demo",
       "source": { "path": "vendor/py_demo" },
       "capabilities": ["pure_math"],
-      "allow": ["echo"]
+      "allow": ["echo"],
+      "wrappers": [
+        "echo",
+        { "name": "sum", "codec": "json", "args": ["Int", "Int"], "ret": "Int" }
+      ]
     }
   ]
 }
 ```
+
+说明：
+- `allow` 控制运行时权限（必须是 adapter `EXPORTS` 的子集）。
+- `wrappers` 为可选，仅影响生成的 `pyadapters` 签名。
+- 省略 `wrappers` 时默认生成 `(Bytes) -> Bytes`。
+- `wrappers` 中的条目可以是字符串（等价 bytes codec）或对象（含 `name`/`codec`/`args`/`ret`）。
 
 ### 6.2 adapter 包结构
 
@@ -147,6 +157,28 @@ Meta 查询：
 运行时会校验：
 - `capabilities` 必须是 adapter `CAPABILITIES` 的子集
 - `allow` 必须是 adapter `EXPORTS` 的子集
+
+### 6.6 Wrapper codec（生成 `pyadapters`）
+
+支持的 `codec`：
+- `bytes`（默认）：`(Bytes) -> Bytes`
+- `text`：`(Str) -> Str`（ASCII 编码）
+- `json`：参数打包为 JSON 数组，返回为 JSON value
+
+`json` codec 支持的类型：
+- `Int`, `Float`, `Bool`, `Str`, `JsonValue`, `Unit`
+
+示例：
+```json
+{
+  "name": "demo",
+  "allow": ["sum", "echoText"],
+  "wrappers": [
+    { "name": "sum", "codec": "json", "args": ["Int", "Int"], "ret": "Int" },
+    { "name": "echoText", "codec": "text", "args": ["Str"], "ret": "Str" }
+  ]
+}
+```
 
 ---
 

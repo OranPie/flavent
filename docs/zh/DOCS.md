@@ -28,6 +28,8 @@ Flavent 使用类似 Python 的缩进语法；出现 `:` 后必须换行并缩�
 - 不能直接 import Python。
 - 通过 stdlib `py` 统一入口：
   - `rpc py.invoke(adapter, method, payload) -> Result[Bytes, Str]`
+  - `rpc py.invokeText(adapter, method, payload) -> Result[Str, Str]`
+  - `rpc py.invokeJson(adapter, method, payload) -> Result[JsonValue, Str]`
 - `flavent pkg install` 会生成 `pyadapters` wrappers：
   - `vendor/pyadapters/<adapter>.flv`
 
@@ -37,3 +39,6 @@ Flavent 使用类似 Python 的缩进语法；出现 `:` 后必须换行并缩�
 use pyadapters.demo
 let r = rpc demo.echo(b"hi")
 ```
+
+Wrapper 可配置（`flm.json` 的 `wrappers`）：
+- `bytes`（默认）、`text`（ASCII）、`json`（参数打包为 JSON 数组）

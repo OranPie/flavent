@@ -28,7 +28,12 @@ def test_flm_install_generates_pyadapter_wrappers(tmp_path: Path):
                         "name": "demo",
                         "source": {"path": "vendor/py_demo"},
                         "capabilities": ["pure_math"],
-                        "allow": ["echo"],
+                        "allow": ["echo", "echoText", "sum"],
+                        "wrappers": [
+                            "echo",
+                            {"name": "echoText", "codec": "text", "args": ["Str"], "ret": "Str"},
+                            {"name": "sum", "codec": "json", "args": ["Int", "Int"], "ret": "Int"},
+                        ],
                     }
                 ],
                 "extensions": {},
@@ -57,6 +62,10 @@ def test_flm_install_generates_pyadapter_wrappers(tmp_path: Path):
         "        assertTrue(bytesLen(b) >= 0)?\n"
         "      Err(e) -> do:\n"
         "        assertTrue(true)?\n"
+        "    let r2 = rpc demo.sum(1, 2)\n"
+        "    match r2:\n"
+        "      Ok(v) -> assertEq(v, 3)?\n"
+        "      Err(e) -> assertTrue(true)?\n"
         "    stop()\n\n"
         "run()\n"
     )

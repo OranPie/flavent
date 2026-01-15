@@ -340,6 +340,7 @@ Functions:
 
 ### 17.1 Overview
 `json` provides encoding and decoding for JSON data, mapping between JSON strings and the `JsonValue` ADT.
+Numbers are currently integers only.
 
 ### 17.2 Public API
 Import:
@@ -376,9 +377,13 @@ use regex
 ```
 
 Functions:
-- `compile(pattern: Str) -> Result[Regex, Str]`: Compiles a regex string.
+- `compile(pattern: Str) -> Regex`: Compiles a regex string (no validation).
+- `compileChecked(pattern: Str) -> Result[Regex, Str]`: Compiles a regex string with basic validation.
 - `isMatch(re: Regex, s: Str) -> Bool`: Returns true if the pattern matches anywhere in `s`.
 - `findFirst(re: Regex, s: Str) -> Option[Str]`: Returns the first substring that matches.
+- `findFirstCaptures(re: Regex, s: Str) -> Option[List[Str]]`: Returns captured groups (group 0 + groups).
+- `replace(re: Regex, s: Str, repl: Str) -> Str`: Replace first match using `$1`-style groups.
+- `replaceAll(re: Regex, s: Str, repl: Str) -> Str`: Replace all matches using `$1`-style groups.
 
 ---
 
@@ -591,6 +596,8 @@ use py
 
 Functions:
 - `invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str]`
+- `invokeText(adapter: Str, method: Str, payload: Str) -> Result[Str, Str]`
+- `invokeJson(adapter: Str, method: Str, payload: JsonValue) -> Result[JsonValue, Str]`
 
 ### 31.3 Generated wrappers: `pyadapters`
 After running `flavent pkg install`, wrapper modules may be generated under:
@@ -607,5 +614,6 @@ use pyadapters.demo
 let r = rpc demo.echo(b"hi")
 ```
 
-Current wrapper convention:
-- Each allowlisted method becomes `fn <method>(payload: Bytes) -> Result[Bytes, Str]`.
+Wrapper customization:
+- `flm.json` can define `wrappers` with per-method `codec`, `args`, `ret`.
+- Supported codecs: `bytes` (default), `text` (ASCII), `json` (args as JSON array).
