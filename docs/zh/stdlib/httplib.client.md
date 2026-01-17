@@ -7,6 +7,10 @@
 - `request` 会连接、发送请求、`recvAll(4096)`，然后关闭 socket。
 - 这是一次性请求模型（不做 keep-alive）。
 
+说明：
+- 响应解析使用 `httplib.core.parseResponse`（包括对 `Transfer-Encoding: chunked` 的解码）。
+- JSON 请求可使用 `requestJson` / `postJson*` / `putJson` / `patchJson`。
+
 ## 导入
 ```flavent
 use httplib.client

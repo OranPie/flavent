@@ -7,6 +7,10 @@ Behavior:
 - `request` connects, sends the request, `recvAll(4096)`, then closes the socket.
 - This is a one-shot request model (no keep-alive).
 
+Notes:
+- Responses are parsed via `httplib.core.parseResponse` (including `Transfer-Encoding: chunked` decoding).
+- For JSON requests, see `requestJson` / `postJson*` / `putJson` / `patchJson`.
+
 ## Import
 ```flavent
 use httplib.client

@@ -9,6 +9,7 @@
 
 ## 字节 / 字符串
 - [bytelib](./bytelib.md)
+- [asciilib](./asciilib.md)
 - [stringlib](./stringlib.md)
 - [stringfmt](./stringfmt.md)
 - [base64](./base64.md)

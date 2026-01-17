@@ -12,7 +12,7 @@ Behavior:
 
 Limitations:
 - No TLS
-- No chunked encoding
+- No chunked *request* encoding
 - No streaming
 
 ## Import

@@ -9,6 +9,7 @@ This directory contains **one page per stdlib module**.
 
 ## Bytes / Strings
 - [bytelib](./bytelib.md)
+- [asciilib](./asciilib.md)
 - [stringlib](./stringlib.md)
 - [stringfmt](./stringfmt.md)
 - [base64](./base64.md)
