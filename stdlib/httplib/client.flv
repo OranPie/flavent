@@ -18,3 +18,43 @@ sector httplib:
   fn post(host: Str, port: Int, path: Str, body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "POST", path, Nil, body)
 
   fn postWith(host: Str, port: Int, path: Str, headers: List[Header], body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "POST", path, headers, body)
+
+  fn requestWithQuery(host: Str, port: Int, method: Str, path: Str, query: List[QueryParam], headers: List[Header], body: Bytes) -> Result[HttpResponse, Str] = do:
+    let p = buildPathWithQuery(path, query)
+    return request(host, port, method, p, headers, body)
+
+  fn getQuery(host: Str, port: Int, path: Str, query: List[QueryParam]) -> Result[HttpResponse, Str] = requestWithQuery(host, port, "GET", path, query, Nil, b"")
+
+  fn getWithQuery(host: Str, port: Int, path: Str, query: List[QueryParam], headers: List[Header]) -> Result[HttpResponse, Str] = requestWithQuery(host, port, "GET", path, query, headers, b"")
+
+  fn head(host: Str, port: Int, path: Str) -> Result[HttpResponse, Str] = request(host, port, "HEAD", path, Nil, b"")
+
+  fn headWith(host: Str, port: Int, path: Str, headers: List[Header]) -> Result[HttpResponse, Str] = request(host, port, "HEAD", path, headers, b"")
+
+  fn put(host: Str, port: Int, path: Str, body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "PUT", path, Nil, body)
+
+  fn putWith(host: Str, port: Int, path: Str, headers: List[Header], body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "PUT", path, headers, body)
+
+  fn patch(host: Str, port: Int, path: Str, body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "PATCH", path, Nil, body)
+
+  fn patchWith(host: Str, port: Int, path: Str, headers: List[Header], body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "PATCH", path, headers, body)
+
+  fn delete(host: Str, port: Int, path: Str) -> Result[HttpResponse, Str] = request(host, port, "DELETE", path, Nil, b"")
+
+  fn deleteWith(host: Str, port: Int, path: Str, headers: List[Header], body: Bytes) -> Result[HttpResponse, Str] = request(host, port, "DELETE", path, headers, body)
+
+  fn requestJson(host: Str, port: Int, method: Str, path: Str, headers: List[Header], jsonText: Str) -> Result[HttpResponse, Str] = do:
+    let sock = rpc socket.tcpConnect(host, port)?
+    let req = buildJsonRequest(method, host, path, headers, jsonText)
+    let _sent = rpc socket.sendAll(sock, req)?
+    let raw = rpc socket.recvAll(sock, 4096)?
+    let _closed = rpc socket.close(sock)
+    return parseResponse(raw)
+
+  fn postJson(host: Str, port: Int, path: Str, jsonText: Str) -> Result[HttpResponse, Str] = requestJson(host, port, "POST", path, Nil, jsonText)
+
+  fn postJsonWith(host: Str, port: Int, path: Str, headers: List[Header], jsonText: Str) -> Result[HttpResponse, Str] = requestJson(host, port, "POST", path, headers, jsonText)
+
+  fn putJson(host: Str, port: Int, path: Str, jsonText: Str) -> Result[HttpResponse, Str] = requestJson(host, port, "PUT", path, Nil, jsonText)
+
+  fn patchJson(host: Str, port: Int, path: Str, jsonText: Str) -> Result[HttpResponse, Str] = requestJson(host, port, "PATCH", path, Nil, jsonText)

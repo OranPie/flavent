@@ -18,6 +18,7 @@ use json
 <!-- AUTO-GEN:START TYPES -->
 ```flavent
 type JsonValue = JNull | JBool(Bool) | JInt(Int) | JFloat(Float) | JStr(Str) | JArr(List[JsonValue]) | JObj(Map[Str, JsonValue])
+type Json = JsonValue
 ```
 <!-- AUTO-GEN:END TYPES -->
 

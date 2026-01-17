@@ -283,17 +283,17 @@ def _json_expr_for_type(arg_name: str, typ: str, *, adapter: str, method: str) -
 def _json_decode_match(typ: str, *, adapter: str, method: str) -> list[str]:
     err = f"pyadapters.{adapter}.{method}: expected {typ}"
     if typ == "Int":
-        return ["      JInt(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+        return ["        JInt(v) -> Ok(v)\n", f"        _ -> Err(\"{err}\")\n"]
     if typ == "Float":
-        return ["      JFloat(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+        return ["        JFloat(v) -> Ok(v)\n", f"        _ -> Err(\"{err}\")\n"]
     if typ == "Bool":
-        return ["      JBool(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+        return ["        JBool(v) -> Ok(v)\n", f"        _ -> Err(\"{err}\")\n"]
     if typ == "Str":
-        return ["      JStr(v) -> Ok(v)\n", f"      _ -> Err(\"{err}\")\n"]
+        return ["        JStr(v) -> Ok(v)\n", f"        _ -> Err(\"{err}\")\n"]
     if typ == "JsonValue":
-        return ["      _ -> Ok(j)\n"]
+        return ["        _ -> Ok(j)\n"]
     if typ == "Unit":
-        return ["      JNull -> Ok(())\n", f"      _ -> Err(\"{err}\")\n"]
+        return ["        JNull -> Ok(())\n", f"        _ -> Err(\"{err}\")\n"]
     raise FlmError(f"bad pythonAdapters[{adapter}].wrappers[{method}]: unsupported json ret type: {typ}")
 
 

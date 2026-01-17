@@ -238,7 +238,7 @@ fn _jParseNumberSpan(s: Str, i0: Int) -> _JNumRes = do:
       let i3 = match hasDot:
         true -> do:
           let i2b = i2 + 1
-          return match i2b >= n or not _jIsDigit(_jCodeAt(s, i2b)):
+          match i2b >= n or not _jIsDigit(_jCodeAt(s, i2b)):
             true -> i0
             false -> _jParseDigits(s, i2b)
         false -> i2
@@ -255,7 +255,7 @@ fn _jParseNumberSpan(s: Str, i0: Int) -> _JNumRes = do:
               let j1 = match j0 < n and (_jCodeAt(s, j0) == 43 or _jCodeAt(s, j0) == 45):
                 true -> j0 + 1
                 false -> j0
-              return match j1 >= n or not _jIsDigit(_jCodeAt(s, j1)):
+              match j1 >= n or not _jIsDigit(_jCodeAt(s, j1)):
                 true -> i0
                 false -> _jParseDigits(s, j1)
             false -> i3

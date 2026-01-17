@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Optional
 
 from flavent.lexer import lex
@@ -101,6 +102,12 @@ def run_file(
     bridge: Bridge | None = None,
     case: str | None = None,
 ) -> RunResult:
+    # The Flavent runtime interpreter is recursive (stdlib helpers are often recursive too).
+    # Bump recursion limit to avoid spurious RecursionError in runtime tests.
+    try:
+        sys.setrecursionlimit(max(10_000, sys.getrecursionlimit()))
+    except Exception:
+        pass
     p = Path(path)
     src = p.read_text(encoding="utf-8")
     if case is not None:

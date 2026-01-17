@@ -22,6 +22,7 @@ use regex
 ```flavent
 type Regex = { pat: Str }
 type RxSpan = { start: Int, end: Int }
+type RxCapture = { idx: Int, start: Int, end: Int }
 ```
 <!-- AUTO-GEN:END TYPES -->
 

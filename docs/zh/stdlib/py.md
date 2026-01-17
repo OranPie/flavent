@@ -24,8 +24,8 @@ use py
 <!-- AUTO-GEN:START FUNCTIONS -->
 ```flavent
 fn invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str] = rpc _bridge_python.pyAdapterCall(adapter, method, payload)
-fn invokeText(adapter: Str, method: Str, payload: Str) -> Result[Str, Str] = ...
-fn invokeJson(adapter: Str, method: Str, payload: JsonValue) -> Result[JsonValue, Str] = ...
+fn invokeText(adapter: Str, method: Str, payload: Str) -> Result[Str, Str] = do:
+fn invokeJson(adapter: Str, method: Str, payload: JsonValue) -> Result[JsonValue, Str] = do:
 ```
 <!-- AUTO-GEN:END FUNCTIONS -->
 

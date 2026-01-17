@@ -172,6 +172,10 @@ fn _rxAtomConsumes(a: _RxAtom) -> Bool = match a:
   RxBoundary(_next) -> false
   _ -> true
 
+fn _rxConsumeLen(a: _RxAtom) -> Int = match _rxAtomConsumes(a):
+  true -> 1
+  false -> 0
+
 fn _rxMatchEndsFromList(ends: List[Int], pat: Str, pi: Int, end: Int, s: Str) -> List[Int] = match ends:
   Nil -> Nil
   Cons(e, rest) -> append(_rxMatchEnds(pat, pi, end, s, e), _rxMatchEndsFromList(rest, pat, pi, end, s))
@@ -253,7 +257,7 @@ fn _rxMatchEnds(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[Int] = do:
                     let q = _rxParseQuant(pat, next0, end)
                     return match q.kind == 0:
                       true -> match _rxAtomMatches(a0, s, si):
-                        true -> _rxMatchEnds(pat, next0, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0))
+                        true -> _rxMatchEnds(pat, next0, end, s, si + _rxConsumeLen(a0))
                         false -> Nil
                       false -> match q.kind == 42:
                         true -> match q.lazy:
@@ -262,16 +266,16 @@ fn _rxMatchEnds(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[Int] = do:
                         false -> match q.kind == 43:
                           true -> match _rxAtomMatches(a0, s, si):
                             true -> match q.lazy:
-                              true -> _rxMatchEndsStarLazy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0))
-                              false -> _rxMatchEndsStarGreedy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0))
+                              true -> _rxMatchEndsStarLazy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0))
+                              false -> _rxMatchEndsStarGreedy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0))
                             false -> Nil
                           false -> match q.kind == 63:
                             true -> do:
                               let z0 = _rxMatchEnds(pat, q.next, end, s, si)
                               return match _rxAtomMatches(a0, s, si):
                                 true -> match q.lazy:
-                                  true -> append(z0, _rxMatchEnds(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0)))
-                                  false -> append(_rxMatchEnds(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0)), z0)
+                                  true -> append(z0, _rxMatchEnds(pat, q.next, end, s, si + _rxConsumeLen(a0)))
+                                  false -> append(_rxMatchEnds(pat, q.next, end, s, si + _rxConsumeLen(a0)), z0)
                                 false -> z0
                             false -> Nil
                   false -> do:
@@ -303,7 +307,7 @@ fn _rxMatchEnds(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[Int] = do:
                 let q = _rxParseQuant(pat, next0, end)
                 return match q.kind == 0:
                   true -> match _rxAtomMatches(a0, s, si):
-                    true -> _rxMatchEnds(pat, next0, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0))
+                    true -> _rxMatchEnds(pat, next0, end, s, si + _rxConsumeLen(a0))
                     false -> Nil
                   false -> match q.kind == 42:
                     true -> match q.lazy:
@@ -312,16 +316,16 @@ fn _rxMatchEnds(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[Int] = do:
                     false -> match q.kind == 43:
                       true -> match _rxAtomMatches(a0, s, si):
                         true -> match q.lazy:
-                          true -> _rxMatchEndsStarLazy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0))
-                          false -> _rxMatchEndsStarGreedy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0))
+                          true -> _rxMatchEndsStarLazy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0))
+                          false -> _rxMatchEndsStarGreedy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0))
                         false -> Nil
                       false -> match q.kind == 63:
                         true -> do:
                           let z0 = _rxMatchEnds(pat, q.next, end, s, si)
                           return match _rxAtomMatches(a0, s, si):
                             true -> match q.lazy:
-                              true -> append(z0, _rxMatchEnds(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0)))
-                              false -> append(_rxMatchEnds(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0)), z0)
+                              true -> append(z0, _rxMatchEnds(pat, q.next, end, s, si + _rxConsumeLen(a0)))
+                              false -> append(_rxMatchEnds(pat, q.next, end, s, si + _rxConsumeLen(a0)), z0)
                             false -> z0
                         false -> Nil
 
@@ -553,8 +557,7 @@ fn _rxCapAttach(caps: List[RxCapture], rs: List[_RxCapRes]) -> List[_RxCapRes] =
   Nil -> Nil
   Cons(r, rest) -> Cons({ end = r.end, caps = _rxCapMerge(caps, r.caps) }, _rxCapAttach(caps, rest))
 
-fn _rxMatchCapsContinue(pat: Str, pi: Int, end: Int, s: Str, si: Int, caps: List[RxCapture]) -> List[_RxCapRes] =
-  _rxCapAttach(caps, _rxMatchCaps(pat, pi, end, s, si))
+fn _rxMatchCapsContinue(pat: Str, pi: Int, end: Int, s: Str, si: Int, caps: List[RxCapture]) -> List[_RxCapRes] = _rxCapAttach(caps, _rxMatchCaps(pat, pi, end, s, si))
 
 fn _rxMatchCapsFromList(rs: List[_RxCapRes], pat: Str, pi: Int, end: Int, s: Str) -> List[_RxCapRes] = match rs:
   Nil -> Nil
@@ -631,7 +634,7 @@ fn _rxMatchCaps(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[_RxCapRes]
                     let q = _rxParseQuant(pat, next0, end)
                     return match q.kind == 0:
                       true -> match _rxAtomMatches(a0, s, si):
-                        true -> _rxMatchCapsContinue(pat, next0, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil)
+                        true -> _rxMatchCapsContinue(pat, next0, end, s, si + _rxConsumeLen(a0), Nil)
                         false -> Nil
                       false -> match q.kind == 42:
                         true -> match q.lazy:
@@ -640,16 +643,16 @@ fn _rxMatchCaps(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[_RxCapRes]
                         false -> match q.kind == 43:
                           true -> match _rxAtomMatches(a0, s, si):
                             true -> match q.lazy:
-                              true -> _rxMatchCapsStarLazy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil)
-                              false -> _rxMatchCapsStarGreedy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil)
+                              true -> _rxMatchCapsStarLazy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0), Nil)
+                              false -> _rxMatchCapsStarGreedy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0), Nil)
                             false -> Nil
                           false -> match q.kind == 63:
                             true -> do:
                               let z0 = _rxMatchCapsContinue(pat, q.next, end, s, si, Nil)
                               return match _rxAtomMatches(a0, s, si):
                                 true -> match q.lazy:
-                                  true -> append(z0, _rxMatchCapsContinue(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil))
-                                  false -> append(_rxMatchCapsContinue(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil), z0)
+                                  true -> append(z0, _rxMatchCapsContinue(pat, q.next, end, s, si + _rxConsumeLen(a0), Nil))
+                                  false -> append(_rxMatchCapsContinue(pat, q.next, end, s, si + _rxConsumeLen(a0), Nil), z0)
                                 false -> z0
                             false -> Nil
                   false -> do:
@@ -681,7 +684,7 @@ fn _rxMatchCaps(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[_RxCapRes]
                 let q = _rxParseQuant(pat, next0, end)
                 return match q.kind == 0:
                   true -> match _rxAtomMatches(a0, s, si):
-                    true -> _rxMatchCapsContinue(pat, next0, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil)
+                    true -> _rxMatchCapsContinue(pat, next0, end, s, si + _rxConsumeLen(a0), Nil)
                     false -> Nil
                   false -> match q.kind == 42:
                     true -> match q.lazy:
@@ -690,16 +693,16 @@ fn _rxMatchCaps(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[_RxCapRes]
                     false -> match q.kind == 43:
                       true -> match _rxAtomMatches(a0, s, si):
                         true -> match q.lazy:
-                          true -> _rxMatchCapsStarLazy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil)
-                          false -> _rxMatchCapsStarGreedy(a0, pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil)
+                          true -> _rxMatchCapsStarLazy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0), Nil)
+                          false -> _rxMatchCapsStarGreedy(a0, pat, q.next, end, s, si + _rxConsumeLen(a0), Nil)
                         false -> Nil
                       false -> match q.kind == 63:
                         true -> do:
                           let z0 = _rxMatchCapsContinue(pat, q.next, end, s, si, Nil)
                           return match _rxAtomMatches(a0, s, si):
                             true -> match q.lazy:
-                              true -> append(z0, _rxMatchCapsContinue(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil))
-                              false -> append(_rxMatchCapsContinue(pat, q.next, end, s, si + (match _rxAtomConsumes(a0): true -> 1 false -> 0), Nil), z0)
+                              true -> append(z0, _rxMatchCapsContinue(pat, q.next, end, s, si + _rxConsumeLen(a0), Nil))
+                              false -> append(_rxMatchCapsContinue(pat, q.next, end, s, si + _rxConsumeLen(a0), Nil), z0)
                             false -> z0
                         false -> Nil
 
@@ -835,7 +838,7 @@ fn replace(r: Regex, s: Str, repl: Str) -> Str = do:
   let m = match anchored:
     true -> do:
       let rs = _rxMatchCaps(pat, 1, plen, s, 0)
-      return match _rxFirstCapRes(rs):
+      match _rxFirstCapRes(rs):
         None -> None
         Some(r0) -> Some({ start = 0, end = r0.end, caps = r0.caps })
     false -> _rxFindFirstCapMatchFrom(pat, 0, plen, s, 0)

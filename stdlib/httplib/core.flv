@@ -10,7 +10,11 @@ type _StatusInfo = { status: Int, reason: Str }
 
 type _BytesPair = { a: Bytes, b: Bytes }
 
+type QueryParam = { key: Str, value: Str }
+
 fn header(key: Str, value: Str) -> Header = { key = key, value = value }
+
+fn queryParam(key: Str, value: Str) -> QueryParam = { key = key, value = value }
 
 fn _headerHas(xs: List[Header], key: Str) -> Bool = match xs:
   Nil -> false
@@ -21,6 +25,34 @@ fn _headerHas(xs: List[Header], key: Str) -> Bool = match xs:
 fn headersHas(xs: List[Header], key: Str) -> Bool = _headerHas(xs, key)
 
 fn _headersAddIfMissing(xs: List[Header], key: Str, value: Str) -> List[Header] = match headersHas(xs, key):
+  true -> xs
+  false -> Cons(header(key, value), xs)
+
+fn headersAdd(xs: List[Header], key: Str, value: Str) -> List[Header] = Cons(header(key, value), xs)
+
+fn _asciiLower(c: Int) -> Int = match c >= 65 and c <= 90:
+  true -> c + 32
+  false -> c
+
+fn _lowerAsciiAcc(s: Str, i: Int, n: Int, acc: Str) -> Str = match i >= n:
+  true -> acc
+  false -> _lowerAsciiAcc(s, i + 1, n, acc + strFromCode(_asciiLower(strCodeAt(s, i))))
+
+fn lowerAscii(s: Str) -> Str = _lowerAsciiAcc(s, 0, strLen(s), "")
+
+fn _headersGetCI(xs: List[Header], keyLower: Str) -> Option[Str] = match xs:
+  Nil -> None
+  Cons(h, rest) -> match lowerAscii(h.key) == keyLower:
+    true -> Some(h.value)
+    false -> _headersGetCI(rest, keyLower)
+
+fn headersGet(xs: List[Header], key: Str) -> Option[Str] = _headersGetCI(xs, lowerAscii(key))
+
+fn headersHasCI(xs: List[Header], key: Str) -> Bool = match headersGet(xs, key):
+  Some(_) -> true
+  None -> false
+
+fn headersAddIfMissingCI(xs: List[Header], key: Str, value: Str) -> List[Header] = match headersHasCI(xs, key):
   true -> xs
   false -> Cons(header(key, value), xs)
 
@@ -52,16 +84,56 @@ fn headersToBytes(xs: List[Header]) -> Bytes = do:
 fn buildRequest(method: Str, host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
   let startLine = asciiToBytes(method + " " + path + " HTTP/1.1")
-  let hs0 = _headersAddIfMissing(headers, "Host", host)
-  let hs1 = _headersAddIfMissing(hs0, "User-Agent", defaultUserAgent())
-  let hs2 = _headersAddIfMissing(hs1, "Connection", "close")
+  let hs0 = headersAddIfMissingCI(headers, "Host", host)
+  let hs1 = headersAddIfMissingCI(hs0, "User-Agent", defaultUserAgent())
+  let hs2 = headersAddIfMissingCI(hs1, "Connection", "close")
   let hs3 = match bytesLen(body) > 0:
-    true -> _headersAddIfMissing(hs2, "Content-Length", intToStr(bytesLen(body)))
+    true -> headersAddIfMissingCI(hs2, "Content-Length", intToStr(bytesLen(body)))
     false -> hs2
   let head = bytesConcat(startLine, crlf)
   let hdrBytes = _headersToBytesAcc(hs3, crlf, b"")
   let end = crlf
   return bytesConcat(bytesConcat(head, bytesConcat(hdrBytes, end)), body)
+
+fn _isUnreserved(c: Int) -> Bool = (c >= 48 and c <= 57) or (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c == 45 or c == 46 or c == 95 or c == 126
+
+fn _hexDigit(n: Int) -> Str = match n < 10:
+  true -> strFromCode(48 + n)
+  false -> strFromCode(65 + (n - 10))
+
+fn _urlEncodeAcc(s: Str, i: Int, n: Int, acc: Str) -> Str = match i >= n:
+  true -> acc
+  false -> do:
+    let c = strCodeAt(s, i)
+    return match c >= 0 and c < 128 and _isUnreserved(c):
+      true -> _urlEncodeAcc(s, i + 1, n, acc + strFromCode(c))
+      false -> match c >= 0 and c < 128:
+        true -> do:
+          let hi = c / 16
+          let lo = c - hi * 16
+          return _urlEncodeAcc(s, i + 1, n, acc + "%" + _hexDigit(hi) + _hexDigit(lo))
+        false -> _urlEncodeAcc(s, i + 1, n, acc + strFromCode(c))
+
+fn urlEncode(s: Str) -> Str = _urlEncodeAcc(s, 0, strLen(s), "")
+
+fn _buildQueryAcc(xs: List[QueryParam], acc: Str) -> Str = match xs:
+  Nil -> acc
+  Cons(p, rest) -> do:
+    let part = urlEncode(p.key) + "=" + urlEncode(p.value)
+    let acc2 = match strLen(acc) == 0:
+      true -> part
+      false -> acc + "&" + part
+    return _buildQueryAcc(rest, acc2)
+
+fn buildQuery(xs: List[QueryParam]) -> Str = _buildQueryAcc(xs, "")
+
+fn buildPathWithQuery(path: Str, xs: List[QueryParam]) -> Str = match xs:
+  Nil -> path
+  _ -> do:
+    let q = buildQuery(xs)
+    return match strFind(path, "?", 0) >= 0:
+      true -> path + "&" + q
+      false -> path + "?" + q
 
 fn _asciiFromBytesAcc(b: Bytes, i: Int, n: Int, acc: Str) -> Str = match i >= n:
   true -> acc
@@ -189,6 +261,73 @@ fn buildGetRequestWith(host: Str, path: Str, headers: List[Header]) -> Bytes = b
 
 fn buildPostRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = buildRequest("POST", host, path, headers, body)
 
+fn buildHeadRequest(host: Str, path: Str) -> Bytes = buildRequest("HEAD", host, path, Nil, b"")
+
+fn buildHeadRequestWith(host: Str, path: Str, headers: List[Header]) -> Bytes = buildRequest("HEAD", host, path, headers, b"")
+
+fn buildPutRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = buildRequest("PUT", host, path, headers, body)
+
+fn buildPatchRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = buildRequest("PATCH", host, path, headers, body)
+
+fn buildDeleteRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = buildRequest("DELETE", host, path, headers, body)
+
+fn buildJsonRequest(method: Str, host: Str, path: Str, headers: List[Header], jsonText: Str) -> Bytes = do:
+  let body = asciiToBytes(jsonText)
+  let hs0 = headersAddIfMissingCI(headers, "Content-Type", "application/json")
+  let hs1 = headersAddIfMissingCI(hs0, "Accept", "application/json")
+  return buildRequest(method, host, path, hs1, body)
+
+fn _hexVal(c: Int) -> Int = match c >= 48 and c <= 57:
+  true -> c - 48
+  false -> match c >= 65 and c <= 70:
+    true -> c - 65 + 10
+    false -> match c >= 97 and c <= 102:
+      true -> c - 97 + 10
+      false -> 0 - 1
+
+fn _parseHexAcc(s: Str, i: Int, n: Int, acc: Int, seen: Bool) -> Result[Int, Str] = match i >= n:
+  true -> match seen:
+    true -> Ok(acc)
+    false -> Err("bad chunk size")
+  false -> do:
+    let c = strCodeAt(s, i)
+    return match c == 59:
+      true -> match seen:
+        true -> Ok(acc)
+        false -> Err("bad chunk size")
+      false -> do:
+        let v = _hexVal(c)
+        return match v < 0:
+          true -> match seen:
+            true -> Ok(acc)
+            false -> Err("bad chunk size")
+          false -> _parseHexAcc(s, i + 1, n, acc * 16 + v, true)
+
+fn parseHexDigits(s: Str) -> Result[Int, Str] = _parseHexAcc(s, 0, strLen(s), 0, false)
+
+fn _decodeChunkedAcc(b: Bytes, chunks: List[Bytes]) -> Result[List[Bytes], Str] = match bytesLen(b) == 0:
+  true -> Err("bad chunked encoding")
+  false -> do:
+    let sp = _splitLineBytes(b)
+    let lineB = sp.a
+    let rest0 = sp.b
+    let line = asciiFromBytes(lineB)
+    let n = parseHexDigits(line)?
+    return match n == 0:
+      true -> Ok(chunks)
+      false -> do:
+        let rn = bytesLen(rest0)
+        return match rn < n + 2:
+          true -> Err("bad chunked encoding")
+          false -> do:
+            let chunk = bytesSlice(rest0, 0, n)
+            let rest = bytesSlice(rest0, n + 2, rn)
+            return _decodeChunkedAcc(rest, Cons(chunk, chunks))
+
+fn decodeChunked(b: Bytes) -> Result[Bytes, Str] = do:
+  let xs = _decodeChunkedAcc(b, Nil)?
+  return Ok(bytesConcatAll(reverse(xs)))
+
 fn parseResponse(raw: Bytes) -> Result[HttpResponse, Str] = do:
   let sep = bytesFromList(Cons(13, Cons(10, Cons(13, Cons(10, Nil)))))
   let p = bytesFind(raw, sep, 0)
@@ -196,10 +335,16 @@ fn parseResponse(raw: Bytes) -> Result[HttpResponse, Str] = do:
     true -> Err("bad http response")
     false -> do:
       let headBytes = bytesSlice(raw, 0, p)
-      let body = bytesSlice(raw, p + 4, bytesLen(raw))
+      let body0 = bytesSlice(raw, p + 4, bytesLen(raw))
       let sp = _splitLineBytes(headBytes)
       let statusLine = asciiFromBytes(sp.a)
       let restB = sp.b
       let st = _parseStatusLine(statusLine)
       let headers = parseHeadersBytes(restB)
+      let te = headersGet(headers, "Transfer-Encoding")
+      let body = match te:
+        Some(v) -> match lowerAscii(v) == "chunked":
+          true -> decodeChunked(body0)?
+          false -> body0
+        None -> body0
       return Ok({ status = st.status, reason = st.reason, headers = headers, body = body })

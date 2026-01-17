@@ -2,6 +2,7 @@ use flvtest
 use httplib
 use bytelib
 use collections.list
+use std.option
 
 fn _mkResp() -> Bytes = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
@@ -13,6 +14,16 @@ fn _mkResp() -> Bytes = do:
   let c = bytesConcat(l3, crlf)
   let head = bytesConcat(bytesConcat(bytesConcat(a, b), c), crlf)
   let body = bytesFromList(Cons(104, Cons(101, Cons(108, Cons(108, Cons(111, Nil))))))
+  return bytesConcat(head, body)
+
+fn _mkRespChunked() -> Bytes = do:
+  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  let l1 = asciiToBytes("HTTP/1.1 200 OK")
+  let l2 = asciiToBytes("Transfer-Encoding: chunked")
+  let a = bytesConcat(l1, crlf)
+  let b = bytesConcat(l2, crlf)
+  let head = bytesConcat(bytesConcat(bytesConcat(a, b), crlf), b"")
+  let body = bytesConcatAll(Cons(asciiToBytes("5"), Cons(crlf, Cons(asciiToBytes("hello"), Cons(crlf, Cons(asciiToBytes("0"), Cons(crlf, Cons(crlf, Nil))))))))
   return bytesConcat(head, body)
 
 test "httplib-buildGetRequest" -> do:
@@ -36,6 +47,9 @@ test "httplib-parseResponse" -> do:
   // Check header parsing finds at least 2 headers
   assertTrue(length(r.headers) >= 2)?
 
+  // Case-insensitive header lookup
+  assertEq(std.option.unwrapOr(headersGet(r.headers, "x-test"), ""), "1")?
+
   // ascii helpers roundtrip
   let s = asciiFromBytes(bytesFromList(Cons(65, Cons(66, Nil))))
   assertEq(s, "AB")?
@@ -58,3 +72,30 @@ test "httplib-buildRequest-content-length" -> do:
   let s = asciiFromBytes(req)
   assertTrue(strFind(s, "POST /x HTTP/1.1", 0) >= 0)?
   assertTrue(strFind(s, "Content-Length: 3", 0) >= 0)?
+
+test "httplib-buildPathWithQuery" -> do:
+  let qs = Cons(queryParam("q", "hello world"), Cons(queryParam("a", "1"), Nil))
+  let p = buildPathWithQuery("/search", qs)
+  assertEq(p, "/search?q=hello%20world&a=1")?
+
+test "httplib-decodeChunked" -> do:
+  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  let b = bytesConcatAll(Cons(asciiToBytes("5"), Cons(crlf, Cons(asciiToBytes("hello"), Cons(crlf, Cons(asciiToBytes("0"), Cons(crlf, Cons(crlf, Nil))))))))
+  let out = decodeChunked(b)?
+  assertEq(bytesLen(out), 5)?
+  assertEq(bytesGet(out, 0), 104)?
+  assertEq(bytesGet(out, 4), 111)?
+
+test "httplib-parseResponse-chunked" -> do:
+  let raw = _mkRespChunked()
+  let r = parseResponse(raw)?
+  assertEq(r.status, 200)?
+  assertEq(bytesLen(r.body), 5)?
+  assertEq(bytesGet(r.body, 0), 104)?
+  assertEq(bytesGet(r.body, 4), 111)?
+
+test "httplib-buildJsonRequest" -> do:
+  let req = buildJsonRequest("POST", "example.com", "/x", Nil, "{\"a\":1}")
+  let s = asciiFromBytes(req)
+  assertTrue(strFind(s, "Content-Type: application/json", 0) >= 0)?
+  assertTrue(strFind(s, "Accept: application/json", 0) >= 0)?

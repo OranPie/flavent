@@ -71,12 +71,11 @@ fn _sfSplitSpec(spec: Str) -> _SfSpecParts = do:
 
 fn _sfParseSpec(fmt: Str) -> _SfSpec = do:
   let n = _sfLen(fmt)
-  let ty = match n > 0:
-    true -> do:
-      let last = _sfCodeAt(fmt, n - 1)
-      return match last == 115 or last == 100 or last == 102 or last == 98:
-        true -> last
-        false -> 0
+  let last = match n > 0:
+    true -> _sfCodeAt(fmt, n - 1)
+    false -> 0
+  let ty = match last == 115 or last == 100 or last == 102 or last == 98:
+    true -> last
     false -> 0
   let fmt2 = match ty == 0:
     true -> fmt
@@ -248,11 +247,9 @@ fn _sfMapGetOrEmpty(m: Map[Str, FmtArg], k: Str) -> FmtArg = match mapGet(m, k):
   None -> FmtStr("")
   Some(v) -> v
 
-fn formatWith(tmpl: Str, posArgs: List[Str], namedArgs: Map[Str, Str]) -> Str =
-  formatWithArgs(tmpl, _sfArgsFromStr(posArgs), _sfMapArgsFromStr(namedArgs))
+fn formatWith(tmpl: Str, posArgs: List[Str], namedArgs: Map[Str, Str]) -> Str = formatWithArgs(tmpl, _sfArgsFromStr(posArgs), _sfMapArgsFromStr(namedArgs))
 
-fn formatMapArgs(tmpl: Str, args: Map[Str, FmtArg]) -> Str =
-  formatWithArgs(tmpl, Nil, args)
+fn formatMapArgs(tmpl: Str, args: Map[Str, FmtArg]) -> Str = formatWithArgs(tmpl, Nil, args)
 
 fn formatMap(tmpl: Str, args: Map[Str, Str]) -> Str = formatMapArgs(tmpl, _sfMapArgsFromStr(args))
 
