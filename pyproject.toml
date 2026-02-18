@@ -6,3 +6,7 @@ requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "tests_flv"]
+markers = [
+  "integration: cross-module and stdlib integration tests",
+  "e2e: end-to-end language behavior tests",
+]

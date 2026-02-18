@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from flavent.flm import FlmError
 from flavent.pyadapter import AdapterManager
 
 
@@ -63,3 +64,43 @@ def test_pyadapter_v2_allows_only_allowlisted_calls(tmp_path: Path):
             mgr.call("demo", "nope", b"")
     finally:
         mgr.close()
+
+
+@pytest.mark.parametrize(
+    ("adapters", "msg_re"),
+    [
+        ([123], r"pythonAdapters\[0\].*object"),
+        ([{"source": {"path": "vendor/py_demo"}}], r"pythonAdapters\[0\].*missing name"),
+        (
+            [{"name": "demo", "source": {"path": "vendor/py_demo"}}, {"name": "demo", "source": {"path": "vendor/py_demo"}}],
+            r"duplicate adapter name",
+        ),
+        ([{"name": "demo", "source": {"path": "vendor/py_demo"}, "allow": [123]}], r"pythonAdapters\[demo\]\.allow"),
+    ],
+)
+def test_pyadapter_v2_rejects_invalid_manifest_entries(
+    tmp_path: Path,
+    adapters: list[object],
+    msg_re: str,
+):
+    root = tmp_path / "proj"
+    root.mkdir(parents=True)
+    (root / "flm.json").write_text(
+        json.dumps(
+            {
+                "flmVersion": 1,
+                "package": {"name": "proj", "version": "0.1.0", "entry": "src/main.flv"},
+                "toolchain": {"flavent": ">=0.1.0"},
+                "dependencies": {},
+                "devDependencies": {},
+                "pythonAdapters": adapters,
+                "extensions": {},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(FlmError, match=msg_re):
+        AdapterManager(root)

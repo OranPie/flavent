@@ -90,6 +90,12 @@ def add_dependency(
     path: str | None = None,
     dev: bool = False,
 ) -> None:
+    _ensure_ident(name, what="dependency name")
+    if rev and not git:
+        raise FlmError("dependency rev requires --git")
+    if git and path:
+        raise FlmError("dependency must specify only one source: --git or --path")
+
     mf_path = root / FLM_FILENAME
     mf = read_json(mf_path)
     deps_key = "devDependencies" if dev else "dependencies"
@@ -98,11 +104,9 @@ def add_dependency(
         raise FlmError(f"bad manifest: {deps_key} must be an object")
 
     if git is not None:
-        spec: dict[str, Any] = {"git": git}
-        if rev:
-            spec["rev"] = rev
+        spec = _normalize_dependency_spec(name, {"git": git, **({"rev": rev} if rev else {})})
     elif path is not None:
-        spec = {"path": path}
+        spec = _normalize_dependency_spec(name, {"path": path})
     else:
         raise FlmError("dependency must specify --git or --path")
 
@@ -121,6 +125,35 @@ def list_dependencies(root: Path) -> list[tuple[str, dict[str, Any]]]:
         if isinstance(v, dict):
             out.append((k, v))
     return out
+
+
+def _normalize_dependency_spec(name: str, spec_any: Any) -> dict[str, str]:
+    if not isinstance(spec_any, dict):
+        raise FlmError(f"bad manifest: dependency '{name}' must be an object")
+
+    has_git = "git" in spec_any
+    has_path = "path" in spec_any
+    if has_git == has_path:
+        raise FlmError(f"bad manifest: dependency '{name}' must specify exactly one of 'git' or 'path'")
+
+    if has_git:
+        git = str(spec_any.get("git", "")).strip()
+        if not git:
+            raise FlmError(f"bad manifest: dependency '{name}' has empty git url")
+        out = {"git": git}
+        if "rev" in spec_any:
+            rev = str(spec_any.get("rev", "")).strip()
+            if not rev:
+                raise FlmError(f"bad manifest: dependency '{name}' has empty rev")
+            out["rev"] = rev
+        return out
+
+    path = str(spec_any.get("path", "")).strip()
+    if not path:
+        raise FlmError(f"bad manifest: dependency '{name}' has empty path")
+    if "rev" in spec_any:
+        raise FlmError(f"bad manifest: dependency '{name}' cannot set rev without git")
+    return {"path": path}
 
 
 def install(root: Path) -> None:
@@ -144,13 +177,14 @@ def install(root: Path) -> None:
 
     resolved: dict[str, Any] = {}
 
-    for name, spec_any in deps.items():
-        if not isinstance(spec_any, dict):
-            continue
+    for name_any, spec_any in deps.items():
+        name = str(name_any)
+        _ensure_ident(name, what="dependency name")
+        spec = _normalize_dependency_spec(name, spec_any)
         dst = vendor / name
 
-        if "path" in spec_any:
-            src = (root / str(spec_any["path"])) if not str(spec_any["path"]).startswith("/") else Path(str(spec_any["path"]))
+        if "path" in spec:
+            src = (root / spec["path"]) if not spec["path"].startswith("/") else Path(spec["path"])
             src = src.resolve()
             if not src.exists():
                 raise FlmError(f"path dependency not found: {name}: {src}")
@@ -161,12 +195,12 @@ def install(root: Path) -> None:
             elif dst.exists():
                 dst.unlink()
             os.symlink(src, dst, target_is_directory=True)
-            resolved[name] = {"path": str(spec_any["path"])}
+            resolved[name] = {"path": spec["path"]}
             continue
 
-        if "git" in spec_any:
-            git_url = str(spec_any["git"])
-            rev = str(spec_any.get("rev", ""))
+        if "git" in spec:
+            git_url = spec["git"]
+            rev = spec.get("rev", "")
             repo = cache_root / name
             if repo.exists():
                 # Keep existing clone.
@@ -221,19 +255,29 @@ def _adapter_names_from_list(items: Any, *, what: str) -> list[str]:
     if not isinstance(items, list):
         raise FlmError(f"bad {what}: must be a list")
     names: list[str] = []
-    for it in items:
+    seen: set[str] = set()
+    for i, it in enumerate(items):
         if isinstance(it, str):
-            if it:
-                _ensure_ident(it, what=what)
-                names.append(it)
-            continue
-        if isinstance(it, dict):
-            name = str(it.get("name", ""))
+            name = it.strip()
             if not name:
-                raise FlmError(f"bad {what}: missing name")
-            _ensure_ident(name, what=what)
+                raise FlmError(f"bad {what}[{i}]: empty name")
+            _ensure_ident(name, what=f"{what}[{i}]")
+            if name in seen:
+                raise FlmError(f"bad {what}: duplicate name: {name}")
+            seen.add(name)
             names.append(name)
             continue
+        if isinstance(it, dict):
+            name = str(it.get("name", "")).strip()
+            if not name:
+                raise FlmError(f"bad {what}[{i}]: missing name")
+            _ensure_ident(name, what=f"{what}[{i}].name")
+            if name in seen:
+                raise FlmError(f"bad {what}: duplicate name: {name}")
+            seen.add(name)
+            names.append(name)
+            continue
+        raise FlmError(f"bad {what}[{i}]: invalid entry")
     return names
 
 
@@ -302,13 +346,19 @@ def _generate_py_wrappers(root: Path, adapters_any: list[Any]) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     names: list[str] = []
-    for it in adapters_any:
+    seen_adapters: set[str] = set()
+    for i, it in enumerate(adapters_any):
         if not isinstance(it, dict):
-            continue
-        name = str(it.get("name", ""))
+            raise FlmError(f"bad pythonAdapters[{i}]: must be an object")
+
+        name = str(it.get("name", "")).strip()
         if not name:
-            continue
-        _ensure_ident(name, what="pythonAdapters.name")
+            raise FlmError(f"bad pythonAdapters[{i}]: missing name")
+        _ensure_ident(name, what=f"pythonAdapters[{i}].name")
+        if name in seen_adapters:
+            raise FlmError(f"bad pythonAdapters: duplicate adapter name: {name}")
+        seen_adapters.add(name)
+
         allow_any = it.get("allow", [])
         wrappers_any = it.get("wrappers")
         allow = _adapter_names_from_list(allow_any, what=f"pythonAdapters[{name}].allow")
@@ -327,13 +377,17 @@ def _generate_py_wrappers(root: Path, adapters_any: list[Any]) -> None:
             wrappers_any = []
         if not isinstance(wrappers_any, list):
             raise FlmError(f"bad pythonAdapters[{name}].wrappers: must be a list")
-        for entry in wrappers_any:
+        for wi, entry in enumerate(wrappers_any):
             if isinstance(entry, str):
-                wrapper_specs.append({"name": entry, "codec": "bytes"})
+                m = entry.strip()
+                if not m:
+                    raise FlmError(f"bad pythonAdapters[{name}].wrappers[{wi}]: empty name")
+                wrapper_specs.append({"name": m, "codec": "bytes"})
                 continue
             if isinstance(entry, dict):
                 wrapper_specs.append(entry)
                 continue
+            raise FlmError(f"bad pythonAdapters[{name}].wrappers[{wi}]: invalid entry")
         for spec in wrapper_specs:
             codec = str(spec.get("codec", "bytes"))
             if codec == "json":
@@ -345,11 +399,15 @@ def _generate_py_wrappers(root: Path, adapters_any: list[Any]) -> None:
             lines.append("use collections.list\n")
         lines.append("\n")
         lines.append(f"sector {name}:\n")
-        for spec in wrapper_specs:
-            m = str(spec.get("name", ""))
+        seen_wrappers: set[str] = set()
+        for wi, spec in enumerate(wrapper_specs):
+            m = str(spec.get("name", "")).strip()
             if not m:
-                raise FlmError(f"bad pythonAdapters[{name}].wrappers: missing name")
+                raise FlmError(f"bad pythonAdapters[{name}].wrappers[{wi}]: missing name")
             _ensure_ident(m, what=f"pythonAdapters[{name}].wrappers[{m}].name")
+            if m in seen_wrappers:
+                raise FlmError(f"bad pythonAdapters[{name}].wrappers: duplicate name: {m}")
+            seen_wrappers.add(m)
             if allow and m not in allow:
                 raise FlmError(f"bad pythonAdapters[{name}].wrappers[{m}]: not in allow list")
             codec = str(spec.get("codec", "bytes"))

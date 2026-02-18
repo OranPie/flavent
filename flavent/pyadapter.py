@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import threading
@@ -10,6 +11,8 @@ from queue import Queue
 from typing import Any
 
 from .flm import FLM_FILENAME, FlmError, read_json
+
+_FLV_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 @dataclass(frozen=True)
@@ -153,13 +156,48 @@ def load_python_adapters(project_root: Path) -> list[PythonAdapterDecl]:
     if not isinstance(adapters_any, list):
         raise FlmError("bad manifest: pythonAdapters must be a list")
 
+    def _ensure_ident(s: str, *, what: str) -> str:
+        if not _FLV_IDENT_RE.match(s):
+            raise FlmError(f"invalid {what} identifier: {s}")
+        return s
+
+    def _parse_name_list(items: Any, *, what: str) -> list[str]:
+        if items is None:
+            return []
+        if not isinstance(items, list):
+            raise FlmError(f"bad {what}: must be a list")
+        out: list[str] = []
+        seen: set[str] = set()
+        for i, entry in enumerate(items):
+            if isinstance(entry, str):
+                name = entry.strip()
+            elif isinstance(entry, dict):
+                name = str(entry.get("name", "")).strip()
+            else:
+                raise FlmError(f"bad {what}[{i}]: invalid entry")
+            if not name:
+                raise FlmError(f"bad {what}[{i}]: missing name")
+            _ensure_ident(name, what=f"{what}[{i}]")
+            if name in seen:
+                raise FlmError(f"bad {what}: duplicate name: {name}")
+            seen.add(name)
+            out.append(name)
+        return out
+
     out: list[PythonAdapterDecl] = []
-    for it in adapters_any:
+    seen_adapters: set[str] = set()
+    for i, it in enumerate(adapters_any):
         if not isinstance(it, dict):
-            continue
-        name = str(it.get("name", ""))
+            raise FlmError(f"bad pythonAdapters[{i}]: must be an object")
+
+        name = str(it.get("name", "")).strip()
         if not name:
-            continue
+            raise FlmError(f"bad pythonAdapters[{i}]: missing name")
+        _ensure_ident(name, what=f"pythonAdapters[{i}].name")
+        if name in seen_adapters:
+            raise FlmError(f"bad pythonAdapters: duplicate adapter name: {name}")
+        seen_adapters.add(name)
+
         source = it.get("source")
         if not isinstance(source, dict):
             raise FlmError(f"bad pythonAdapters[{name}]: source must be an object")
@@ -173,32 +211,19 @@ def load_python_adapters(project_root: Path) -> list[PythonAdapterDecl]:
         wrappers_any = it.get("wrappers", [])
         if not isinstance(caps_any, list):
             raise FlmError(f"bad pythonAdapters[{name}]: capabilities must be a list")
-        allow: list[str] = []
-        if isinstance(allow_any, list):
-            for entry in allow_any:
-                if isinstance(entry, str):
-                    allow.append(entry)
-                elif isinstance(entry, dict):
-                    name_entry = str(entry.get("name", ""))
-                    if not name_entry:
-                        raise FlmError(f"bad pythonAdapters[{name}]: allow entry missing name")
-                    allow.append(name_entry)
-        elif allow_any is not None:
-            raise FlmError(f"bad pythonAdapters[{name}]: allow must be a list")
+        caps: list[str] = []
+        for ci, cap in enumerate(caps_any):
+            if not isinstance(cap, str):
+                raise FlmError(f"bad pythonAdapters[{name}].capabilities[{ci}]: must be a string")
+            c = cap.strip()
+            if not c:
+                raise FlmError(f"bad pythonAdapters[{name}].capabilities[{ci}]: empty capability")
+            caps.append(c)
+        allow = _parse_name_list(allow_any, what=f"pythonAdapters[{name}].allow")
 
         if not allow and wrappers_any is not None:
-            if not isinstance(wrappers_any, list):
-                raise FlmError(f"bad pythonAdapters[{name}]: wrappers must be a list")
-            for entry in wrappers_any:
-                if isinstance(entry, str):
-                    allow.append(entry)
-                elif isinstance(entry, dict):
-                    name_entry = str(entry.get("name", ""))
-                    if not name_entry:
-                        raise FlmError(f"bad pythonAdapters[{name}]: wrappers entry missing name")
-                    allow.append(name_entry)
+            allow = _parse_name_list(wrappers_any, what=f"pythonAdapters[{name}].wrappers")
 
-        caps = [str(x) for x in caps_any]
         out.append(PythonAdapterDecl(name=name, source_path=source_path, capabilities=caps, allow=allow))
 
     return out

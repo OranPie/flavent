@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from .diagnostics import Diagnostic, EffectError, LowerError, ParseError, ResolveError, TypeError, format_diagnostic
@@ -14,6 +15,35 @@ from .resolve import resolve_program_with_stdlib
 from .lower import lower_resolved
 from .hir import node_to_dict as hir_to_dict
 from .typecheck import check_program
+
+
+def _write_junit_report(
+    out_path: Path,
+    *,
+    test_name: str,
+    failure_message: str = "",
+    details: str = "",
+    system_out: str = "",
+) -> None:
+    has_failure = bool(failure_message)
+    suite = ET.Element(
+        "testsuite",
+        name="flavent.check",
+        tests="1",
+        failures="1" if has_failure else "0",
+        errors="0",
+    )
+    case = ET.SubElement(suite, "testcase", classname="flavent.check", name=test_name)
+    if has_failure:
+        failure = ET.SubElement(case, "failure", message=failure_message)
+        if details:
+            failure.text = details
+    if system_out:
+        out = ET.SubElement(case, "system-out")
+        out.text = system_out
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    ET.ElementTree(suite).write(out_path, encoding="utf-8", xml_declaration=True)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -63,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
     p_check.add_argument("--no-stdlib", action="store_true")
     p_check.add_argument("--bridge-report", default="", help="Write bridge usage report JSON to this path")
     p_check.add_argument("--bridge-warn", action="store_true", help="Print warnings for deprecated bridge shims")
+    p_check.add_argument("--strict", action="store_true", help="Treat warnings as errors")
+    p_check.add_argument("--report-junit", default="", help="Write JUnit XML report for check command")
 
     args = p.parse_args(argv)
 
@@ -114,6 +146,23 @@ def main(argv: list[str] | None = None) -> int:
 
     path = Path(args.file)
     src = path.read_text(encoding="utf-8")
+
+    def _write_check_report(*, failure_message: str = "", details: str = "", system_out: str = "") -> None:
+        if args.cmd != "check":
+            return
+        out = getattr(args, "report_junit", "")
+        if not out:
+            return
+        try:
+            _write_junit_report(
+                Path(out),
+                test_name=str(path),
+                failure_message=failure_message,
+                details=details,
+                system_out=system_out,
+            )
+        except Exception as e:
+            print(f"ReportError: failed to write JUnit report: {e}")
 
     def _fmt_err(kind: str, e) -> str:
         try:
@@ -175,30 +224,49 @@ def main(argv: list[str] | None = None) -> int:
             report = audit_bridge_usage(hir_prog, res)
             if getattr(args, "bridge_report", ""):
                 Path(args.bridge_report).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-            if getattr(args, "bridge_warn", False):
-                for line in format_bridge_warnings(report):
+            warnings = format_bridge_warnings(report)
+            if getattr(args, "bridge_warn", False) or getattr(args, "strict", False):
+                for line in warnings:
                     print(line)
+            if getattr(args, "strict", False) and warnings:
+                msg = f"StrictCheckError: {len(warnings)} warning(s) found"
+                print(msg)
+                _write_check_report(failure_message=msg, details="\n".join(warnings))
+                return 2
+            _write_check_report(system_out="\n".join(warnings))
 
         print("OK")
         return 0
 
     except ParseError as e:
-        print(_fmt_err("ParseError", e))
+        msg = _fmt_err("ParseError", e)
+        print(msg)
+        _write_check_report(failure_message="ParseError", details=msg)
         return 2
     except ResolveError as e:
-        print(_fmt_err("ResolveError", e))
+        msg = _fmt_err("ResolveError", e)
+        print(msg)
+        _write_check_report(failure_message="ResolveError", details=msg)
         return 2
     except LowerError as e:
-        print(_fmt_err("LowerError", e))
+        msg = _fmt_err("LowerError", e)
+        print(msg)
+        _write_check_report(failure_message="LowerError", details=msg)
         return 2
     except TypeError as e:
-        print(_fmt_err("TypeError", e))
+        msg = _fmt_err("TypeError", e)
+        print(msg)
+        _write_check_report(failure_message="TypeError", details=msg)
         return 2
     except EffectError as e:
-        print(_fmt_err("EffectError", e))
+        msg = _fmt_err("EffectError", e)
+        print(msg)
+        _write_check_report(failure_message="EffectError", details=msg)
         return 2
     except FlmError as e:
-        print(f"PkgError: {e}")
+        msg = f"PkgError: {e}"
+        print(msg)
+        _write_check_report(failure_message="PkgError", details=msg)
         return 2
     except Exception as e:
         raise

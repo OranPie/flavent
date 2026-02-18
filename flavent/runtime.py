@@ -182,9 +182,15 @@ def run_hir_program(
         for fn in sec.fns:
             fn_by_sym[fn.sym] = fn
 
-    ctor_by_sym: dict[SymbolId, str] = {s.id: s.name for s in res.symbols if s.kind == SymbolKind.CTOR}
-
     type_by_id: dict[int, str] = {s.id: s.name for s in res.symbols if s.kind == SymbolKind.TYPE}
+    ctor_by_sym: dict[SymbolId, str] = {s.id: s.name for s in res.symbols if s.kind == SymbolKind.CTOR}
+    event_ctor_type_by_name: dict[str, int] = {}
+    for s in res.symbols:
+        if s.kind != SymbolKind.CTOR or s.owner is None:
+            continue
+        owner = int(s.owner)
+        if type_by_id.get(owner, "").startswith("Event."):
+            event_ctor_type_by_name[s.name] = owner
 
     def find_type_id(name: str) -> int | None:
         for tid, tname in type_by_id.items():
@@ -247,12 +253,15 @@ def run_hir_program(
                 continue
             raise RuntimeError("not a List")
 
+    _NO_SEND = object()
+
     @dataclass
     class _Task:
         gen: Generator[Any, Any, Any]
         sector: SymbolId | None
         env: dict[SymbolId, Any]
         env_event_types: dict[SymbolId, int]
+        pending_send: Any = _NO_SEND
 
     def eval_expr_gen(
         e: Expr,
@@ -488,6 +497,27 @@ def run_hir_program(
             return True, binds
         return False, {}
 
+    def _infer_event_type_id(expr: Expr, value: Any, env_event_types: dict[SymbolId, int]) -> int | None:
+        if isinstance(expr, AwaitEventExpr):
+            return int(expr.typeId)
+        if isinstance(expr, VarExpr):
+            if expr.sym in env_event_types:
+                return int(env_event_types[expr.sym])
+            sym = sym_by_id.get(expr.sym)
+            if sym is not None and sym.kind == SymbolKind.CTOR and sym.owner is not None:
+                tid = int(sym.owner)
+                if type_by_id.get(tid, "").startswith("Event."):
+                    return tid
+        if isinstance(expr, CallExpr) and isinstance(expr.callee, VarExpr):
+            sym = sym_by_id.get(expr.callee.sym)
+            if sym is not None and sym.kind == SymbolKind.CTOR and sym.owner is not None:
+                tid = int(sym.owner)
+                if type_by_id.get(tid, "").startswith("Event."):
+                    return tid
+        if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], str):
+            return event_ctor_type_by_name.get(value[0])
+        return None
+
     def exec_block_gen(
         b: Block,
         env: dict[SymbolId, Any],
@@ -567,13 +597,11 @@ def run_hir_program(
                     return
             raise RuntimeError("non-exhaustive match stmt")
         if isinstance(st, EmitStmt):
-            # Minimal event loop: require emitting an event-typed variable.
-            if isinstance(st.expr, VarExpr) and st.expr.sym in env_event_types:
-                tid = env_event_types[st.expr.sym]
-                val = (yield from eval_expr_gen(st.expr, env, current_sector, env_event_types))
-                yield ("emit", tid, val)
-                return
-            raise RuntimeError("emit currently only supports event-typed vars (binder or await result)")
+            val = (yield from eval_expr_gen(st.expr, env, current_sector, env_event_types))
+            tid = _infer_event_type_id(st.expr, val, env_event_types)
+            if tid is None:
+                raise RuntimeError("emit expects an event value")
+            yield ("emit", tid, val)
             return
         if isinstance(st, ReturnStmt):
             raise _Return((yield from eval_expr_gen(st.expr, env, current_sector, env_event_types)))
@@ -624,12 +652,21 @@ def run_hir_program(
         return None
 
     def enqueue_event(tid: int, value: Any) -> None:
-        events_by_type.setdefault(tid, []).append(value)
-        # Wake one waiter if present.
+        # Awaiters consume events first (FIFO). If no waiter exists, queue for dispatch.
         ws = waiting.get(tid)
         if ws:
             t = ws.pop(0)
+            t.pending_send = value
             runnable.append(t)
+            return
+        events_by_type.setdefault(tid, []).append(value)
+
+    def _advance_task(task: _Task) -> Any:
+        if task.pending_send is _NO_SEND:
+            return next(task.gen)
+        value = task.pending_send
+        task.pending_send = _NO_SEND
+        return task.gen.send(value)
 
     def make_handler_task(h: HandlerDecl, sec_sym: SymbolId, ev_value: Any) -> _Task:
         env: dict[SymbolId, Any] = {}
@@ -677,7 +714,7 @@ def run_hir_program(
             task = runnable.pop(0)
 
             try:
-                req = next(task.gen)
+                req = _advance_task(task)
             except StopProgram:
                 return
             except AbortHandler as ah:
@@ -698,16 +735,8 @@ def run_hir_program(
                 q = events_by_type.get(tid)
                 if q:
                     ev = q.pop(0)
-                    try:
-                        req2 = task.gen.send(ev)
-                    except StopProgram:
-                        return
-                    except AbortHandler as ah:
-                        raise RuntimeError(f"handler aborted: {ah.cause!r}")
-                    except StopIteration:
-                        continue
-                    # The resumed step may have yielded again; push back and handle next loop.
-                    runnable.append(_Task(gen=_prepend(req2, task.gen), sector=task.sector, env=task.env, env_event_types=task.env_event_types))
+                    task.pending_send = ev
+                    runnable.append(task)
                 else:
                     waiting.setdefault(tid, []).append(task)
                 continue
@@ -720,17 +749,6 @@ def run_hir_program(
                 raise RuntimeError("runtime exceeded step limit")
     except StopProgram:
         return
-
-
-def _prepend(first, gen):
-    # Helper to re-yield a value already produced by send().
-    v = first
-    while True:
-        if v is not None:
-            sent = yield v
-        else:
-            sent = yield
-        v = gen.send(sent)
 
 
 __all__ = ["Bridge", "run_hir_program"]

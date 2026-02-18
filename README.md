@@ -53,6 +53,18 @@ Flavent comes with a built-in test runner `flvtest`.
 python3 -m pytest
 ```
 
+For CI-oriented compiler checks:
+
+```bash
+python3 -m flavent check examples/minimal.flv --strict --report-junit reports/check.xml
+```
+
+For CI-style pytest output artifacts:
+
+```bash
+python3 -m pytest -q --junit-xml=reports/junit.xml
+```
+
 ## Documentation
 
 - [Language Specification & Library Docs](DOCS.md)
