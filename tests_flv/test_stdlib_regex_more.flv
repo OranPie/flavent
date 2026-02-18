@@ -1,0 +1,26 @@
+use flvtest
+use regex
+use collections.list
+use std.result
+
+test "regex-compileChecked-errors" -> do:
+  assertEq(errOr(compileChecked("a)"), ""), "unmatched )")?
+  assertEq(errOr(compileChecked("[ab"), ""), "unterminated class")?
+  assertEq(errOr(compileChecked("(ab"), ""), "unterminated group")?
+
+test "regex-anchor-behavior" -> do:
+  let r = compile("^ab$")
+  assertTrue(isMatch(r, "ab"))?
+  assertTrue(not isMatch(r, "zab"))?
+  assertEq(findFirstSpan(r, "ab"), Some({ start = 0, end = 2 }))?
+  assertEq(findFirstSpan(r, "zab"), None)?
+
+test "regex-zero-length-and-replaceAll" -> do:
+  let spans = findAllSpans(compile("a*"), "aa")
+  assertEq(spans, Cons({ start = 0, end = 2 }, Cons({ start = 2, end = 2 }, Nil)))?
+  assertEq(replaceAll(compile("a*"), "aa", "X"), "XX")?
+  assertEq(replaceAll(compile("^"), "aa", "X"), "Xaa")?
+
+test "regex-capture-replacement-tokens" -> do:
+  assertEq(replace(compile("(ab)(cd)"), "zzabcdyy", "<$0,$1,$2,$$>"), "zz<abcd,ab,cd,$>yy")?
+  assertEq(findFirstCaptures(compile("(ab)(cd)"), "zzabcdyy"), Some(Cons("abcd", Cons("ab", Cons("cd", Nil)))))?

@@ -659,7 +659,7 @@ fn _rxMatchCaps(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[_RxCapRes]
                     let qg = _rxParseQuant(pat, close + 1, end)
                     return match qg.kind == 0:
                       true -> do:
-                        let inner = _rxMatchCaps(pat, pi + 1, close, s, si)
+                        let inner = _rxMatchCapsGroupOnce(pat, pi, close, s, si)
                         return _rxMatchCapsFromList(inner, pat, close + 1, end, s)
                       false -> match qg.kind == 42:
                         true -> _rxMatchCapsGroupStar(pat, pi, close, qg.next, end, s, si, Nil, qg.lazy)
@@ -667,7 +667,7 @@ fn _rxMatchCaps(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> List[_RxCapRes]
                           true -> _rxMatchCapsGroupPlus(pat, pi, close, qg.next, end, s, si, Nil, qg.lazy)
                           false -> match qg.kind == 63:
                             true -> do:
-                              let inner = _rxMatchCaps(pat, pi + 1, close, s, si)
+                              let inner = _rxMatchCapsGroupOnce(pat, pi, close, s, si)
                               let z0 = _rxMatchCapsContinue(pat, qg.next, end, s, si, Nil)
                               let one = _rxMatchCapsFromList(inner, pat, qg.next, end, s)
                               return match qg.lazy:
@@ -782,12 +782,15 @@ type _RxCapMatch = { start: Int, end: Int, caps: List[RxCapture] }
 
 fn _rxFindFirstCapMatchFrom(pat: Str, pi: Int, end: Int, s: Str, si: Int) -> Option[_RxCapMatch] = do:
   let slen = _rxLen(s)
-  let rs = _rxMatchCaps(pat, pi, end, s, si)
-  return match _rxFirstCapRes(rs):
-    Some(r) -> Some({ start = si, end = r.end, caps = r.caps })
-    None -> match si >= slen:
-      true -> None
-      false -> _rxFindFirstCapMatchFrom(pat, pi, end, s, si + 1)
+  return match si > slen:
+    true -> None
+    false -> do:
+      let rs = _rxMatchCaps(pat, pi, end, s, si)
+      return match _rxFirstCapRes(rs):
+        Some(r) -> Some({ start = si, end = r.end, caps = r.caps })
+        None -> match si >= slen:
+          true -> None
+          false -> _rxFindFirstCapMatchFrom(pat, pi, end, s, si + 1)
 
 fn _rxGroupAt(groups: List[Str], idx: Int) -> Str = match idx < 0:
   true -> ""

@@ -33,7 +33,10 @@ Refine Flavent language behavior and standard library consistency while improvin
   - [x] Added `strStartsWith` / `strEndsWith` aliases in `stringlib`.
   - [x] Added Option-based find APIs: `strFindOpt` / `bytesFindOpt`.
   - [x] Added Option-based find helpers in `httplib/core`.
-  - [ ] Continue with follow-up modules (`regex`, targeted stdlib edge cases).
+  - [x] Completed `regex` edge-case pass:
+    - fixed zero-length `replaceAll` termination behavior
+    - fixed capture propagation for grouped matches in `replace`/`findFirstCaptures`
+    - added runtime and `.flv` tests for anchors, compile errors, zero-length, and replacement tokens
 - [ ] Add/expand tests for invalid input handling in stdlib modules.
 - [ ] Update docs/examples to reflect final APIs.
 

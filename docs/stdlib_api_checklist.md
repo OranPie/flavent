@@ -33,10 +33,10 @@ This checklist defines the first-pass refinement targets for stdlib API consiste
 1. `stdlib/stringlib/__init__.flv`
 2. `stdlib/bytelib/__init__.flv`
 3. `stdlib/httplib/core.flv`
-4. `stdlib/regex/__init__.flv` (follow-up consistency pass)
+4. `stdlib/regex/__init__.flv` (follow-up consistency pass) ✅
 
 ## 5) Required Test and Docs Updates Per Change
-- [ ] Add Python tests under `tests/test_stdlib_*`.
-- [ ] Add `.flv` behavior tests under `tests_flv/`.
+- [x] Add Python tests under `tests/test_stdlib_*`.
+- [x] Add `.flv` behavior tests under `tests_flv/`.
 - [ ] Update docs pages under `docs/en/stdlib/` and `docs/zh/stdlib/`.
 - [ ] Include deprecation/compat note in release notes for new additive aliases/APIs.
