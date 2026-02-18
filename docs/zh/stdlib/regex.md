@@ -11,10 +11,21 @@
 - 支持 `\\b` 单词边界与惰性量词（`*?`/`+?`/`??`）。
 - `replace`/`replaceAll` 支持 `$0`（整体匹配）与 `$1..$n`。
 - `findFirstCaptures` 返回第 0 组（整体匹配）以及 1..n 组。
+- `replaceAll` 在零长度匹配场景下会安全推进，避免死循环。
 
 ## 导入
 ```flavent
 use regex
+```
+
+## 示例
+```flavent
+let r = compile("^ab$")
+let ok = isMatch(r, "ab")                                // true
+let caps = findFirstCaptures(compile("(ab)(cd)"), "zzabcdyy")
+// Some(Cons("abcd", Cons("ab", Cons("cd", Nil))))
+let out = replace(compile("(ab)(cd)"), "zzabcdyy", "<$0,$1,$2,$$>")
+// "zz<abcd,ab,cd,$>yy"
 ```
 
 ## 类型

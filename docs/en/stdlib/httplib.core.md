@@ -15,9 +15,19 @@ Limitations:
 - No chunked *request* encoding
 - No streaming
 
+Parsing helpers:
+- `strFindOpt` and `bytesFindOpt` are provided for Option-first parsing flows.
+- `strFind` and `bytesFind` are kept for compatibility with `-1` sentinel style.
+
 ## Import
 ```flavent
 use httplib.core
+```
+
+## Examples
+```flavent
+let req = buildGetRequest("example.com", "/")
+let idx = strFindOpt("HTTP/1.1 200 OK", "200", 0) // Some(9)
 ```
 
 ## Types

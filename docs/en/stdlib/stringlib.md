@@ -1,11 +1,24 @@
 # `stringlib`
 
 ## Overview
-(Edit this page freely. The generator only updates the marked API blocks.)
+String helpers focused on deterministic, allocation-light operations.
+
+Notes:
+- `strFind` returns `-1` when no match is found.
+- `strFindOpt` returns `Some(index)` / `None` and is preferred in new code.
+- `startsWith`/`endsWith` and `strStartsWith`/`strEndsWith` are equivalent (alias pair for compatibility).
 
 ## Import
 ```flavent
 use stringlib
+```
+
+## Examples
+```flavent
+let i0 = strFind("abcabc", "bc", 0)      // 1
+let i1 = strFindOpt("abc", "z", 0)       // None
+let ok = strStartsWith("hello", "he")    // true
+let out = trimSpaces("  hi  ")           // "hi"
 ```
 
 ## Types

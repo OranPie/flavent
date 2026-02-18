@@ -1,6 +1,7 @@
 use flvtest
 use struct
 use bytelib
+use std.result
 
 test "struct-pack-unpack-B" -> do:
   let b = packB(0x12)
@@ -74,3 +75,24 @@ test "struct-format-unpackFrom-offset" -> do:
   let b = bytesConcat(bytesFromList(Cons(255, Cons(255, Nil))), pack("B", Cons(7, Nil))?)
   let v = unpackFrom("B", b, 2)?
   assertEq(v, Cons(7, Nil))?
+
+test "struct-format-errors-more" -> do:
+  let e0 = errOr(pack("B", Cons(1, Cons(2, Nil))), "")
+  if e0 != "too many values":
+    fail("pack-too-many")?
+
+  let e1 = errOr(pack("2B", Cons(1, Nil)), "")
+  if e1 != "not enough values":
+    fail("pack-not-enough")?
+
+  let e2 = errOr(pack("Z", Cons(1, Nil)), "")
+  if e2 != "unsupported format":
+    fail("pack-unsupported-format")?
+
+  let e3 = errOr(unpack("H", bytesFromList(Cons(1, Nil))), "")
+  if e3 != "buffer too small for H":
+    fail("unpack-short-buffer")?
+
+  let e4 = errOr(unpack("2", b""), "")
+  if e4 != "dangling count":
+    fail("unpack-dangling-count")?

@@ -15,9 +15,19 @@ HTTP/1.1 的纯函数工具：构造请求、解析响应。
 - 不支持 chunked 请求编码
 - 不支持流式 body
 
+解析辅助：
+- 提供 `strFindOpt` 与 `bytesFindOpt`，方便使用 `Option` 风格分支。
+- 保留 `strFind` 与 `bytesFind` 的 `-1` 语义以兼容旧代码。
+
 ## 导入
 ```flavent
 use httplib.core
+```
+
+## 示例
+```flavent
+let req = buildGetRequest("example.com", "/")
+let idx = strFindOpt("HTTP/1.1 200 OK", "200", 0) // Some(9)
 ```
 
 ## 类型
@@ -70,4 +80,3 @@ fn decodeChunked(b: Bytes) -> Result[Bytes, Str] = do:
 fn parseResponse(raw: Bytes) -> Result[HttpResponse, Str] = do:
 ```
 <!-- AUTO-GEN:END FUNCTIONS -->
-

@@ -11,10 +11,21 @@ Key points:
 - Supports `\\b` word boundary and lazy quantifiers (`*?`, `+?`, `??`).
 - `replace`/`replaceAll` support `$0` (whole match) and `$1`..`$n`.
 - `findFirstCaptures` returns group 0 (full match) followed by groups 1..n.
+- Zero-length matches in `replaceAll` always advance safely to avoid infinite loops.
 
 ## Import
 ```flavent
 use regex
+```
+
+## Examples
+```flavent
+let r = compile("^ab$")
+let ok = isMatch(r, "ab")                               // true
+let caps = findFirstCaptures(compile("(ab)(cd)"), "zzabcdyy")
+// Some(Cons("abcd", Cons("ab", Cons("cd", Nil))))
+let out = replace(compile("(ab)(cd)"), "zzabcdyy", "<$0,$1,$2,$$>")
+// "zz<abcd,ab,cd,$>yy"
 ```
 
 ## Types

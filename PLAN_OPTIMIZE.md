@@ -37,8 +37,10 @@ Refine Flavent language behavior and standard library consistency while improvin
     - fixed zero-length `replaceAll` termination behavior
     - fixed capture propagation for grouped matches in `replace`/`findFirstCaptures`
     - added runtime and `.flv` tests for anchors, compile errors, zero-length, and replacement tokens
-- [ ] Add/expand tests for invalid input handling in stdlib modules.
-- [ ] Update docs/examples to reflect final APIs.
+- [~] Add/expand tests for invalid input handling in stdlib modules.
+  - [x] `regex`: compile errors, anchor edge cases, zero-length replacement behavior.
+  - [x] `struct`: format/value/buffer error paths (`too many values`, `not enough values`, `unsupported format`, `dangling count`, short buffer).
+- [x] Update docs/examples to reflect final APIs (`regex`, `stringlib`, `bytelib`, `httplib.core` in `docs/en` + `docs/zh`).
 
 ## Phase 4: Performance Pass
 - [ ] Optimize hot runtime paths identified in baseline.

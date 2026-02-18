@@ -1,11 +1,23 @@
 # `bytelib`
 
 ## Overview
-(Edit this page freely. The generator only updates the marked API blocks.)
+Byte helpers for `Bytes` manipulation and conversion to/from `List[Int]`.
+
+Notes:
+- `bytesFind` uses `-1` for not found.
+- `bytesFindOpt` is the Option-based variant for new code.
+- `bytesStartsWith` / `bytesEndsWith` are pure comparisons (no mutation).
 
 ## Import
 ```flavent
 use bytelib
+```
+
+## Examples
+```flavent
+let h = bytesFromList(Cons(1, Cons(2, Cons(3, Nil))))
+let i = bytesFindOpt(h, bytesFromList(Cons(2, Nil)), 0) // Some(1)
+let p = bytesStartsWith(h, bytesFromList(Cons(1, Nil))) // true
 ```
 
 ## Types

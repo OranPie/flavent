@@ -38,5 +38,6 @@ This checklist defines the first-pass refinement targets for stdlib API consiste
 ## 5) Required Test and Docs Updates Per Change
 - [x] Add Python tests under `tests/test_stdlib_*`.
 - [x] Add `.flv` behavior tests under `tests_flv/`.
-- [ ] Update docs pages under `docs/en/stdlib/` and `docs/zh/stdlib/`.
+- [x] Update docs pages under `docs/en/stdlib/` and `docs/zh/stdlib/`.
+  - Updated module notes/examples for `regex`, `stringlib`, `bytelib`, and `httplib.core`.
 - [ ] Include deprecation/compat note in release notes for new additive aliases/APIs.
