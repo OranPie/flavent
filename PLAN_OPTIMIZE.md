@@ -32,7 +32,8 @@ Refine Flavent language behavior and standard library consistency while improvin
 - [~] Normalize module APIs with mismatched naming and edge-case behavior.
   - [x] Added `strStartsWith` / `strEndsWith` aliases in `stringlib`.
   - [x] Added Option-based find APIs: `strFindOpt` / `bytesFindOpt`.
-  - [ ] Continue with `httplib/core` and follow-up modules.
+  - [x] Added Option-based find helpers in `httplib/core`.
+  - [ ] Continue with follow-up modules (`regex`, targeted stdlib edge cases).
 - [ ] Add/expand tests for invalid input handling in stdlib modules.
 - [ ] Update docs/examples to reflect final APIs.
 

@@ -1,5 +1,6 @@
 use flvtest
 use httplib
+use httplib.core
 use bytelib
 use collections.list
 use std.option
@@ -65,6 +66,8 @@ test "httplib-buildRequest-default-UA" -> do:
   assertTrue(strFind(s, "GET / HTTP/1.1", 0) >= 0)?
   // default UA should be present
   assertTrue(strFind(s, "User-Agent: ", 0) >= 0)?
+  assertTrue(std.option.isSome(httplib.core.strFindOpt(s, "User-Agent: ", 0)))?
+  assertTrue(std.option.isNone(httplib.core.strFindOpt(s, "Nope", 0)))?
 
 test "httplib-buildRequest-content-length" -> do:
   let body = bytesFromList(Cons(1, Cons(2, Cons(3, Nil))))
@@ -85,6 +88,8 @@ test "httplib-decodeChunked" -> do:
   assertEq(bytesLen(out), 5)?
   assertEq(bytesGet(out, 0), 104)?
   assertEq(bytesGet(out, 4), 111)?
+  assertEq(httplib.core.bytesFindOpt(out, asciiToBytes("ll"), 0), Some(2))?
+  assertEq(httplib.core.bytesFindOpt(out, asciiToBytes("zz"), 0), None)?
 
 test "httplib-parseResponse-chunked" -> do:
   let raw = _mkRespChunked()

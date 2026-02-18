@@ -20,7 +20,7 @@ This checklist defines the first-pass refinement targets for stdlib API consiste
 - [~] Refinement target (in progress):
   - [x] Added additive Option-based APIs `strFindOpt` and `bytesFindOpt` while preserving existing `Int` APIs.
   - [ ] Add migration note in release docs (prefer Option forms in new code).
-  - [ ] Decide whether `httplib/core` should expose Option-based public find helpers.
+  - [x] Added `httplib/core` Option-based public find helpers (`strFindOpt`, `bytesFindOpt`).
 
 ## 3) Option/Result Ergonomics
 - [ ] Ensure paired APIs are available and consistent:

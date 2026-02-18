@@ -168,6 +168,12 @@ fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
     true -> start
     false -> _strFindFrom(h, needle, start, n, nn)
 
+fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
+  let i = strFind(h, needle, start)
+  return match i >= 0:
+    true -> Some(i)
+    false -> None
+
 fn _parseIntDigitsAcc(s: Str, i: Int, n: Int, acc: Int) -> Int = match i >= n:
   true -> acc
   false -> do:
@@ -198,6 +204,12 @@ fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
   return match nn == 0:
     true -> start
     false -> _bytesFindFrom(h, needle, start, hn, nn)
+
+fn bytesFindOpt(h: Bytes, needle: Bytes, start: Int) -> Option[Int] = do:
+  let i = bytesFind(h, needle, start)
+  return match i >= 0:
+    true -> Some(i)
+    false -> None
 
 fn _splitLineBytes(b: Bytes) -> _BytesPair = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
