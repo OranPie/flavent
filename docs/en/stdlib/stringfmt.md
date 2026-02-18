@@ -35,8 +35,8 @@ fn format1(tmpl: Str, a0: Str) -> Str = format(tmpl, Cons(a0, Nil))
 fn format2(tmpl: Str, a0: Str, a1: Str) -> Str = format(tmpl, Cons(a0, Cons(a1, Nil)))
 fn format3(tmpl: Str, a0: Str, a1: Str, a2: Str) -> Str = format(tmpl, Cons(a0, Cons(a1, Cons(a2, Nil))))
 fn formatWithArgs(tmpl: Str, posArgs: List[FmtArg], namedArgs: Map[Str, FmtArg]) -> Str = do:
-fn formatWith(tmpl: Str, posArgs: List[Str], namedArgs: Map[Str, Str]) -> Str =
-fn formatMapArgs(tmpl: Str, args: Map[Str, FmtArg]) -> Str =
+fn formatWith(tmpl: Str, posArgs: List[Str], namedArgs: Map[Str, Str]) -> Str = formatWithArgs(tmpl, _sfArgsFromStr(posArgs), _sfMapArgsFromStr(namedArgs))
+fn formatMapArgs(tmpl: Str, args: Map[Str, FmtArg]) -> Str = formatWithArgs(tmpl, Nil, args)
 fn formatMap(tmpl: Str, args: Map[Str, Str]) -> Str = formatMapArgs(tmpl, _sfMapArgsFromStr(args))
 fn formatKV(tmpl: Str, k0: Str, v0: Str) -> Str = formatMap(tmpl, mapPut(mapEmpty(), k0, v0))
 ```

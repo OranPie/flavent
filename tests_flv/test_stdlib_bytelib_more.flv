@@ -8,6 +8,8 @@ test "bytelib-bytesFind" -> do:
   assertEq(bytesFind(h, n, 0), 1)?
   assertEq(bytesFind(h, n, 2), 3)?
   assertEq(bytesFind(h, bytesFromList(Cons(9, Nil)), 0), 0 - 1)?
+  assertEq(bytesFindOpt(h, n, 0), Some(1))?
+  assertEq(bytesFindOpt(h, bytesFromList(Cons(9, Nil)), 0), None)?
 
 test "bytelib-prefix-suffix" -> do:
   let h = bytesFromList(Cons(10, Cons(20, Cons(30, Nil))))

@@ -32,6 +32,12 @@ fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
     true -> start
     false -> _bytesFindFrom(h, needle, start, hn, nn)
 
+fn bytesFindOpt(h: Bytes, needle: Bytes, start: Int) -> Option[Int] = do:
+  let i = bytesFind(h, needle, start)
+  return match i >= 0:
+    true -> Some(i)
+    false -> None
+
 fn bytesStartsWith(h: Bytes, prefix: Bytes) -> Bool = do:
   let hn = bytesLen(h)
   let pn = bytesLen(prefix)

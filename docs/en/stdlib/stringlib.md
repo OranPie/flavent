@@ -18,9 +18,12 @@ use stringlib
 <!-- AUTO-GEN:START FUNCTIONS -->
 ```flavent
 fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
+fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
 fn strContains(h: Str, needle: Str) -> Bool = strFind(h, needle, 0) >= 0
 fn startsWith(h: Str, prefix: Str) -> Bool = do:
 fn endsWith(h: Str, suffix: Str) -> Bool = do:
+fn strStartsWith(h: Str, prefix: Str) -> Bool = startsWith(h, prefix)
+fn strEndsWith(h: Str, suffix: Str) -> Bool = endsWith(h, suffix)
 fn trimLeftSpaces(s: Str) -> Str = do:
 fn trimRightSpaces(s: Str) -> Str = do:
 fn trimSpaces(s: Str) -> Str = trimRightSpaces(trimLeftSpaces(s))

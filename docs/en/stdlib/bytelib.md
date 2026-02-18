@@ -24,6 +24,7 @@ fn bytesSlice(b: Bytes, start: Int, end: Int) -> Bytes = _pyBytesSlice(b, start,
 fn bytesConcat(a: Bytes, b: Bytes) -> Bytes = _pyBytesConcat(a, b)
 fn bytesFromByte(x: Int) -> Bytes = _pyBytesFromByte(x)
 fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
+fn bytesFindOpt(h: Bytes, needle: Bytes, start: Int) -> Option[Int] = do:
 fn bytesStartsWith(h: Bytes, prefix: Bytes) -> Bool = do:
 fn bytesEndsWith(h: Bytes, suffix: Bytes) -> Bool = do:
 fn bytesToList(b: Bytes) -> List[Int] = _btToListAcc(b, 0, bytesLen(b))
