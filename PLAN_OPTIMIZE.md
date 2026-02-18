@@ -14,7 +14,7 @@ Refine Flavent language behavior and standard library consistency while improvin
   - collection-heavy operations (`list`, `map`, `queue`)
   - parsing/checking representative examples
 - [x] Capture first runtime baseline and store in `docs/perf_baseline.md`.
-- [ ] Expand baseline with memory snapshots and per-module profiles.
+- [x] Expand baseline with memory snapshots and per-module profiles (see `scripts/perf_snapshot.py` and updated `docs/perf_baseline.md`).
 - [x] Create stdlib API consistency checklist in `docs/stdlib_api_checklist.md`:
   - naming consistency (`camelCase` vs `snake_case` not mixed)
   - error style (`Result` vs sentinel values)
@@ -44,7 +44,7 @@ Refine Flavent language behavior and standard library consistency while improvin
 
 ## Phase 4: Performance Pass
 - [ ] Optimize hot runtime paths identified in baseline.
-- [ ] Re-run benchmarks and compare to baseline.
+- [x] Re-run benchmarks and compare to baseline (documented in `docs/perf_baseline.md`).
 - [ ] Keep behavior unchanged unless documented in changelog/migration notes.
 
 ## Exit Criteria

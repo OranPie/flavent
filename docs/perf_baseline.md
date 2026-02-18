@@ -17,3 +17,37 @@ These numbers are local baseline measurements to compare future optimization wor
 ## Notes
 - Measurements include Python process startup overhead.
 - Use these values as a relative baseline only (not cross-machine absolute targets).
+
+---
+
+# Performance Snapshot (Updated)
+
+Date: 2026-02-18
+
+Generated with:
+- `python3 scripts/perf_snapshot.py`
+
+## Benchmarks + Memory
+- Full test suite: `9.674s` wall, `46420 KB` max RSS, summary: `295 passed in 8.69s`.
+- Runtime determinism tests: `0.610s` wall, `31112 KB` max RSS, summary: `5 passed in 0.18s`.
+- Compiler check (minimal, strict): `0.231s` wall, `18076 KB` max RSS, summary: `OK`.
+
+## Delta vs Initial Baseline
+- Full suite wall: `+1.572s` vs initial (`8.102s` → `9.674s`).
+- Runtime determinism wall: `+0.053s` vs initial (`0.557s` → `0.610s`).
+- Minimal strict check wall: `+0.023s` vs initial (`0.208s` → `0.231s`).
+- Note: the full-suite delta includes additional tests added since the initial snapshot (`278` → `295` passed).
+
+## cProfile Hotspots (per-module)
+- Compiler pipeline (`examples/minimal.flv`, repeated):
+  - `flavent/typecheck.py:107 check_program` (cum ~`1.47s`)
+  - `flavent/typecheck.py:490 _check_fn` (cum ~`1.24s`)
+  - `flavent/resolve.py:709 resolve_program_with_stdlib` (cum ~`0.72s`)
+  - `flavent/resolve.py:981 _resolve_uses` (cum ~`0.51s`)
+  - `flavent/resolve.py:1088 _resolve_fn` (cum ~`0.48s`)
+- Runtime hot loop (`emit`/`await` ping-pong, repeated):
+  - `flavent/runtime.py:69 run_hir_program` (cum ~`0.64s`)
+  - `flavent/runtime.py:666 _advance_task` (cum ~`0.31s`)
+  - `flavent/runtime.py:680 _gen` (cum ~`0.28s`)
+  - `flavent/runtime.py:523 exec_block_gen` (cum ~`0.27s`)
+  - `flavent/runtime.py:533 exec_stmt_gen` (cum ~`0.25s`)

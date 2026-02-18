@@ -19,7 +19,7 @@ This checklist defines the first-pass refinement targets for stdlib API consiste
   - `stdlib/httplib/core.flv`: internal find helpers with `Int` not-found semantics.
 - [~] Refinement target (in progress):
   - [x] Added additive Option-based APIs `strFindOpt` and `bytesFindOpt` while preserving existing `Int` APIs.
-  - [ ] Add migration note in release docs (prefer Option forms in new code).
+  - [x] Add migration note in release docs (prefer Option forms in new code).
   - [x] Added `httplib/core` Option-based public find helpers (`strFindOpt`, `bytesFindOpt`).
 
 ## 3) Option/Result Ergonomics
@@ -40,4 +40,5 @@ This checklist defines the first-pass refinement targets for stdlib API consiste
 - [x] Add `.flv` behavior tests under `tests_flv/`.
 - [x] Update docs pages under `docs/en/stdlib/` and `docs/zh/stdlib/`.
   - Updated module notes/examples for `regex`, `stringlib`, `bytelib`, and `httplib.core`.
-- [ ] Include deprecation/compat note in release notes for new additive aliases/APIs.
+- [x] Include deprecation/compat note in release notes for new additive aliases/APIs.
+  - Added `docs/release_notes.md` and `docs/zh/release_notes.md`.
