@@ -404,8 +404,37 @@ def _lex_string(
     *,
     bytes_prefix: bool,
 ) -> None:
+    def _err_here(msg: str) -> None:
+        raise LexError(msg, Span(file=st.file, start=start_i, end=max(start_i + 1, st.i), line=start_line, col=start_col))
+
+    def _append_char(out: str, ch: str) -> str:
+        if bytes_prefix and ord(ch) > 255:
+            _err_here("Bytes literal supports only byte-range characters")
+        return out + ch
+
+    def _read_hex_byte() -> str:
+        h1 = st.peek()
+        h2 = st.peek(1)
+        hex_digits = "0123456789abcdefABCDEF"
+        if not h1 or not h2 or h1 not in hex_digits or h2 not in hex_digits:
+            _err_here("Invalid hex escape in string literal")
+        st.advance(2)
+        return chr(int(h1 + h2, 16))
+
     st.advance(1)  # opening quote
     out = ""
+    esc_map = {
+        '"': '"',
+        "\\": "\\",
+        "n": "\n",
+        "r": "\r",
+        "t": "\t",
+        "0": "\0",
+        "a": "\a",
+        "b": "\b",
+        "f": "\f",
+        "v": "\v",
+    }
     while True:
         if st.eof():
             raise LexError("Unterminated string literal", Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col))
@@ -418,12 +447,20 @@ def _lex_string(
         if ch == "\\":
             st.advance(1)
             esc = st.peek()
-            if esc in ('"', "\\", "n", "r", "t"):
-                out += "\\" + st.advance(1)
+            if esc == "" or esc == "\n":
+                raise LexError("Unterminated string literal", Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col))
+            if esc == "x":
+                st.advance(1)
+                out = _append_char(out, _read_hex_byte())
+            elif esc in esc_map:
+                st.advance(1)
+                out = _append_char(out, esc_map[esc])
             else:
-                out += "\\" + st.advance(1)
+                # Keep unknown escapes as-is for compatibility (e.g. regex "\\d").
+                out = _append_char(out, "\\")
+                out = _append_char(out, st.advance(1))
             continue
-        out += st.advance(1)
+        out = _append_char(out, st.advance(1))
 
     kind = TokenKind.BYTES if bytes_prefix else TokenKind.STR
     emit(kind, out, start_i, start_line, start_col)

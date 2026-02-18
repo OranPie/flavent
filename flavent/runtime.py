@@ -276,8 +276,10 @@ def run_hir_program(
             if e.lit.kind == "LitFloat":
                 return float(e.lit.value)
             if e.lit.kind == "LitBytes":
-                # Lexer stores raw bytes literal contents as a string.
-                return str(e.lit.value).encode("utf-8")
+                try:
+                    return str(e.lit.value).encode("latin-1")
+                except UnicodeEncodeError as ue:
+                    raise RuntimeError("bytes literal contains non-byte character") from ue
             return e.lit.value
 
         if isinstance(e, UndefExpr):

@@ -172,6 +172,25 @@ _RUNTIME_CASES.extend(
             ),
             uses="use struct\nuse bytelib\n",
         ),
+        Case(
+            name="string-escape-runtime",
+            body=(
+                "    let one = \"\\n\"\n"
+                "    assertEq(isMatch(compile(\"^.$\"), one), true)?\n"
+            ),
+            uses="use regex\n",
+        ),
+        Case(
+            name="bytes-hex-escape-runtime",
+            body=(
+                "    let b = b\"\\x41\\x80\\x0a\"\n"
+                "    assertEq(bytesLen(b), 3)?\n"
+                "    assertEq(bytesGet(b, 0), 65)?\n"
+                "    assertEq(bytesGet(b, 1), 128)?\n"
+                "    assertEq(bytesGet(b, 2), 10)?\n"
+            ),
+            uses="use bytelib\n",
+        ),
     ]
 )
 
