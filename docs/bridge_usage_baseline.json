@@ -1,0 +1,547 @@
+{
+  "date": "2026-02-18",
+  "bridge_surface": {
+    "pure_count": 24,
+    "effectful_count": 31,
+    "total_count": 55,
+    "pure_symbols": [
+      "_pyBytesConcat",
+      "_pyBytesFromByte",
+      "_pyBytesGet",
+      "_pyBytesLen",
+      "_pyBytesSlice",
+      "_pyMd5Digest",
+      "_pyMd5Hex",
+      "_pySha1Digest",
+      "_pySha1Hex",
+      "_pySha512Digest",
+      "_pySha512Hex",
+      "_pyU32And",
+      "_pyU32Not",
+      "_pyU32Or",
+      "_pyU32Shl",
+      "_pyU32Shr",
+      "_pyU32Wrap",
+      "_pyU32Xor",
+      "floatToStr",
+      "strCodeAt",
+      "strFromCode",
+      "strLen",
+      "strSlice",
+      "strToFloat"
+    ],
+    "effectful_symbols": [
+      "consoleFlush",
+      "consolePrint",
+      "consolePrintErr",
+      "consolePrintln",
+      "consolePrintlnErr",
+      "consoleReadLine",
+      "fsExists",
+      "fsListDir",
+      "fsMkdirs",
+      "fsReadFileBytes",
+      "fsReadFileStr",
+      "fsRemove",
+      "fsTempDir",
+      "fsTempFile",
+      "fsWriteFileBytes",
+      "fsWriteFileStr",
+      "monoMillis",
+      "monoNanos",
+      "nowMillis",
+      "nowNanos",
+      "pyAdapterCall",
+      "sleep",
+      "sockClose",
+      "sockRecv",
+      "sockSend",
+      "sockSetTimeoutMillis",
+      "sockShutdown",
+      "sockTcpAccept",
+      "sockTcpConnect",
+      "sockTcpListen",
+      "uuid4Bytes"
+    ]
+  },
+  "stdlib_references": {
+    "total_references": 166,
+    "distinct_symbols_referenced": 55,
+    "distinct_modules_referencing": 20,
+    "per_symbol": {
+      "strLen": 38,
+      "strCodeAt": 29,
+      "strSlice": 25,
+      "strFromCode": 12,
+      "nowMillis": 5,
+      "pyAdapterCall": 3,
+      "floatToStr": 2,
+      "monoMillis": 2,
+      "monoNanos": 2,
+      "nowNanos": 2,
+      "sleep": 2,
+      "_pyBytesConcat": 1,
+      "_pyBytesFromByte": 1,
+      "_pyBytesGet": 1,
+      "_pyBytesLen": 1,
+      "_pyBytesSlice": 1,
+      "_pyMd5Digest": 1,
+      "_pyMd5Hex": 1,
+      "_pySha1Digest": 1,
+      "_pySha1Hex": 1,
+      "_pySha512Digest": 1,
+      "_pySha512Hex": 1,
+      "_pyU32And": 1,
+      "_pyU32Not": 1,
+      "_pyU32Or": 1,
+      "_pyU32Shl": 1,
+      "_pyU32Shr": 1,
+      "_pyU32Wrap": 1,
+      "_pyU32Xor": 1,
+      "consoleFlush": 1,
+      "consolePrint": 1,
+      "consolePrintErr": 1,
+      "consolePrintln": 1,
+      "consolePrintlnErr": 1,
+      "consoleReadLine": 1,
+      "fsExists": 1,
+      "fsListDir": 1,
+      "fsMkdirs": 1,
+      "fsReadFileBytes": 1,
+      "fsReadFileStr": 1,
+      "fsRemove": 1,
+      "fsTempDir": 1,
+      "fsTempFile": 1,
+      "fsWriteFileBytes": 1,
+      "fsWriteFileStr": 1,
+      "sockClose": 1,
+      "sockRecv": 1,
+      "sockSend": 1,
+      "sockSetTimeoutMillis": 1,
+      "sockShutdown": 1,
+      "sockTcpAccept": 1,
+      "sockTcpConnect": 1,
+      "sockTcpListen": 1,
+      "strToFloat": 1,
+      "uuid4Bytes": 1
+    },
+    "per_module": {
+      "httplib/core": 33,
+      "stringlib/__init__": 19,
+      "time/__init__": 13,
+      "struct/__init__": 12,
+      "fslib/__init__": 10,
+      "regex/__init__": 10,
+      "socket/api": 8,
+      "u32/__init__": 7,
+      "consoleIO/__init__": 6,
+      "hashlib/__init__": 6,
+      "json/__init__": 6,
+      "py/__init__": 6,
+      "bytelib/__init__": 5,
+      "file/lines": 5,
+      "stringfmt/__init__": 5,
+      "uuid/__init__": 4,
+      "asciilib/__init__": 3,
+      "base64/core": 3,
+      "glob/__init__": 3,
+      "hashlib/sha256": 2
+    },
+    "symbol_to_modules": {
+      "_pyBytesConcat": [
+        "bytelib/__init__"
+      ],
+      "_pyBytesFromByte": [
+        "bytelib/__init__"
+      ],
+      "_pyBytesGet": [
+        "bytelib/__init__"
+      ],
+      "_pyBytesLen": [
+        "bytelib/__init__"
+      ],
+      "_pyBytesSlice": [
+        "bytelib/__init__"
+      ],
+      "_pyMd5Digest": [
+        "hashlib/__init__"
+      ],
+      "_pyMd5Hex": [
+        "hashlib/__init__"
+      ],
+      "_pySha1Digest": [
+        "hashlib/__init__"
+      ],
+      "_pySha1Hex": [
+        "hashlib/__init__"
+      ],
+      "_pySha512Digest": [
+        "hashlib/__init__"
+      ],
+      "_pySha512Hex": [
+        "hashlib/__init__"
+      ],
+      "_pyU32And": [
+        "u32/__init__"
+      ],
+      "_pyU32Not": [
+        "u32/__init__"
+      ],
+      "_pyU32Or": [
+        "u32/__init__"
+      ],
+      "_pyU32Shl": [
+        "u32/__init__"
+      ],
+      "_pyU32Shr": [
+        "u32/__init__"
+      ],
+      "_pyU32Wrap": [
+        "u32/__init__"
+      ],
+      "_pyU32Xor": [
+        "u32/__init__"
+      ],
+      "consoleFlush": [
+        "consoleIO/__init__"
+      ],
+      "consolePrint": [
+        "consoleIO/__init__"
+      ],
+      "consolePrintErr": [
+        "consoleIO/__init__"
+      ],
+      "consolePrintln": [
+        "consoleIO/__init__"
+      ],
+      "consolePrintlnErr": [
+        "consoleIO/__init__"
+      ],
+      "consoleReadLine": [
+        "consoleIO/__init__"
+      ],
+      "floatToStr": [
+        "json/__init__",
+        "stringfmt/__init__"
+      ],
+      "fsExists": [
+        "fslib/__init__"
+      ],
+      "fsListDir": [
+        "fslib/__init__"
+      ],
+      "fsMkdirs": [
+        "fslib/__init__"
+      ],
+      "fsReadFileBytes": [
+        "fslib/__init__"
+      ],
+      "fsReadFileStr": [
+        "fslib/__init__"
+      ],
+      "fsRemove": [
+        "fslib/__init__"
+      ],
+      "fsTempDir": [
+        "fslib/__init__"
+      ],
+      "fsTempFile": [
+        "fslib/__init__"
+      ],
+      "fsWriteFileBytes": [
+        "fslib/__init__"
+      ],
+      "fsWriteFileStr": [
+        "fslib/__init__"
+      ],
+      "monoMillis": [
+        "time/__init__"
+      ],
+      "monoNanos": [
+        "time/__init__"
+      ],
+      "nowMillis": [
+        "time/__init__"
+      ],
+      "nowNanos": [
+        "time/__init__"
+      ],
+      "pyAdapterCall": [
+        "py/__init__"
+      ],
+      "sleep": [
+        "time/__init__"
+      ],
+      "sockClose": [
+        "socket/api"
+      ],
+      "sockRecv": [
+        "socket/api"
+      ],
+      "sockSend": [
+        "socket/api"
+      ],
+      "sockSetTimeoutMillis": [
+        "socket/api"
+      ],
+      "sockShutdown": [
+        "socket/api"
+      ],
+      "sockTcpAccept": [
+        "socket/api"
+      ],
+      "sockTcpConnect": [
+        "socket/api"
+      ],
+      "sockTcpListen": [
+        "socket/api"
+      ],
+      "strCodeAt": [
+        "asciilib/__init__",
+        "base64/core",
+        "file/lines",
+        "glob/__init__",
+        "httplib/core",
+        "json/__init__",
+        "py/__init__",
+        "regex/__init__",
+        "stringfmt/__init__",
+        "stringlib/__init__",
+        "struct/__init__",
+        "uuid/__init__"
+      ],
+      "strFromCode": [
+        "asciilib/__init__",
+        "httplib/core",
+        "json/__init__",
+        "py/__init__",
+        "regex/__init__",
+        "stringfmt/__init__"
+      ],
+      "strLen": [
+        "asciilib/__init__",
+        "base64/core",
+        "file/lines",
+        "glob/__init__",
+        "hashlib/sha256",
+        "httplib/core",
+        "json/__init__",
+        "py/__init__",
+        "regex/__init__",
+        "stringfmt/__init__",
+        "stringlib/__init__",
+        "struct/__init__",
+        "uuid/__init__"
+      ],
+      "strSlice": [
+        "base64/core",
+        "file/lines",
+        "glob/__init__",
+        "hashlib/sha256",
+        "httplib/core",
+        "json/__init__",
+        "regex/__init__",
+        "stringfmt/__init__",
+        "stringlib/__init__",
+        "uuid/__init__"
+      ],
+      "strToFloat": [
+        "json/__init__"
+      ],
+      "uuid4Bytes": [
+        "uuid/__init__"
+      ]
+    }
+  },
+  "tests_flv_runtime_baseline": {
+    "programs_analyzed": 52,
+    "files_analyzed": 16,
+    "files_failed": 0,
+    "total_bridge_calls": 838,
+    "kind_counts": {
+      "pure_call": 774,
+      "rpc": 64
+    },
+    "counts": {
+      "pure_call:strLen": 180,
+      "pure_call:strCodeAt": 171,
+      "pure_call:strSlice": 91,
+      "pure_call:strFromCode": 63,
+      "pure_call:_pyBytesConcat": 28,
+      "pure_call:_pyBytesFromByte": 28,
+      "pure_call:_pyBytesGet": 28,
+      "pure_call:_pyBytesLen": 28,
+      "pure_call:_pyBytesSlice": 28,
+      "pure_call:_pyU32And": 18,
+      "pure_call:_pyU32Not": 18,
+      "pure_call:_pyU32Or": 18,
+      "pure_call:_pyU32Shl": 18,
+      "pure_call:_pyU32Shr": 18,
+      "pure_call:_pyU32Wrap": 18,
+      "pure_call:_pyU32Xor": 18,
+      "rpc:sockClose": 8,
+      "rpc:sockRecv": 8,
+      "rpc:sockSend": 8,
+      "rpc:sockSetTimeoutMillis": 8,
+      "rpc:sockShutdown": 8,
+      "rpc:sockTcpAccept": 8,
+      "rpc:sockTcpConnect": 8,
+      "rpc:sockTcpListen": 8,
+      "pure_call:floatToStr": 3
+    },
+    "files": [
+      {
+        "file": "tests_flv/test_stdlib_httplib_more.flv",
+        "bridge_calls": 368,
+        "counts": {
+          "pure_call:strLen": 96,
+          "pure_call:strCodeAt": 64,
+          "pure_call:strFromCode": 56,
+          "pure_call:strSlice": 48,
+          "pure_call:_pyBytesConcat": 8,
+          "pure_call:_pyBytesFromByte": 8,
+          "pure_call:_pyBytesGet": 8,
+          "pure_call:_pyBytesLen": 8,
+          "pure_call:_pyBytesSlice": 8,
+          "rpc:sockClose": 8,
+          "rpc:sockRecv": 8,
+          "rpc:sockSend": 8,
+          "rpc:sockSetTimeoutMillis": 8,
+          "rpc:sockShutdown": 8,
+          "rpc:sockTcpAccept": 8,
+          "rpc:sockTcpConnect": 8,
+          "rpc:sockTcpListen": 8
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_struct.flv",
+        "bridge_calls": 264,
+        "counts": {
+          "pure_call:strCodeAt": 88,
+          "pure_call:strLen": 44,
+          "pure_call:_pyBytesConcat": 11,
+          "pure_call:_pyBytesFromByte": 11,
+          "pure_call:_pyBytesGet": 11,
+          "pure_call:_pyBytesLen": 11,
+          "pure_call:_pyBytesSlice": 11,
+          "pure_call:_pyU32And": 11,
+          "pure_call:_pyU32Not": 11,
+          "pure_call:_pyU32Or": 11,
+          "pure_call:_pyU32Shl": 11,
+          "pure_call:_pyU32Shr": 11,
+          "pure_call:_pyU32Wrap": 11,
+          "pure_call:_pyU32Xor": 11
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_random.flv",
+        "bridge_calls": 84,
+        "counts": {
+          "pure_call:_pyBytesConcat": 7,
+          "pure_call:_pyBytesFromByte": 7,
+          "pure_call:_pyBytesGet": 7,
+          "pure_call:_pyBytesLen": 7,
+          "pure_call:_pyBytesSlice": 7,
+          "pure_call:_pyU32And": 7,
+          "pure_call:_pyU32Not": 7,
+          "pure_call:_pyU32Or": 7,
+          "pure_call:_pyU32Shl": 7,
+          "pure_call:_pyU32Shr": 7,
+          "pure_call:_pyU32Wrap": 7,
+          "pure_call:_pyU32Xor": 7
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_stringlib_more.flv",
+        "bridge_calls": 57,
+        "counts": {
+          "pure_call:strLen": 33,
+          "pure_call:strCodeAt": 12,
+          "pure_call:strSlice": 12
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_regex_more.flv",
+        "bridge_calls": 40,
+        "counts": {
+          "pure_call:strSlice": 28,
+          "pure_call:strCodeAt": 4,
+          "pure_call:strFromCode": 4,
+          "pure_call:strLen": 4
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_stringfmt_more.flv",
+        "bridge_calls": 15,
+        "counts": {
+          "pure_call:floatToStr": 3,
+          "pure_call:strCodeAt": 3,
+          "pure_call:strFromCode": 3,
+          "pure_call:strLen": 3,
+          "pure_call:strSlice": 3
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_bytelib_more.flv",
+        "bridge_calls": 10,
+        "counts": {
+          "pure_call:_pyBytesConcat": 2,
+          "pure_call:_pyBytesFromByte": 2,
+          "pure_call:_pyBytesGet": 2,
+          "pure_call:_pyBytesLen": 2,
+          "pure_call:_pyBytesSlice": 2
+        }
+      },
+      {
+        "file": "tests_flv/test_basic.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_cases.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_eventloop_await.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_eventloop_emit.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_stdlib_enum_more.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_stdlib_list_map_more.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_stdlib_map_more.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_stdlib_option_list.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_stdlib_queue_heap_set_more.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      }
+    ],
+    "failures": []
+  },
+  "notes": [
+    "stdlib_references are static token counts from stdlib/*.flv (excluding _bridge_python.flv).",
+    "tests_flv_runtime_baseline uses compiler bridge audit counts after resolve/lower/typecheck."
+  ]
+}

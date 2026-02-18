@@ -10,13 +10,17 @@ Improve language grammar clarity and compiler structure while reducing runtime d
 - Ship each step with tests and measurable bridge-usage reduction.
 
 ## Phase 1: Baseline and Inventory
-- [ ] Capture current bridge surface:
-  - list all stdlib bridge primitives used in `stdlib/_bridge_python.flv`
-  - map which stdlib modules consume each primitive
-- [ ] Add baseline metrics:
-  - count of bridge calls in runtime tests
-  - count of bridge symbols referenced by stdlib
-- [ ] Document current grammar pain points (escapes, precedence edge cases, pattern/match ergonomics).
+- [x] Capture current bridge surface:
+  - [x] list all stdlib bridge primitives used in `stdlib/_bridge_python.flv`
+  - [x] map which stdlib modules consume each primitive
+- [x] Add baseline metrics:
+  - [x] count of bridge calls in runtime tests
+  - [x] count of bridge symbols referenced by stdlib
+- Notes:
+  - Baseline tooling: `scripts/bridge_usage_snapshot.py`
+  - Current snapshot: `docs/bridge_usage_baseline.md` + `docs/bridge_usage_baseline.json`
+- [x] Document current grammar pain points (escapes, precedence edge cases, pattern/match ergonomics).
+  - Baseline doc: `docs/grammar_pain_points.md`
 
 ## Phase 2: Grammar Refinement
 - [ ] Publish a compact EBNF-style grammar supplement in docs.

@@ -37,3 +37,19 @@ Compatibility note:
   - event dispatch uses event-type indexing and heap scheduling.
 - Match arm binding now restores only touched symbols instead of copying full environments.
 - No user-visible runtime semantics were changed (validated by full test suite).
+
+## Bridge Usage Baseline Tooling
+
+- Added `scripts/bridge_usage_snapshot.py` to capture bridge-dependency metrics.
+- Added baseline artifacts:
+  - `docs/bridge_usage_baseline.md`
+  - `docs/bridge_usage_baseline.json`
+- This snapshot tracks:
+  - bridge primitive surface in `stdlib/_bridge_python.flv`,
+  - static bridge symbol references across stdlib modules,
+  - audited bridge call usage across expanded `tests_flv` cases.
+
+## Grammar Planning Notes
+
+- Added `docs/grammar_pain_points.md` as a Phase 1 baseline for grammar refinement work.
+- Captures current pain points for literals, precedence visibility, pattern parsing heuristics, and parser diagnostics.

@@ -37,3 +37,19 @@
   - 事件分发增加按事件类型索引与堆调度。
 - `match` 绑定恢复只处理实际绑定符号，不再复制整份环境字典。
 - 未改变用户可见运行时语义（已通过全量测试验证）。
+
+## Bridge 依赖基线工具
+
+- 新增 `scripts/bridge_usage_snapshot.py`，用于采集 bridge 依赖指标。
+- 新增基线产物：
+  - `docs/bridge_usage_baseline.md`
+  - `docs/bridge_usage_baseline.json`
+- 当前快照覆盖：
+  - `stdlib/_bridge_python.flv` 的 bridge 原语表面，
+  - 标准库模块对 bridge 符号的静态引用，
+  - 展开 `tests_flv` 用例后的 bridge 调用审计统计。
+
+## 语法规划说明
+
+- 新增 `docs/grammar_pain_points.md`，作为语法优化 Phase 1 的基线说明。
+- 内容覆盖字面量、优先级可见性、模式匹配启发式与解析诊断等当前痛点。
