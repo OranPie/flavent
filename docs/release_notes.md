@@ -29,3 +29,11 @@ Migration guidance:
 Compatibility note:
 - Programs that intentionally relied on literal text `\n` being two characters should now use `\\n` for that exact text.
 - Unknown escapes remain preserved as-is for compatibility (for example regex-like `\d` text literals).
+
+## Runtime Performance Notes
+
+- Event-loop internals were optimized for FIFO-heavy workloads:
+  - queue operations now use deque-based `popleft` paths,
+  - event dispatch uses event-type indexing and heap scheduling.
+- Match arm binding now restores only touched symbols instead of copying full environments.
+- No user-visible runtime semantics were changed (validated by full test suite).

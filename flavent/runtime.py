@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import heapq
+from collections import deque
 from dataclasses import dataclass
 from typing import Any, Generator, Optional
 
@@ -211,9 +213,11 @@ def run_hir_program(
     # - events_by_type: queued events by TypeId.
     # - waiting: suspended tasks waiting for a TypeId.
     # - runnable: tasks ready to run.
-    events_by_type: dict[int, list[Any]] = {}
-    waiting: dict[int, list[_Task]] = {}
-    runnable: list[_Task] = []
+    events_by_type: dict[int, deque[Any]] = {}
+    waiting: dict[int, deque[_Task]] = {}
+    runnable: deque[_Task] = deque()
+    event_type_heap: list[int] = []
+    event_type_in_heap: set[int] = set()
 
     def deep_eq(a: Any, b: Any) -> bool:
         if type(a) != type(b):
@@ -368,9 +372,11 @@ def run_hir_program(
                 assert isinstance(arm, MatchArmExpr)
                 ok, binds = match_pattern(arm.pat, scr)
                 if ok:
-                    env2 = dict(env)
-                    env2.update(binds)
-                    return (yield from eval_expr_gen(arm.body, env2, current_sector, env_event_types))
+                    prev, missing = _bind_env(env, binds)
+                    try:
+                        return (yield from eval_expr_gen(arm.body, env, current_sector, env_event_types))
+                    finally:
+                        _restore_env(env, prev, missing)
             raise RuntimeError("non-exhaustive match")
 
         if isinstance(e, CallExpr):
@@ -520,6 +526,23 @@ def run_hir_program(
             return event_ctor_type_by_name.get(value[0])
         return None
 
+    def _bind_env(env: dict[SymbolId, Any], binds: dict[SymbolId, Any]) -> tuple[dict[SymbolId, Any], list[SymbolId]]:
+        prev: dict[SymbolId, Any] = {}
+        missing: list[SymbolId] = []
+        for k, v in binds.items():
+            if k in env:
+                prev[k] = env[k]
+            else:
+                missing.append(k)
+            env[k] = v
+        return prev, missing
+
+    def _restore_env(env: dict[SymbolId, Any], prev: dict[SymbolId, Any], missing: list[SymbolId]) -> None:
+        for k, v in prev.items():
+            env[k] = v
+        for k in missing:
+            env.pop(k, None)
+
     def exec_block_gen(
         b: Block,
         env: dict[SymbolId, Any],
@@ -586,16 +609,11 @@ def run_hir_program(
                     # Execute in the same env so assignments to existing variables
                     # (e.g. lowering-produced `res_sym`) are preserved, but treat
                     # pattern bindings as scoped locals.
-                    saved = dict(env)
-                    env.update(binds)
+                    prev, missing = _bind_env(env, binds)
                     try:
                         yield from exec_block_gen(arm.body, env, current_sector, env_event_types)
                     finally:
-                        for k in binds.keys():
-                            if k in saved:
-                                env[k] = saved[k]
-                            else:
-                                env.pop(k, None)
+                        _restore_env(env, prev, missing)
                     return
             raise RuntimeError("non-exhaustive match stmt")
         if isinstance(st, EmitStmt):
@@ -653,15 +671,25 @@ def run_hir_program(
             return r.value
         return None
 
+    handlers_by_event: dict[int, list[tuple[HandlerDecl, SymbolId]]] = {}
+    for sec in hir.sectors:
+        for h in sec.handlers:
+            handlers_by_event.setdefault(h.eventType, []).append((h, sec.sym))
+
     def enqueue_event(tid: int, value: Any) -> None:
         # Awaiters consume events first (FIFO). If no waiter exists, queue for dispatch.
         ws = waiting.get(tid)
         if ws:
-            t = ws.pop(0)
+            t = ws.popleft()
             t.pending_send = value
             runnable.append(t)
             return
-        events_by_type.setdefault(tid, []).append(value)
+        q = events_by_type.setdefault(tid, deque())
+        was_empty = not q
+        q.append(value)
+        if was_empty and tid not in event_type_in_heap:
+            heapq.heappush(event_type_heap, tid)
+            event_type_in_heap.add(tid)
 
     def _advance_task(task: _Task) -> Any:
         if task.pending_send is _NO_SEND:
@@ -685,16 +713,20 @@ def run_hir_program(
 
     def dispatch_one_event() -> bool:
         # Deterministic: smallest type id first.
-        for tid in sorted(events_by_type.keys()):
+        while event_type_heap:
+            tid = event_type_heap[0]
             q = events_by_type.get(tid)
             if not q:
+                heapq.heappop(event_type_heap)
+                event_type_in_heap.discard(tid)
                 continue
-            ev = q.pop(0)
+            ev = q.popleft()
+            if not q:
+                heapq.heappop(event_type_heap)
+                event_type_in_heap.discard(tid)
             # Schedule handlers in program order.
-            for sec in hir.sectors:
-                for h in sec.handlers:
-                    if h.eventType == tid:
-                        runnable.append(make_handler_task(h, sec.sym, ev))
+            for h, sec_sym in handlers_by_event.get(tid, ()):
+                runnable.append(make_handler_task(h, sec_sym, ev))
             return True
         return False
 
@@ -713,7 +745,7 @@ def run_hir_program(
                 if not dispatch_one_event():
                     return
 
-            task = runnable.pop(0)
+            task = runnable.popleft()
 
             try:
                 req = _advance_task(task)
@@ -736,11 +768,14 @@ def run_hir_program(
                 # If an event is already queued, consume immediately.
                 q = events_by_type.get(tid)
                 if q:
-                    ev = q.pop(0)
+                    ev = q.popleft()
+                    if not q and event_type_heap and event_type_heap[0] == tid:
+                        heapq.heappop(event_type_heap)
+                        event_type_in_heap.discard(tid)
                     task.pending_send = ev
                     runnable.append(task)
                 else:
-                    waiting.setdefault(tid, []).append(task)
+                    waiting.setdefault(tid, deque()).append(task)
                 continue
 
             # Unknown yield: just keep running.

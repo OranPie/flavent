@@ -51,3 +51,28 @@ Generated with:
   - `flavent/runtime.py:680 _gen` (cum ~`0.28s`)
   - `flavent/runtime.py:523 exec_block_gen` (cum ~`0.27s`)
   - `flavent/runtime.py:533 exec_stmt_gen` (cum ~`0.25s`)
+
+---
+
+# Post Runtime-Queue Optimization Snapshot
+
+Date: 2026-02-18
+
+Optimization focus:
+- runtime queue path (`list.pop(0)` → `deque.popleft()`)
+- event dispatch path (event-type heap + pre-indexed handlers)
+- match-bind restore path (targeted bind/restore instead of full `dict(env)` copy)
+
+Measured with:
+- `python3 scripts/perf_snapshot.py`
+
+## Benchmarks + Memory
+- Full test suite: `10.086s` wall, `46192 KB` max RSS, summary: `295 passed in 8.98s`.
+- Runtime determinism tests: `0.686s` wall, `31168 KB` max RSS, summary: `5 passed in 0.18s`.
+- Compiler check (minimal, strict): `0.256s` wall, `17932 KB` max RSS, summary: `OK`.
+
+## Runtime Hotspot Delta (cProfile, focused)
+- `run_hir_program` cumulative: `~0.64s` → `~0.61s` (improved).
+- `_advance_task` cumulative: `~0.31s` → `~0.30s` (improved).
+- `exec_block_gen` cumulative: `~0.27s` → `~0.26s` (improved).
+- Note: wall-clock suite benchmarks are noisy; cProfile hotspot reductions are the more stable signal for this pass.

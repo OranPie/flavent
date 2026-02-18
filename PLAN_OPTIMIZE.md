@@ -43,7 +43,12 @@ Refine Flavent language behavior and standard library consistency while improvin
 - [x] Update docs/examples to reflect final APIs (`regex`, `stringlib`, `bytelib`, `httplib.core` in `docs/en` + `docs/zh`).
 
 ## Phase 4: Performance Pass
-- [ ] Optimize hot runtime paths identified in baseline.
+- [~] Optimize hot runtime paths identified in baseline.
+  - [x] Runtime event-loop queue structures optimized:
+    - switched runnable/event/waiter FIFO queues from `list.pop(0)` to `deque.popleft()`
+    - added min-heap dispatch for event type scheduling and pre-indexed handlers by event type
+  - [x] Reduced environment-copy overhead in pattern matching:
+    - replaced full `dict(env)` snapshot in `match` paths with targeted bind/restore of bound symbols only
 - [x] Re-run benchmarks and compare to baseline (documented in `docs/perf_baseline.md`).
 - [ ] Keep behavior unchanged unless documented in changelog/migration notes.
 
