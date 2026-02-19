@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Optional
 
 from . import ast
@@ -25,6 +26,7 @@ class Resolution:
 @dataclass(slots=True)
 class _Ctx:
     file: str
+    discard_names: set[str]
     symbols: list[Symbol]
     next_id: int
     global_scope: Scope
@@ -47,6 +49,7 @@ def resolve_program(prog: ast.Program) -> Resolution:
 
 _STDLIB_PRELUDE: ast.Program | None = None
 _STDLIB_MODULES: dict[str, ast.Program] = {}
+_DISCARD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def _find_module_path_in_roots(qname: str, roots: list[Path]) -> Path | None:
@@ -1098,6 +1101,43 @@ def _expand_uses(prog: ast.Program, *, module_roots: list[Path] | None) -> ast.P
     return ast.Program(items=[*out_items, *kept], run=prog.run, span=prog.span)
 
 
+def _load_discard_names(file: str) -> set[str]:
+    # Default discard binding is `_`; users can override via nearest `flvdiscard` file.
+    defaults = {"_"}
+    path = Path(file)
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve()
+    cur = path if path.is_dir() else path.parent
+    config: Path | None = None
+    while True:
+        cand = cur / "flvdiscard"
+        if cand.exists() and cand.is_file():
+            config = cand
+            break
+        parent = cur.parent
+        if parent == cur:
+            break
+        cur = parent
+    if config is None:
+        return defaults
+    try:
+        raw = config.read_text(encoding="utf-8")
+    except OSError:
+        return defaults
+
+    names: list[str] = []
+    for line in raw.splitlines():
+        clean = line.split("#", 1)[0].strip()
+        if not clean:
+            continue
+        for tok in clean.replace(",", " ").split():
+            if _DISCARD_NAME_RE.match(tok):
+                names.append(tok)
+    if not names:
+        return defaults
+    return set(names)
+
+
 def resolve_program_with_stdlib(
     prog: ast.Program,
     *,
@@ -1120,6 +1160,7 @@ def resolve_program_with_stdlib(
     file = prog.span.file
     ctx = _Ctx(
         file=file,
+        discard_names=_load_discard_names(file),
         symbols=[],
         next_id=1,
         global_scope=Scope.root(),
@@ -1284,6 +1325,11 @@ def _define_value_decl(ctx: _Ctx, ident: ast.Ident, kind: SymbolKind) -> SymbolI
 
 def _define_in_scope(ctx: _Ctx, scope: Scope, ident: ast.Ident, kind: SymbolKind, *, owner: SymbolId | None) -> SymbolId:
     name = ident.name
+    if kind == SymbolKind.VAR and name in ctx.discard_names:
+        sid = ctx.new_symbol(kind, name, ident.span, owner=owner, data={"discard": True})
+        ctx.ident_to_symbol[id(ident)] = sid
+        return sid
+
     # Duplicate names may come from `use` expansion (stdlib modules), which is allowed.
     # We still reject duplicates originating from the same source file (true duplicate definition).
     existing_in_this_scope = scope.values.get(name)

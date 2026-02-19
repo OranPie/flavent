@@ -21,13 +21,16 @@ use socket
 ```flavent
 use socket
 
+type Event.Start = {}
+
 sector main:
-  fn run() -> Unit = do:
+  on Event.Start -> do:
     let s = rpc socket.tcpConnect("127.0.0.1", 8080)?
-    let _ = rpc socket.sendAll(s, b"hello")?
+    rpc socket.sendAll(s, b"hello")?
     let resp = rpc socket.recvAll(s, 4096)?
-    let _ = rpc socket.close(s)
-    return ()
+    rpc socket.close(s)
+    resp
+    stop()
 ```
 
 ## Notes

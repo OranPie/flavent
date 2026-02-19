@@ -35,6 +35,7 @@ Improve language grammar clarity and compiler structure while reducing runtime d
 - [~] Add parser/lexer regression tests for ambiguous and edge-case constructs.
   - [x] Added parser regression coverage for precedence and trailing-comma forms.
   - [x] Added parser/runtime coverage for sector mixin hook forms (`head`/`tail`/`invoke`) and resolver ordering.
+  - [x] Added resolver regression coverage for configurable discard bindings (`flvdiscard`, default `_`).
   - [ ] Expand to additional ambiguity classes (match arms, mixin forms, nested blocks).
 - [~] Improve user-facing error messages with expected-token hints.
   - [x] Added expected-token hints in core parser `expect` paths.
@@ -58,6 +59,7 @@ Improve language grammar clarity and compiler structure while reducing runtime d
   - docs coverage:
     - add `flvrepr` stdlib docs pages (`docs/en/stdlib/flvrepr.md`, `docs/zh/stdlib/flvrepr.md`)
     - include `flvrepr` in stdlib index pages
+    - refresh outdated runnable snippets (replace legacy `fn run()` quickstart/socket examples with `on Event.Start` forms)
 
 ## Phase 3: Compiler Structure Improvements
 - [~] Split parser/lexer helper logic into clearer internal units (without public API breakage).

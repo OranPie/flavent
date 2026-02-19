@@ -42,3 +42,25 @@ let r = rpc demo.echo(b"hi")
 
 Wrapper 可配置（`flm.json` 的 `wrappers`）：
 - `bytes`（默认）、`text`（ASCII）、`json`（参数打包为 JSON 数组）
+
+## 6. 丢弃绑定（`flvdiscard`）
+
+被配置为“丢弃名”的变量可以在同一作用域重复绑定，且不能按名称再次读取。
+
+- 默认丢弃名：`_`
+- 可在项目中新增 `flvdiscard` 文件进行配置（从源文件目录向上查找）。
+- 文件格式：空白/逗号分隔标识符，支持 `#` 注释。
+
+示例：
+
+```text
+# flvdiscard
+_, drop
+```
+
+```flavent
+fn f() -> Int = do:
+  let _ = 1
+  let _ = 2
+  return 0
+```

@@ -30,10 +30,12 @@ Create a file `hello.flv`:
 ```flavent
 use consoleIO
 
+type Event.Start = {}
+
 sector main:
-  fn run() -> Unit = do:
-    rpc print("Hello, Flavent!")
-    return ()
+  on Event.Start -> do:
+    call consoleIO.println("Hello, Flavent!")
+    stop()
 
 run()
 ```

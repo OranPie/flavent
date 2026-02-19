@@ -1,3 +1,6 @@
+import pytest
+
+from flavent.diagnostics import ResolveError
 from flavent.lexer import lex
 from flavent.parser import parse_program
 from flavent.resolve import resolve_program
@@ -68,3 +71,54 @@ run()
     prog = parse_program(lex("test.flv", src))
     res = resolve_program_with_stdlib(prog, use_stdlib=False)
     assert len(res.symbols) > 0
+
+
+def test_resolve_default_discard_binding_allows_repeated_underscore():
+    src = """fn f() -> Int = do:
+  let _ = 1
+  let _ = 2
+  return 0
+
+run()
+"""
+    prog = parse_program(lex("test.flv", src))
+    res = resolve_program_with_stdlib(prog, use_stdlib=False)
+    assert len(res.symbols) > 0
+
+
+def test_resolve_discard_binding_cannot_be_referenced():
+    src = """fn f() -> Int = do:
+  let _ = 1
+  return _
+
+run()
+"""
+    prog = parse_program(lex("test.flv", src))
+    with pytest.raises(ResolveError, match="NameNotFound: _"):
+        resolve_program_with_stdlib(prog, use_stdlib=False)
+
+
+def test_resolve_flvdiscard_config_overrides_default_name(tmp_path):
+    (tmp_path / "flvdiscard").write_text("drop\n", encoding="utf-8")
+
+    ok_src = """fn f() -> Int = do:
+  let drop = 1
+  let drop = 2
+  return 0
+
+run()
+"""
+    ok_prog = parse_program(lex(str(tmp_path / "main_ok.flv"), ok_src))
+    res = resolve_program_with_stdlib(ok_prog, use_stdlib=False, module_roots=[tmp_path])
+    assert len(res.symbols) > 0
+
+    bad_src = """fn f() -> Int = do:
+  let _ = 1
+  let _ = 2
+  return 0
+
+run()
+"""
+    bad_prog = parse_program(lex(str(tmp_path / "main_bad.flv"), bad_src))
+    with pytest.raises(ResolveError, match="Duplicate name in same scope: _"):
+        resolve_program_with_stdlib(bad_prog, use_stdlib=False, module_roots=[tmp_path])

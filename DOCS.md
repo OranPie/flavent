@@ -107,6 +107,27 @@ fn demo() -> Result[Int, Str] = do:
   return Ok(x)
 ```
 
+### 5.3 Discard bindings (`flvdiscard`)
+Bindings whose names are configured as discard names are accepted repeatedly in the same scope and are not resolvable by name.
+
+- Default discard name: `_`
+- Configure per project with a `flvdiscard` file (searched upward from source file path).
+- File format: whitespace/comma separated identifiers (supports `#` comments).
+
+Example:
+
+```text
+# flvdiscard
+_, drop
+```
+
+```flavent
+fn f() -> Int = do:
+  let _ = 1
+  let _ = 2
+  return 0
+```
+
 ## 6. Mixins (Advanced)
 
 Mixins allow weaving cross-cutting concerns into sectors or types.

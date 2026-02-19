@@ -2,6 +2,16 @@
 
 Date: 2026-02-19
 
+## Discard Binding Configuration
+
+- Added auto-discard bindings for variable declarations.
+- Default discard name is `_`:
+  - repeated bindings like `let _ = ...` no longer trigger duplicate-name errors.
+  - discard names are not resolvable as normal variables.
+- Discard names are configurable via nearest `flvdiscard` file:
+  - searched upward from the source file directory.
+  - supports whitespace/comma-separated identifiers and `#` comments.
+
 ## Stdlib API Compatibility Notes
 
 - `stringlib` now exposes Option-first find APIs:
