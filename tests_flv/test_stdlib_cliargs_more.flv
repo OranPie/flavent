@@ -1,0 +1,27 @@
+use flvtest
+use cliargs
+use collections.list
+
+fn _unwrapArgs(r: Result[CliArgs, Str], fallback: CliArgs) -> CliArgs = match r:
+  Err(_) -> fallback
+  Ok(v) -> v
+
+test "cliargs-long-short-and-positionals" -> do:
+  let argv = Cons("--verbose", Cons("--port=8080", Cons("--name", Cons("alice", Cons("-xz", Cons("file1", Nil))))))
+  let parsed = _unwrapArgs(cliParse(argv), cliEmpty())
+  assertTrue(cliHasFlag(parsed, "verbose"))?
+  assertTrue(cliHasFlag(parsed, "x"))?
+  assertTrue(cliHasFlag(parsed, "z"))?
+  assertEq(cliGetOption(parsed, "port"), Some("8080"))?
+  assertEq(cliGetOptionOr(parsed, "name", ""), "alice")?
+  assertEq(cliPositionals(parsed), Cons("file1", Nil))?
+
+test "cliargs-terminator" -> do:
+  let argv = Cons("--", Cons("--not-opt", Cons("-x", Nil)))
+  let parsed = _unwrapArgs(cliParse(argv), cliEmpty())
+  assertTrue(not cliHasFlag(parsed, "x"))?
+  assertEq(cliPositionals(parsed), Cons("--not-opt", Cons("-x", Nil)))?
+
+test "cliargs-errors" -> do:
+  assertEq(cliParse(Cons("--=x", Nil)), Err("cliargs: empty long option name"))?
+  assertEq(cliParse(Cons("-", Nil)), Err("cliargs: invalid short option token"))?

@@ -79,6 +79,9 @@ Compatibility note:
   - spec builders: `processSpec`, `processWith*`
   - lifecycle: `processSpawn`, `processStart`, `processWait`, `processRun`
   - structured errors via `ProcessError { code, message }`
+- Added new `cliargs` stdlib module for deterministic argv parsing:
+  - `cliParse`, `cliHasFlag`, `cliGetOption`, `cliPositionals`
+  - supports long options, short flag bundles, and `--` terminator
 - Added new `collections.deque` stdlib module (plus `deque` compatibility wrapper):
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -103,6 +106,8 @@ Compatibility note:
   - `docs/zh/stdlib/env.md`
   - `docs/en/stdlib/process.md`
   - `docs/zh/stdlib/process.md`
+  - `docs/en/stdlib/cliargs.md`
+  - `docs/zh/stdlib/cliargs.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`

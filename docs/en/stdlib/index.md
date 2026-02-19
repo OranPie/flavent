@@ -19,6 +19,7 @@ This directory contains **one page per stdlib module**.
 ## System / IO
 - [consoleIO](./consoleIO.md)
 - [time](./time.md)
+- [cliargs](./cliargs.md)
 - [env](./env.md)
 - [process](./process.md)
 - [fslib](./fslib.md)

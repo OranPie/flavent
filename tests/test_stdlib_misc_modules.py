@@ -28,6 +28,7 @@ use collections.heap
 use collections.set
 use bytelib
 use u32
+use cliargs
 use env
 use process
 use fslib
@@ -141,6 +142,7 @@ sector s:
     let _sf0 = stringlib.strFind("abcabc", "bc", 0)
     let _sf1 = startsWith("hello", "he")
     let _sf2 = trimSpaces("  x  ")
+    let _ca0 = cliParse(Cons("--x", Cons("file", Nil)))
 
     let a = wrap(0 - 1)
     let b = wrap(1)

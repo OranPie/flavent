@@ -79,6 +79,9 @@
   - 规格构建：`processSpec`、`processWith*`
   - 生命周期：`processSpawn`、`processStart`、`processWait`、`processRun`
   - 通过 `ProcessError { code, message }` 返回结构化错误
+- 新增 `cliargs` 标准库模块（确定性 argv 解析）：
+  - `cliParse`、`cliHasFlag`、`cliGetOption`、`cliPositionals`
+  - 支持长参数、短参数组合与 `--` 终止符
 - 新增 `collections.deque` 标准库模块（并提供 `deque` 兼容 wrapper）：
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -103,6 +106,8 @@
   - `docs/zh/stdlib/env.md`
   - `docs/en/stdlib/process.md`
   - `docs/zh/stdlib/process.md`
+  - `docs/en/stdlib/cliargs.md`
+  - `docs/zh/stdlib/cliargs.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`

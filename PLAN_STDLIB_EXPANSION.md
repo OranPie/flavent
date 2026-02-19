@@ -31,7 +31,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 ## Phase 3: System & Runtime Expansion
 - [x] Add `env` module (get/set/list env vars with `Result`)
 - [x] Add `process` module (spawn/run/wait wrappers, structured errors)
-- [ ] Add `cliargs` module (argument parsing helpers for apps/tools)
+- [x] Add `cliargs` module (argument parsing helpers for apps/tools)
 - [ ] Add `log` module (leveled logging helpers over `consoleIO`)
 
 ## Phase 4: Quality Gates Per Module
