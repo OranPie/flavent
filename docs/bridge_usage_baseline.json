@@ -65,16 +65,16 @@
     ]
   },
   "stdlib_references": {
-    "total_references": 99,
+    "total_references": 90,
     "distinct_symbols_referenced": 55,
-    "distinct_modules_referencing": 18,
+    "distinct_modules_referencing": 17,
     "per_symbol": {
-      "strLen": 14,
-      "strCodeAt": 9,
-      "strSlice": 9,
+      "strLen": 11,
+      "strCodeAt": 7,
+      "strSlice": 7,
       "nowMillis": 5,
-      "strFromCode": 5,
       "pyAdapterCall": 3,
+      "strFromCode": 3,
       "floatToStr": 2,
       "monoMillis": 2,
       "monoNanos": 2,
@@ -132,8 +132,6 @@
       "u32/__init__": 7,
       "consoleIO/__init__": 6,
       "hashlib/__init__": 6,
-      "json/__init__": 6,
-      "py/__init__": 6,
       "bytelib/__init__": 5,
       "file/lines": 5,
       "stringfmt/__init__": 5,
@@ -143,7 +141,8 @@
       "base64/core": 3,
       "glob/__init__": 3,
       "process/__init__": 3,
-      "hashlib/sha256": 2
+      "py/__init__": 3,
+      "json/__init__": 2
     },
     "symbol_to_modules": {
       "_pyBytesConcat": [
@@ -299,16 +298,12 @@
         "base64/core",
         "file/lines",
         "glob/__init__",
-        "json/__init__",
-        "py/__init__",
         "stringfmt/__init__",
         "stringlib/__init__",
         "uuid/__init__"
       ],
       "strFromCode": [
         "asciilib/__init__",
-        "json/__init__",
-        "py/__init__",
         "stringfmt/__init__",
         "stringlib/__init__"
       ],
@@ -317,10 +312,7 @@
         "base64/core",
         "file/lines",
         "glob/__init__",
-        "hashlib/sha256",
-        "json/__init__",
         "process/__init__",
-        "py/__init__",
         "stringfmt/__init__",
         "stringlib/__init__",
         "uuid/__init__"
@@ -329,8 +321,6 @@
         "base64/core",
         "file/lines",
         "glob/__init__",
-        "hashlib/sha256",
-        "json/__init__",
         "stringfmt/__init__",
         "stringlib/__init__",
         "uuid/__init__"

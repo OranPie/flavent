@@ -1,27 +1,14 @@
 use _bridge_python
-use bytelib
-use collections.list
+use asciilib
 use json
 
-fn _asciiFromBytesAcc(b: Bytes, i: Int, n: Int, acc: Str) -> Str = match i >= n:
-  true -> acc
-  false -> _asciiFromBytesAcc(b, i + 1, n, acc + strFromCode(bytesGet(b, i)))
+fn _textEncode(s: Str) -> Bytes = asciilib.asciiToBytes(s)
 
-fn _asciiFromBytes(b: Bytes) -> Str = _asciiFromBytesAcc(b, 0, bytesLen(b), "")
+fn _textDecode(b: Bytes) -> Str = asciilib.asciiFromBytes(b)
 
-fn _asciiCodesAcc(s: Str, i: Int, n: Int, acc: List[Int]) -> List[Int] = match i >= n:
-  true -> reverse(acc)
-  false -> _asciiCodesAcc(s, i + 1, n, Cons(strCodeAt(s, i), acc))
+fn _jsonEncode(v: JsonValue) -> Bytes = asciilib.asciiToBytes(json.dumps(v))
 
-fn _asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLen(s), Nil))
-
-fn _textEncode(s: Str) -> Bytes = _asciiToBytes(s)
-
-fn _textDecode(b: Bytes) -> Str = _asciiFromBytes(b)
-
-fn _jsonEncode(v: JsonValue) -> Bytes = _asciiToBytes(json.dumps(v))
-
-fn _jsonDecode(b: Bytes) -> Result[JsonValue, Str] = json.loads(_asciiFromBytes(b))
+fn _jsonDecode(b: Bytes) -> Result[JsonValue, Str] = json.loads(asciilib.asciiFromBytes(b))
 
 sector py:
   fn invoke(adapter: Str, method: Str, payload: Bytes) -> Result[Bytes, Str] = rpc _bridge_python.pyAdapterCall(adapter, method, payload)

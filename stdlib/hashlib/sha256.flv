@@ -1,11 +1,11 @@
-use _bridge_python
 use collections.list
 use bytelib
 use u32
+use stringlib
 
-fn _shaLen(s: Str) -> Int = strLen(s)
+fn _shaLen(s: Str) -> Int = strLength(s)
 
-fn _shaSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn _shaSlice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
 
 fn _shaMod(x: Int, m: Int) -> Int = x - (x / m) * m
 

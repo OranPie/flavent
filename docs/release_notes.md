@@ -59,9 +59,9 @@ Compatibility note:
   - audited bridge call usage across expanded `tests_flv` cases.
 - Refreshed baseline after bridge-wrapper consolidation (`2026-02-19`):
   - total bridge symbols: `55` (24 pure + 31 effectful),
-  - stdlib bridge references: `99` across `18` modules (down from `226` across `26`),
+  - stdlib bridge references: `90` across `17` modules (down from `226` across `26`),
   - audited `tests_flv` bridge calls: `640` (pure_call `564`, rpc `66`, call `10`; down from `1711`).
-- Added reusable low-level string wrappers in `stringlib` and migrated core modules (`url`, `path`, `datetime`, `csv`, `cliargs`, `regex`, `httplib.core`, `struct`) to reduce direct bridge coupling.
+- Added reusable low-level string wrappers in `stringlib` and migrated core modules (`url`, `path`, `datetime`, `csv`, `cliargs`, `regex`, `httplib.core`, `struct`, `json`, `hashlib.sha256`, `py`) to reduce direct bridge coupling.
 - `stdlib/flvrepr` now avoids direct `_bridge_python` imports by using `stringlib`/`collections.list` helpers.
 - `stdlib/httplib.core` now delegates shared helpers to connected stdlib modules (`stringlib`, `bytelib`, `asciilib`) for find/trim/ascii conversions.
 - Added duplicate-definition detector/report for stdlib cross-module symbols:

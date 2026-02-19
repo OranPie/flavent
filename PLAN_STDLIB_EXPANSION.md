@@ -45,6 +45,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Snapshot bridge usage after each batch (`scripts/bridge_usage_snapshot.py`)
 - [x] Consolidate low-level string bridge usage through `stringlib` wrappers (`strLength`/`strCode`/`strSliceRange`/`strFromCodePoint`)
 - [x] Migrate parser-heavy modules (`regex`, `httplib.core`, `struct`) to `stringlib` wrappers to remove direct `_bridge_python` imports
+- [x] Migrate `json`/`hashlib.sha256`/`py` string handling to shared stdlib wrappers
 - [ ] Prioritize replacing deterministic bridge-backed helpers with pure-Flavent versions
 - [ ] Keep bridge-only functionality limited to IO/network/OS boundaries
 

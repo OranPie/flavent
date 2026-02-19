@@ -8,16 +8,16 @@ Date: 2026-02-19
 - Total bridge symbols: `55`
 
 ## Stdlib Bridge Symbol References (Static)
-- Total symbol references: `99`
+- Total symbol references: `90`
 - Distinct bridge symbols referenced: `55`
-- Distinct stdlib modules referencing bridge symbols: `18`
+- Distinct stdlib modules referencing bridge symbols: `17`
 - Top referenced bridge symbols:
-- `strLen`: `14`
-- `strCodeAt`: `9`
-- `strSlice`: `9`
+- `strLen`: `11`
+- `strCodeAt`: `7`
+- `strSlice`: `7`
 - `nowMillis`: `5`
-- `strFromCode`: `5`
 - `pyAdapterCall`: `3`
+- `strFromCode`: `3`
 - `floatToStr`: `2`
 - `monoMillis`: `2`
 - Top stdlib modules by bridge references:
@@ -27,8 +27,8 @@ Date: 2026-02-19
 - `u32/__init__`: `7`
 - `consoleIO/__init__`: `6`
 - `hashlib/__init__`: `6`
-- `json/__init__`: `6`
-- `py/__init__`: `6`
+- `bytelib/__init__`: `5`
+- `file/lines`: `5`
 
 ## tests_flv Bridge Call Baseline
 - Programs analyzed (expanded test cases): `83`

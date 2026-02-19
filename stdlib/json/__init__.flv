@@ -2,16 +2,17 @@ use _bridge_python
 use collections.list
 use collections.map
 use std.result
+use stringlib
 
 type JsonValue = JNull | JBool(Bool) | JInt(Int) | JFloat(Float) | JStr(Str) | JArr(List[JsonValue]) | JObj(Map[Str, JsonValue])
 type Json = JsonValue
 
 fn jNull() -> JsonValue = JNull
 
-fn _jLen(s: Str) -> Int = strLen(s)
-fn _jCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
-fn _jSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
-fn _jChar(code: Int) -> Str = strFromCode(code)
+fn _jLen(s: Str) -> Int = strLength(s)
+fn _jCodeAt(s: Str, i: Int) -> Int = strCode(s, i)
+fn _jSlice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
+fn _jChar(code: Int) -> Str = strFromCodePoint(code)
 
 fn _jConcatPieces(xs: List[Str]) -> Str = match xs:
   Nil -> ""
