@@ -1,0 +1,101 @@
+use collections.list
+use file.lines
+use stringlib
+
+type CsvOptions = { delimiter: Str, quote: Str }
+
+fn csvDefaultOptions() -> CsvOptions = { delimiter = ",", quote = "\"" }
+
+fn _csvNormChar(s: Str, fallback: Str) -> Str = match strLen(s) <= 0:
+  true -> fallback
+  false -> strSlice(s, 0, 1)
+
+fn _csvParseAcc(
+  line: Str,
+  i: Int,
+  n: Int,
+  delim: Str,
+  quote: Str,
+  inQuote: Bool,
+  field: Str,
+  fieldsRev: List[Str]
+) -> Result[List[Str], Str] = match i >= n:
+  true -> match inQuote:
+    true -> Err("csv: unterminated quoted field")
+    false -> Ok(reverse(Cons(field, fieldsRev)))
+  false -> do:
+    let c = strSlice(line, i, i + 1)
+    return match inQuote:
+      true -> match c == quote:
+        true -> match i + 1 < n and strSlice(line, i + 1, i + 2) == quote:
+          true -> _csvParseAcc(line, i + 2, n, delim, quote, true, field + quote, fieldsRev)
+          false -> _csvParseAcc(line, i + 1, n, delim, quote, false, field, fieldsRev)
+        false -> _csvParseAcc(line, i + 1, n, delim, quote, true, field + c, fieldsRev)
+      false -> match c == quote:
+        true -> _csvParseAcc(line, i + 1, n, delim, quote, true, field, fieldsRev)
+        false -> match c == delim:
+          true -> _csvParseAcc(line, i + 1, n, delim, quote, false, "", Cons(field, fieldsRev))
+          false -> _csvParseAcc(line, i + 1, n, delim, quote, false, field + c, fieldsRev)
+
+fn csvParseLineWith(line: Str, opts: CsvOptions) -> Result[List[Str], Str] = do:
+  let delim = _csvNormChar(opts.delimiter, ",")
+  let quote = _csvNormChar(opts.quote, "\"")
+  return _csvParseAcc(line, 0, strLen(line), delim, quote, false, "", Nil)
+
+fn csvParseLine(line: Str) -> Result[List[Str], Str] = csvParseLineWith(line, csvDefaultOptions())
+
+fn _csvParseLinesAcc(lines: List[Str], opts: CsvOptions, acc: List[List[Str]]) -> Result[List[List[Str]], Str] = match lines:
+  Nil -> Ok(reverse(acc))
+  Cons(line, rest) -> do:
+    let row = csvParseLineWith(line, opts)
+    return match row:
+      Err(e) -> Err(e)
+      Ok(v) -> _csvParseLinesAcc(rest, opts, Cons(v, acc))
+
+fn csvParseWith(text: Str, opts: CsvOptions) -> Result[List[List[Str]], Str] = do:
+  let lines = splitLines(text)
+  return _csvParseLinesAcc(lines, opts, Nil)
+
+fn csvParse(text: Str) -> Result[List[List[Str]], Str] = csvParseWith(text, csvDefaultOptions())
+
+fn _csvEscapeQuoteAcc(s: Str, i: Int, n: Int, quote: Str, acc: Str) -> Str = match i >= n:
+  true -> acc
+  false -> do:
+    let c = strSlice(s, i, i + 1)
+    let part = match c == quote:
+      true -> quote + quote
+      false -> c
+    return _csvEscapeQuoteAcc(s, i + 1, n, quote, acc + part)
+
+fn csvEncodeFieldWith(field: Str, opts: CsvOptions) -> Str = do:
+  let delim = _csvNormChar(opts.delimiter, ",")
+  let quote = _csvNormChar(opts.quote, "\"")
+  let esc = _csvEscapeQuoteAcc(field, 0, strLen(field), quote, "")
+  let needsQuote = strFind(field, delim, 0) >= 0 or strFind(field, quote, 0) >= 0 or strFind(field, "\n", 0) >= 0 or strFind(field, "\r", 0) >= 0
+  return match needsQuote:
+    true -> quote + esc + quote
+    false -> esc
+
+fn csvEncodeField(field: Str) -> Str = csvEncodeFieldWith(field, csvDefaultOptions())
+
+fn _csvJoinFieldsAcc(fields: List[Str], opts: CsvOptions, acc: Str) -> Str = do:
+  let delim = _csvNormChar(opts.delimiter, ",")
+  return match fields:
+    Nil -> acc
+    Cons(f, rest) -> do:
+      let enc = csvEncodeFieldWith(f, opts)
+      return match strLen(acc) == 0:
+        true -> _csvJoinFieldsAcc(rest, opts, enc)
+        false -> _csvJoinFieldsAcc(rest, opts, acc + delim + enc)
+
+fn csvStringifyLineWith(fields: List[Str], opts: CsvOptions) -> Str = _csvJoinFieldsAcc(fields, opts, "")
+
+fn csvStringifyLine(fields: List[Str]) -> Str = csvStringifyLineWith(fields, csvDefaultOptions())
+
+fn _csvStringifyRowsAcc(rows: List[List[Str]], opts: CsvOptions, acc: List[Str]) -> List[Str] = match rows:
+  Nil -> reverse(acc)
+  Cons(row, rest) -> _csvStringifyRowsAcc(rest, opts, Cons(csvStringifyLineWith(row, opts), acc))
+
+fn csvStringifyWith(rows: List[List[Str]], opts: CsvOptions) -> Str = joinLines(_csvStringifyRowsAcc(rows, opts, Nil))
+
+fn csvStringify(rows: List[List[Str]]) -> Str = csvStringifyWith(rows, csvDefaultOptions())

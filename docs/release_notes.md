@@ -71,11 +71,17 @@ Compatibility note:
 
 ## Stdlib Expansion (Phase 2 Kickoff)
 
+- Added new `csv` stdlib module with pure-Flavent helpers:
+  - `csvParseLine` / `csvParse`
+  - `csvStringifyLine` / `csvStringify`
+  - `CsvOptions` for delimiter/quote configuration
 - Added new `url` stdlib module with pure-Flavent helpers:
   - `encodeComponent` / `decodeComponent`
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - Added EN/ZH docs pages and index links:
+  - `docs/en/stdlib/csv.md`
+  - `docs/zh/stdlib/csv.md`
   - `docs/en/stdlib/url.md`
   - `docs/zh/stdlib/url.md`
 

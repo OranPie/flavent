@@ -23,7 +23,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 
 ## Phase 2: Core Utility Expansion
 - [x] Add `url` module (encode/decode/query parsing utilities)
-- [ ] Add `csv` module (read/write rows, delimiter/quote support)
+- [x] Add `csv` module (read/write rows, delimiter/quote support)
 - [ ] Add `path` module (join/base/ext/normalize helpers)
 - [ ] Add `datetime` module (parse/format ISO-like helpers)
 - [ ] Add `collections.deque` module for explicit queue/deque operations

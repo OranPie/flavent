@@ -33,6 +33,7 @@ use uuid
 use glob
 use tempfile
 use json
+use csv
 use struct
 use socket
 use httplib
@@ -164,6 +165,8 @@ sector s:
     let j0 = JArr(Cons(JInt(1), Cons(JBool(true), Cons(jNull(), nil()))))
     let s0 = dumps(j0)
     let _j1 = loads(s0)
+    let _csvRow = csvParseLine("a,\\\"b,c\\\"")
+    let _csvTxt = csvStringify(Cons(Cons("a", Cons("b,c", Nil)), Nil))
 
     let o0 = Some(1)
     let _os = isSome(o0)

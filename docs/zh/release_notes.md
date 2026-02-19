@@ -71,11 +71,17 @@
 
 ## 标准库扩展（Phase 2 启动）
 
+- 新增 `csv` 标准库模块（纯 Flavent 实现）：
+  - `csvParseLine` / `csvParse`
+  - `csvStringifyLine` / `csvStringify`
+  - 通过 `CsvOptions` 配置分隔符与引用符
 - 新增 `url` 标准库模块（纯 Flavent 实现）：
   - `encodeComponent` / `decodeComponent`
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - 已补充 EN/ZH 文档与索引入口：
+  - `docs/en/stdlib/csv.md`
+  - `docs/zh/stdlib/csv.md`
   - `docs/en/stdlib/url.md`
   - `docs/zh/stdlib/url.md`
 

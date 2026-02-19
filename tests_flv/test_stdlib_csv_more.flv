@@ -1,0 +1,30 @@
+use flvtest
+use csv
+use collections.list
+
+test "csv-parse-line-basic" -> do:
+  let row = csvParseLine("a,b,c")
+  let want = Ok(Cons("a", Cons("b", Cons("c", Nil))))
+  assertEq(row, want)?
+
+test "csv-parse-line-quoted" -> do:
+  let row = csvParseLine("\"a,b\",c,\"x\"\"y\"")
+  let want = Ok(Cons("a,b", Cons("c", Cons("x\"y", Nil))))
+  assertEq(row, want)?
+
+test "csv-stringify-line" -> do:
+  let row = Cons("a,b", Cons("x\"y", Cons("z", Nil)))
+  assertEq(csvStringifyLine(row), "\"a,b\",\"x\"\"y\",z")?
+
+test "csv-parse-stringify-roundtrip" -> do:
+  let rows = Cons(Cons("a", Cons("b,c", Nil)), Cons(Cons("1", Cons("2", Nil)), Nil))
+  let s = csvStringify(rows)
+  assertEq(s, "a,\"b,c\"\n1,2")?
+  assertEq(csvParse(s), Ok(rows))?
+
+test "csv-options-and-errors" -> do:
+  let opts = { delimiter = ";", quote = "'" }
+  let row = csvParseLineWith("a;'b;c';d", opts)
+  let want = Ok(Cons("a", Cons("b;c", Cons("d", Nil))))
+  assertEq(row, want)?
+  assertEq(csvParseLine("\"oops"), Err("csv: unterminated quoted field"))?
