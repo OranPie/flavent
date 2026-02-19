@@ -1,8 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "flavent"
 version = "0.0.0"
 description = "flavent compiler (Phase 1: lexer/parser/AST)"
 requires-python = ">=3.10"
+
+[project.scripts]
+flavent = "flavent.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["flavent*", "flvtest*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "tests_flv"]
