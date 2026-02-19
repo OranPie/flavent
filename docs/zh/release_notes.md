@@ -61,3 +61,7 @@
   - 表达式/事件/rpc/call/proceed 的参数列表支持尾随逗号，
   - 元组字面量支持尾随逗号（含单元素元组写法），
   - 常见分隔符缺失的报错增加了更有针对性的 expected-token 提示。
+  - 声明级错误提示更具体：
+    - type/const/let/need/pattern/function 中缺少 `=` 会给出更明确指导，
+    - 在 sector 作用域误用赋值时会提示改用 `let`，
+    - mixin 项目报错会按目标类型（sector/type）提示可用项。

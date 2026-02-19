@@ -61,3 +61,7 @@ Compatibility note:
   - expression/event/rpc/call/proceed argument lists now accept trailing commas,
   - tuple literals now accept trailing commas (including single-element tuple form),
   - expected-token parse errors now include targeted hints for common delimiters.
+  - declaration-level parse hints improved for common mistakes:
+    - missing `=` in type/const/let/need/pattern/function declarations,
+    - sector-scope assignment misuse now suggests `let`,
+    - mixin item errors now mention valid items per mixin target (sector vs type).

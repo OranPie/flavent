@@ -90,3 +90,26 @@ def test_parse_error_hints_flvtest_top_level():
     src = 'test "case" -> do:\n  stop()\n'
     with pytest.raises(ParseError, match="flvtest syntax"):
         parse_program(lex("test.flv", src))
+
+
+def test_parse_error_fn_signature_requires_eq_hint():
+    src = "fn f() -> Int:\n  1\n"
+    with pytest.raises(ParseError, match=r"use '= expr' or '= do:'"):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_error_sector_assignment_scope_hint():
+    src = """sector main:
+  x = 1
+run()
+"""
+    with pytest.raises(ParseError, match=r"use `let name ="):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_error_mixin_item_context_hint():
+    src = """mixin M v1 into sector main:
+  let x = 1
+"""
+    with pytest.raises(ParseError, match=r"sector mixins support: pattern, fn, around"):
+        parse_program(lex("test.flv", src))

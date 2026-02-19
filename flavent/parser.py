@@ -180,7 +180,7 @@ def _parse_type_decl(cur: _Cursor) -> ast.TypeDecl:
         while cur.match(TokenKind.COMMA):
             params.append(_parse_ident(cur))
         cur.expect(TokenKind.RBRACKET)
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after type declaration")
 
     if cur.at(TokenKind.LBRACE):
         rhs = _parse_record_type(cur)
@@ -254,7 +254,7 @@ def _parse_variant_decl(cur: _Cursor) -> ast.VariantDecl:
 def _parse_const_decl(cur: _Cursor) -> ast.ConstDecl:
     kw = cur.expect(TokenKind.KW_CONST)
     name = _parse_ident(cur)
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after const name")
     value = _parse_expr(cur)
     span = kw.span.merge(value.span)
     return ast.ConstDecl(name=name, value=value, span=span)
@@ -263,7 +263,7 @@ def _parse_const_decl(cur: _Cursor) -> ast.ConstDecl:
 def _parse_let_decl(cur: _Cursor) -> ast.LetDecl:
     kw = cur.expect(TokenKind.KW_LET)
     name = _parse_ident(cur)
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after let name")
     value = _parse_expr(cur)
     span = kw.span.merge(value.span)
     return ast.LetDecl(name=name, value=value, span=span)
@@ -288,7 +288,7 @@ def _parse_need_decl(cur: _Cursor) -> ast.NeedDecl:
         rp = cur.expect(TokenKind.RPAREN)
         attrs = ast.NeedAttr(cache=cache, cacheFail=cache_fail, span=kw.span.merge(rp.span))
     name = _parse_ident(cur)
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after need name")
     value = _parse_expr(cur)
     span = kw.span.merge(value.span)
     return ast.NeedDecl(name=name, attrs=attrs, value=value, span=span)
@@ -331,7 +331,7 @@ def _parse_fn_decl(cur: _Cursor) -> ast.FnDecl:
     if cur.match(TokenKind.ARROW):
         ret_ty = _parse_type_ref(cur)
 
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after function signature (use '= expr' or '= do:')")
     body = _parse_fn_body(cur)
     span = kw.span.merge(body.span)
     return ast.FnDecl(name=name, sectorQual=sector_qual, typeParams=type_params, params=params, retType=ret_ty, body=body, span=span)
@@ -347,9 +347,9 @@ def _parse_fn_body(cur: _Cursor) -> ast.FnBody:
 
 
 def _parse_block_after_colon(cur: _Cursor, start_span: Span) -> ast.Block:
-    cur.expect(TokenKind.COLON)
-    cur.expect(TokenKind.NL)
-    cur.expect(TokenKind.INDENT)
+    cur.expect(TokenKind.COLON, "Expected ':' before block body")
+    cur.expect(TokenKind.NL, "Expected newline after ':' before block body")
+    cur.expect(TokenKind.INDENT, "Expected indented block body")
     stmts: list[ast.Stmt] = []
     while not cur.at(TokenKind.DEDENT) and not cur.at(TokenKind.EOF):
         if cur.at(TokenKind.NL):
@@ -366,9 +366,9 @@ def _parse_block_after_colon(cur: _Cursor, start_span: Span) -> ast.Block:
 def _parse_sector_decl(cur: _Cursor) -> ast.SectorDecl:
     kw = cur.expect(TokenKind.KW_SECTOR)
     name = _parse_ident(cur)
-    cur.expect(TokenKind.COLON)
-    cur.expect(TokenKind.NL)
-    cur.expect(TokenKind.INDENT)
+    cur.expect(TokenKind.COLON, "Expected ':' after sector name")
+    cur.expect(TokenKind.NL, "Expected newline after sector header")
+    cur.expect(TokenKind.INDENT, "Expected indented sector body")
     items: list[ast.TopItem] = []
     while not cur.at(TokenKind.DEDENT) and not cur.at(TokenKind.EOF):
         if cur.at(TokenKind.NL):
@@ -383,7 +383,16 @@ def _parse_sector_decl(cur: _Cursor) -> ast.SectorDecl:
         elif cur.at(TokenKind.KW_ON):
             items.append(_parse_on_handler(cur))
         else:
-            raise ParseError("Unexpected sector item", cur.peek().span)
+            bad = cur.peek()
+            if bad.kind == TokenKind.IDENT and cur.peek(1).kind == TokenKind.EQ:
+                raise ParseError(
+                    "Unexpected sector item: assignment at sector scope; hint: use `let name = ...` (assignments belong in handler/fn bodies)",
+                    bad.span,
+                )
+            raise ParseError(
+                "Unexpected sector item; expected one of: let, need, fn, on",
+                bad.span,
+            )
         if cur.at(TokenKind.NL):
             cur.advance()
     ded = cur.expect(TokenKind.DEDENT)
@@ -443,9 +452,9 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
         ty = _parse_qualified_name(cur)
         target = ast.MixinTargetType(name=ty, span=ty.span)
 
-    cur.expect(TokenKind.COLON)
-    cur.expect(TokenKind.NL)
-    cur.expect(TokenKind.INDENT)
+    cur.expect(TokenKind.COLON, "Expected ':' after mixin header")
+    cur.expect(TokenKind.NL, "Expected newline after mixin header")
+    cur.expect(TokenKind.INDENT, "Expected indented mixin body")
     items: list[ast.MixinItem] = []
     while not cur.at(TokenKind.DEDENT) and not cur.at(TokenKind.EOF):
         if cur.at(TokenKind.NL):
@@ -464,7 +473,15 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
         if cur.at(TokenKind.IDENT) and cur.peek(1).kind == TokenKind.COLON:
             items.append(_parse_mixin_field_add(cur))
             continue
-        raise ParseError("Expected mixin item (fn/around)", cur.peek().span)
+        if isinstance(target, ast.MixinTargetSector):
+            raise ParseError(
+                "Expected mixin item; sector mixins support: pattern, fn, around",
+                cur.peek().span,
+            )
+        raise ParseError(
+            "Expected mixin item; type mixins support: pattern, fn, around, field: Type",
+            cur.peek().span,
+        )
 
         if cur.at(TokenKind.NL):
             cur.advance()
@@ -488,7 +505,7 @@ def _parse_mixin_add(cur: _Cursor) -> ast.MixinFnAdd:
         ret_ty = _parse_type_ref(cur)
     sig_span = kw.span.merge(rp.span)
     sig = ast.FnSignature(name=name, params=params, retType=ret_ty, span=sig_span)
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after mixin function signature (use '= expr' or '= do:')")
     body = _parse_fn_body(cur)
     span = kw.span.merge(body.span)
     return ast.MixinFnAdd(sig=sig, body=body, span=span)
@@ -868,7 +885,7 @@ def _parse_pattern(cur: _Cursor) -> ast.Pattern:
 def _parse_pattern_decl(cur: _Cursor) -> ast.PatternDecl:
     kw = cur.expect(TokenKind.KW_PATTERN)
     name = _parse_qualified_name(cur)
-    cur.expect(TokenKind.EQ)
+    cur.expect(TokenKind.EQ, "Expected '=' after pattern name")
     pat = _parse_pattern(cur)
     span = kw.span.merge(pat.span)
     return ast.PatternDecl(name=name, pat=pat, span=span)

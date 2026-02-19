@@ -37,7 +37,11 @@ Improve language grammar clarity and compiler structure while reducing runtime d
   - [ ] Expand to additional ambiguity classes (match arms, mixin forms, nested blocks).
 - [~] Improve user-facing error messages with expected-token hints.
   - [x] Added expected-token hints in core parser `expect` paths.
-  - [ ] Add more context-sensitive hints for declaration-level parse failures.
+  - [~] Added context-sensitive declaration-level hints:
+    - [x] function/type/const/let/need/pattern declaration `'='` guidance
+    - [x] sector-item scope hint (`let` vs assignment at sector scope)
+    - [x] mixin target-specific expected-item guidance
+    - [ ] continue expanding hints for additional malformed declaration patterns
 
 ## Phase 3: Compiler Structure Improvements
 - [ ] Split parser/lexer helper logic into clearer internal units (without public API breakage).
