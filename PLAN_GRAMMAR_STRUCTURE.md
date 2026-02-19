@@ -23,7 +23,8 @@ Improve language grammar clarity and compiler structure while reducing runtime d
   - Baseline doc: `docs/grammar_pain_points.md`
 
 ## Phase 2: Grammar Refinement
-- [ ] Publish a compact EBNF-style grammar supplement in docs.
+- [x] Publish a compact EBNF-style grammar supplement in docs.
+  - Added: `docs/grammar_ebnf.md`
 - [ ] Tighten literal grammar and diagnostics (invalid escapes, malformed bytes/hex, recoverable parser errors).
 - [ ] Add parser/lexer regression tests for ambiguous and edge-case constructs.
 - [ ] Improve user-facing error messages with expected-token hints.

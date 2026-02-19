@@ -53,3 +53,4 @@ Compatibility note:
 
 - Added `docs/grammar_pain_points.md` as a Phase 1 baseline for grammar refinement work.
 - Captures current pain points for literals, precedence visibility, pattern parsing heuristics, and parser diagnostics.
+- Added `docs/grammar_ebnf.md` as a compact Phase 2 EBNF-style grammar supplement aligned with current parser behavior.

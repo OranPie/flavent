@@ -53,3 +53,4 @@
 
 - 新增 `docs/grammar_pain_points.md`，作为语法优化 Phase 1 的基线说明。
 - 内容覆盖字面量、优先级可见性、模式匹配启发式与解析诊断等当前痛点。
+- 新增 `docs/grammar_ebnf.md`，提供与当前解析器实现对齐的紧凑 EBNF 语法补充说明（Phase 2）。
