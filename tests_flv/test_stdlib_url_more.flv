@@ -1,0 +1,27 @@
+use flvtest
+use url
+use collections.list
+
+test "url-encode-decode-component" -> do:
+  assertEq(encodeComponent("a b+c"), "a%20b%2Bc")?
+  assertEq(decodeComponent("a%20b%2Bc"), Ok("a b+c"))?
+  assertEq(decodeComponent("%GG"), Err("url: invalid percent escape"))?
+  assertEq(decodeComponent("%A"), Err("url: incomplete percent escape"))?
+
+test "url-query-encode-decode" -> do:
+  assertEq(queryEncode("a b"), "a+b")?
+  assertEq(queryEncode("x+y"), "x%2By")?
+  assertEq(queryDecode("a+b"), Ok("a b"))?
+  assertEq(queryDecode("x%2By"), Ok("x+y"))?
+
+test "url-query-build-parse" -> do:
+  let xs = Cons({ key = "a b", value = "x+y" }, Cons({ key = "k", value = "v" }, Nil))
+  let q = queryBuild(xs)
+  assertEq(q, "a+b=x%2By&k=v")?
+  assertEq(queryParse(q), Ok(xs))?
+
+test "url-query-parse-forms" -> do:
+  let parsed = queryParse("?a=1&&b&c=3&")
+  let want = Ok(Cons({ key = "a", value = "1" }, Cons({ key = "b", value = "" }, Cons({ key = "c", value = "3" }, Nil))))
+  assertEq(parsed, want)?
+  assertEq(queryParse("a=%GG"), Err("url: invalid percent escape"))?

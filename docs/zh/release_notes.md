@@ -69,6 +69,16 @@
   - 默认排除内部模块（`_bridge_python`、`testns.*`），
   - `file`/`fslib` 的兼容性重名通过白名单显式追踪。
 
+## 标准库扩展（Phase 2 启动）
+
+- 新增 `url` 标准库模块（纯 Flavent 实现）：
+  - `encodeComponent` / `decodeComponent`
+  - `queryEncode` / `queryDecode`
+  - `queryParse` / `queryBuild`
+- 已补充 EN/ZH 文档与索引入口：
+  - `docs/en/stdlib/url.md`
+  - `docs/zh/stdlib/url.md`
+
 ## 语法规划说明
 
 - 新增 `docs/grammar_pain_points.md`，作为语法优化 Phase 1 的基线说明。

@@ -28,6 +28,7 @@ This directory contains **one page per stdlib module**.
 - [httplib](./httplib.md)
 
 ## Data / Utils
+- [url](./url.md)
 - [json](./json.md)
 - [regex](./regex.md)
 - [hashlib](./hashlib.md)

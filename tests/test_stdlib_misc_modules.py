@@ -36,6 +36,7 @@ use json
 use struct
 use socket
 use httplib
+use url
 use py
 use std.option
 use std.result
@@ -126,6 +127,8 @@ sector s:
     let _httpPost = rpc httplib.post("example.com", 80, "/", b"hi")
     let _httpPostW = rpc httplib.postWith("example.com", 80, "/", Nil, b"hi")
     let _br = buildRequest("GET", "example.com", "/", Nil, b"")
+    let _uq = queryBuild(Cons({ key = "q", value = "a b" }, Nil))
+    let _up = queryParse(_uq)
 
     let _p0 = rpc py.invoke("demo", "echo", b"hi")
 

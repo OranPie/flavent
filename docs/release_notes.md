@@ -69,6 +69,16 @@ Compatibility note:
   - internal modules (`_bridge_python`, `testns.*`) are excluded by default,
   - approved `file`/`fslib` overlap is tracked explicitly by allowlist entries.
 
+## Stdlib Expansion (Phase 2 Kickoff)
+
+- Added new `url` stdlib module with pure-Flavent helpers:
+  - `encodeComponent` / `decodeComponent`
+  - `queryEncode` / `queryDecode`
+  - `queryParse` / `queryBuild`
+- Added EN/ZH docs pages and index links:
+  - `docs/en/stdlib/url.md`
+  - `docs/zh/stdlib/url.md`
+
 ## Grammar Planning Notes
 
 - Added `docs/grammar_pain_points.md` as a Phase 1 baseline for grammar refinement work.

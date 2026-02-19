@@ -22,7 +22,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Add CI check that fails on unapproved new duplicate public defs
 
 ## Phase 2: Core Utility Expansion
-- [ ] Add `url` module (encode/decode/query parsing utilities)
+- [x] Add `url` module (encode/decode/query parsing utilities)
 - [ ] Add `csv` module (read/write rows, delimiter/quote support)
 - [ ] Add `path` module (join/base/ext/normalize helpers)
 - [ ] Add `datetime` module (parse/format ISO-like helpers)
