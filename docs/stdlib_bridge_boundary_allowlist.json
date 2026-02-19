@@ -1,0 +1,56 @@
+{
+  "entries": [
+    {
+      "module": "bytelib/__init__",
+      "note": "Core bytes primitive wrappers over host bytes intrinsics."
+    },
+    {
+      "module": "consoleIO/__init__",
+      "note": "Console side-effect boundary."
+    },
+    {
+      "module": "fslib/__init__",
+      "note": "Filesystem boundary."
+    },
+    {
+      "module": "hashlib/__init__",
+      "note": "Host crypto primitives (md5/sha1/sha512) boundary."
+    },
+    {
+      "module": "json/__init__",
+      "note": "Float parse/format bridge dependency."
+    },
+    {
+      "module": "py/__init__",
+      "note": "Python adapter RPC boundary."
+    },
+    {
+      "module": "socket/api",
+      "note": "Networking boundary."
+    },
+    {
+      "module": "socket/types",
+      "note": "Bridge socket type aliases."
+    },
+    {
+      "module": "stringfmt/__init__",
+      "note": "Float formatting bridge dependency."
+    },
+    {
+      "module": "stringlib/__init__",
+      "note": "Core string primitive wrappers for stdlib reuse."
+    },
+    {
+      "module": "time/__init__",
+      "note": "Clock/sleep boundary."
+    },
+    {
+      "module": "u32/__init__",
+      "note": "U32 bitwise primitive wrappers."
+    },
+    {
+      "module": "uuid/__init__",
+      "note": "Host UUID generation boundary."
+    }
+  ]
+}

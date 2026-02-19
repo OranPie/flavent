@@ -70,6 +70,10 @@ Compatibility note:
 - Added duplicate policy allowlist + ownership table:
   - `docs/stdlib_duplicate_allowlist.json`
   - `docs/stdlib_api_ownership.md`
+- Added direct bridge-import boundary policy tooling:
+  - `scripts/stdlib_bridge_boundary.py`
+  - `docs/stdlib_bridge_boundary_allowlist.json`
+  - CI now enforces both unapproved bridge-import modules and stale allowlist entries.
 - Duplicate CI policy now fails only on **unapproved** public duplicates:
   - internal modules (`_bridge_python`, `testns.*`) are excluded by default,
   - approved `file`/`fslib` overlap is tracked explicitly by allowlist entries.

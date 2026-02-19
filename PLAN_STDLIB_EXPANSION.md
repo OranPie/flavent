@@ -48,7 +48,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Migrate `json`/`hashlib.sha256`/`py` string handling to shared stdlib wrappers
 - [x] Migrate additional utility modules (`process`, `file.lines`, `glob`, `uuid`, `base64.core`, `asciilib`, `stringfmt`) to shared string wrappers
 - [ ] Prioritize replacing deterministic bridge-backed helpers with pure-Flavent versions
-- [ ] Keep bridge-only functionality limited to IO/network/OS boundaries
+- [x] Keep bridge-only functionality limited to allowlisted boundary/core-wrapper modules (CI-enforced)
 
 ## Exit Criteria
 - [x] New modules documented in EN/ZH indexes

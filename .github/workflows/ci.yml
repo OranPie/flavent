@@ -28,6 +28,15 @@ jobs:
             --fail-on-duplicates \
             --json-out reports/stdlib-duplicate-defs.json \
             --md-out reports/stdlib-duplicate-defs.md
+      - name: Enforce stdlib bridge boundary policy
+        run: |
+          mkdir -p reports
+          python scripts/stdlib_bridge_boundary.py \
+            --allowlist docs/stdlib_bridge_boundary_allowlist.json \
+            --fail-on-violations \
+            --fail-on-stale \
+            --json-out reports/stdlib-bridge-boundary.json \
+            --md-out reports/stdlib-bridge-boundary.md
       - name: Run tests with coverage gate
         run: |
           mkdir -p reports

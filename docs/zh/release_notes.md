@@ -70,6 +70,10 @@
 - 新增重复策略白名单与归属表：
   - `docs/stdlib_duplicate_allowlist.json`
   - `docs/stdlib_api_ownership.md`
+- 新增 bridge 直连导入边界策略工具：
+  - `scripts/stdlib_bridge_boundary.py`
+  - `docs/stdlib_bridge_boundary_allowlist.json`
+  - CI 现同时校验未批准 bridge 导入模块与白名单陈旧项。
 - CI 重复策略改为仅对“未批准”的公开重复失败：
   - 默认排除内部模块（`_bridge_python`、`testns.*`），
   - `file`/`fslib` 的兼容性重名通过白名单显式追踪。
