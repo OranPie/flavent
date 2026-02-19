@@ -20,7 +20,6 @@
 - `bytelib` 新增：
   - `bytesFindOpt(h, needle, start) -> Option[Int]`
   - 原有 `bytesFind(...) -> Int` 继续保留（未找到返回 `-1`）。
-- `httplib.core` 也新增 `strFindOpt` / `bytesFindOpt` 便于解析流程。
 - `stringlib` 新增别名：
   - `strStartsWith`（等价 `startsWith`）
   - `strEndsWith`（等价 `endsWith`）
@@ -59,6 +58,10 @@
   - 标准库模块对 bridge 符号的静态引用，
   - 展开 `tests_flv` 用例后的 bridge 调用审计统计。
 - `stdlib/flvrepr` 已改为不直接依赖 `_bridge_python`，改用 `stringlib`/`collections.list` 组合实现。
+- `stdlib/httplib.core` 已改为连接复用 `stringlib`、`bytelib`、`asciilib` 的共享能力（find/trim/ascii 转换）。
+- 新增 stdlib 跨模块重复定义检测与报告：
+  - `scripts/stdlib_duplicate_defs.py`
+  - `docs/stdlib_duplicate_defs.md`
 
 ## 语法规划说明
 

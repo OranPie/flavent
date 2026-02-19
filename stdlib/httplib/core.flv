@@ -1,6 +1,8 @@
 use _bridge_python
 use collections.list
 use bytelib
+use stringlib
+use asciilib
 
 type Header = { key: Str, value: Str }
 
@@ -73,17 +75,17 @@ fn intToStr(n: Int) -> Str = match n == 0:
 fn _headersToBytesAcc(xs: List[Header], crlf: Bytes, acc: Bytes) -> Bytes = match xs:
   Nil -> acc
   Cons(h, rest) -> do:
-    let line = asciiToBytes(h.key + ": " + h.value)
+    let line = asciilib.asciiToBytes(h.key + ": " + h.value)
     let acc2 = bytesConcat(acc, bytesConcat(line, crlf))
     return _headersToBytesAcc(rest, crlf, acc2)
 
 fn headersToBytes(xs: List[Header]) -> Bytes = do:
-  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
+  let crlf = asciilib.crlfBytes()
   return _headersToBytesAcc(xs, crlf, b"")
 
 fn buildRequest(method: Str, host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = do:
-  let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
-  let startLine = asciiToBytes(method + " " + path + " HTTP/1.1")
+  let crlf = asciilib.crlfBytes()
+  let startLine = asciilib.asciiToBytes(method + " " + path + " HTTP/1.1")
   let hs0 = headersAddIfMissingCI(headers, "Host", host)
   let hs1 = headersAddIfMissingCI(hs0, "User-Agent", defaultUserAgent())
   let hs2 = headersAddIfMissingCI(hs1, "Connection", "close")
@@ -131,48 +133,9 @@ fn buildPathWithQuery(path: Str, xs: List[QueryParam]) -> Str = match xs:
   Nil -> path
   _ -> do:
     let q = buildQuery(xs)
-    return match strFind(path, "?", 0) >= 0:
+    return match stringlib.strFind(path, "?", 0) >= 0:
       true -> path + "&" + q
       false -> path + "?" + q
-
-fn _asciiFromBytesAcc(b: Bytes, i: Int, n: Int, acc: Str) -> Str = match i >= n:
-  true -> acc
-  false -> _asciiFromBytesAcc(b, i + 1, n, acc + strFromCode(bytesGet(b, i)))
-
-fn asciiFromBytes(b: Bytes) -> Str = _asciiFromBytesAcc(b, 0, bytesLen(b), "")
-
-fn _asciiCodesAcc(s: Str, i: Int, n: Int, acc: List[Int]) -> List[Int] = match i >= n:
-  true -> reverse(acc)
-  false -> _asciiCodesAcc(s, i + 1, n, Cons(strCodeAt(s, i), acc))
-
-fn asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLen(s), Nil))
-
-fn _strFindAt(h: Str, hi: Int, n: Int, needle: Str, ni: Int, nn: Int) -> Bool = match ni >= nn:
-  true -> true
-  false -> match hi + ni >= n:
-    true -> false
-    false -> match strCodeAt(h, hi + ni) == strCodeAt(needle, ni):
-      true -> _strFindAt(h, hi, n, needle, ni + 1, nn)
-      false -> false
-
-fn _strFindFrom(h: Str, needle: Str, i: Int, n: Int, nn: Int) -> Int = match i + nn > n:
-  true -> 0 - 1
-  false -> match _strFindAt(h, i, n, needle, 0, nn):
-    true -> i
-    false -> _strFindFrom(h, needle, i + 1, n, nn)
-
-fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
-  let n = strLen(h)
-  let nn = strLen(needle)
-  return match nn == 0:
-    true -> start
-    false -> _strFindFrom(h, needle, start, n, nn)
-
-fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
-  let i = strFind(h, needle, start)
-  return match i >= 0:
-    true -> Some(i)
-    false -> None
 
 fn _parseIntDigitsAcc(s: Str, i: Int, n: Int, acc: Int) -> Int = match i >= n:
   true -> acc
@@ -184,56 +147,21 @@ fn _parseIntDigitsAcc(s: Str, i: Int, n: Int, acc: Int) -> Int = match i >= n:
 
 fn parseIntDigits(s: Str) -> Int = _parseIntDigitsAcc(s, 0, strLen(s), 0)
 
-fn _bytesEqAt(h: Bytes, hi: Int, hn: Int, needle: Bytes, ni: Int, nn: Int) -> Bool = match ni >= nn:
-  true -> true
-  false -> match hi + ni >= hn:
-    true -> false
-    false -> match bytesGet(h, hi + ni) == bytesGet(needle, ni):
-      true -> _bytesEqAt(h, hi, hn, needle, ni + 1, nn)
-      false -> false
-
-fn _bytesFindFrom(h: Bytes, needle: Bytes, i: Int, hn: Int, nn: Int) -> Int = match i + nn > hn:
-  true -> 0 - 1
-  false -> match _bytesEqAt(h, i, hn, needle, 0, nn):
-    true -> i
-    false -> _bytesFindFrom(h, needle, i + 1, hn, nn)
-
-fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
-  let hn = bytesLen(h)
-  let nn = bytesLen(needle)
-  return match nn == 0:
-    true -> start
-    false -> _bytesFindFrom(h, needle, start, hn, nn)
-
-fn bytesFindOpt(h: Bytes, needle: Bytes, start: Int) -> Option[Int] = do:
-  let i = bytesFind(h, needle, start)
-  return match i >= 0:
-    true -> Some(i)
-    false -> None
-
 fn _splitLineBytes(b: Bytes) -> _BytesPair = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
-  let i = bytesFind(b, crlf, 0)
+  let i = bytelib.bytesFind(b, crlf, 0)
   return match i < 0:
     true -> { a = b, b = b"" }
     false -> { a = bytesSlice(b, 0, i), b = bytesSlice(b, i + 2, bytesLen(b)) }
 
-fn _trimLeftSpacesAcc(s: Str, i: Int, n: Int) -> Str = match i >= n:
-  true -> ""
-  false -> match strCodeAt(s, i) == 32:
-    true -> _trimLeftSpacesAcc(s, i + 1, n)
-    false -> strSlice(s, i, n)
-
-fn trimLeftSpaces(s: Str) -> Str = _trimLeftSpacesAcc(s, 0, strLen(s))
-
 fn _parseHeaderLine(line: Str) -> Option[Header] = do:
-  let i = strFind(line, ":", 0)
+  let i = stringlib.strFind(line, ":", 0)
   return match i < 0:
     true -> None
     false -> do:
       let k = strSlice(line, 0, i)
       let v0 = strSlice(line, i + 1, strLen(line))
-      let v = trimLeftSpaces(v0)
+      let v = stringlib.trimLeftSpaces(v0)
       return Some({ key = k, value = v })
 
 fn _parseHeadersBytesAcc(b: Bytes, acc: List[Header]) -> List[Header] = match bytesLen(b) == 0:
@@ -245,7 +173,7 @@ fn _parseHeadersBytesAcc(b: Bytes, acc: List[Header]) -> List[Header] = match by
     return match bytesLen(lineB) == 0:
       true -> reverse(acc)
       false -> do:
-        let line = asciiFromBytes(lineB)
+        let line = asciilib.asciiFromBytes(lineB)
         let h = _parseHeaderLine(line)
         return match h:
           Some(v) -> _parseHeadersBytesAcc(restB, Cons(v, acc))
@@ -254,11 +182,11 @@ fn _parseHeadersBytesAcc(b: Bytes, acc: List[Header]) -> List[Header] = match by
 fn parseHeadersBytes(b: Bytes) -> List[Header] = _parseHeadersBytesAcc(b, Nil)
 
 fn _parseStatusLine(line: Str) -> _StatusInfo = do:
-  let i1 = strFind(line, " ", 0)
+  let i1 = stringlib.strFind(line, " ", 0)
   return match i1 < 0:
     true -> { status = 0, reason = "" }
     false -> do:
-      let i2 = strFind(line, " ", i1 + 1)
+      let i2 = stringlib.strFind(line, " ", i1 + 1)
       return match i2 < 0:
         true -> { status = parseIntDigits(strSlice(line, i1 + 1, strLen(line))), reason = "" }
         false -> do:
@@ -284,7 +212,7 @@ fn buildPatchRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -
 fn buildDeleteRequest(host: Str, path: Str, headers: List[Header], body: Bytes) -> Bytes = buildRequest("DELETE", host, path, headers, body)
 
 fn buildJsonRequest(method: Str, host: Str, path: Str, headers: List[Header], jsonText: Str) -> Bytes = do:
-  let body = asciiToBytes(jsonText)
+  let body = asciilib.asciiToBytes(jsonText)
   let hs0 = headersAddIfMissingCI(headers, "Content-Type", "application/json")
   let hs1 = headersAddIfMissingCI(hs0, "Accept", "application/json")
   return buildRequest(method, host, path, hs1, body)
@@ -323,7 +251,7 @@ fn _decodeChunkedAcc(b: Bytes, chunks: List[Bytes]) -> Result[List[Bytes], Str] 
     let sp = _splitLineBytes(b)
     let lineB = sp.a
     let rest0 = sp.b
-    let line = asciiFromBytes(lineB)
+    let line = asciilib.asciiFromBytes(lineB)
     let n = parseHexDigits(line)?
     return match n == 0:
       true -> Ok(chunks)
@@ -342,14 +270,14 @@ fn decodeChunked(b: Bytes) -> Result[Bytes, Str] = do:
 
 fn parseResponse(raw: Bytes) -> Result[HttpResponse, Str] = do:
   let sep = bytesFromList(Cons(13, Cons(10, Cons(13, Cons(10, Nil)))))
-  let p = bytesFind(raw, sep, 0)
+  let p = bytelib.bytesFind(raw, sep, 0)
   return match p < 0:
     true -> Err("bad http response")
     false -> do:
       let headBytes = bytesSlice(raw, 0, p)
       let body0 = bytesSlice(raw, p + 4, bytesLen(raw))
       let sp = _splitLineBytes(headBytes)
-      let statusLine = asciiFromBytes(sp.a)
+      let statusLine = asciilib.asciiFromBytes(sp.a)
       let restB = sp.b
       let st = _parseStatusLine(statusLine)
       let headers = parseHeadersBytes(restB)

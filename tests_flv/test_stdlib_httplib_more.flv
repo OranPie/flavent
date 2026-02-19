@@ -2,14 +2,16 @@ use flvtest
 use httplib
 use httplib.core
 use bytelib
+use asciilib
+use stringlib
 use collections.list
 use std.option
 
 fn _mkResp() -> Bytes = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
-  let l1 = asciiToBytes("HTTP/1.1 200 OK")
-  let l2 = asciiToBytes("Content-Length: 5")
-  let l3 = asciiToBytes("X-Test: 1")
+  let l1 = asciilib.asciiToBytes("HTTP/1.1 200 OK")
+  let l2 = asciilib.asciiToBytes("Content-Length: 5")
+  let l3 = asciilib.asciiToBytes("X-Test: 1")
   let a = bytesConcat(l1, crlf)
   let b = bytesConcat(l2, crlf)
   let c = bytesConcat(l3, crlf)
@@ -19,12 +21,12 @@ fn _mkResp() -> Bytes = do:
 
 fn _mkRespChunked() -> Bytes = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
-  let l1 = asciiToBytes("HTTP/1.1 200 OK")
-  let l2 = asciiToBytes("Transfer-Encoding: chunked")
+  let l1 = asciilib.asciiToBytes("HTTP/1.1 200 OK")
+  let l2 = asciilib.asciiToBytes("Transfer-Encoding: chunked")
   let a = bytesConcat(l1, crlf)
   let b = bytesConcat(l2, crlf)
   let head = bytesConcat(bytesConcat(bytesConcat(a, b), crlf), b"")
-  let body = bytesConcatAll(Cons(asciiToBytes("5"), Cons(crlf, Cons(asciiToBytes("hello"), Cons(crlf, Cons(asciiToBytes("0"), Cons(crlf, Cons(crlf, Nil))))))))
+  let body = bytesConcatAll(Cons(asciilib.asciiToBytes("5"), Cons(crlf, Cons(asciilib.asciiToBytes("hello"), Cons(crlf, Cons(asciilib.asciiToBytes("0"), Cons(crlf, Cons(crlf, Nil))))))))
   return bytesConcat(head, body)
 
 test "httplib-buildGetRequest" -> do:
@@ -52,27 +54,27 @@ test "httplib-parseResponse" -> do:
   assertEq(std.option.unwrapOr(headersGet(r.headers, "x-test"), ""), "1")?
 
   // ascii helpers roundtrip
-  let s = asciiFromBytes(bytesFromList(Cons(65, Cons(66, Nil))))
+  let s = asciilib.asciiFromBytes(bytesFromList(Cons(65, Cons(66, Nil))))
   assertEq(s, "AB")?
-  let b2 = asciiToBytes("AB")
+  let b2 = asciilib.asciiToBytes("AB")
   assertEq(bytesLen(b2), 2)?
   assertEq(bytesGet(b2, 0), 65)?
   assertEq(bytesGet(b2, 1), 66)?
 
 test "httplib-buildRequest-default-UA" -> do:
   let req = buildRequest("GET", "example.com", "/", Nil, b"")
-  let s = asciiFromBytes(req)
+  let s = asciilib.asciiFromBytes(req)
   // check start line
   assertTrue(strFind(s, "GET / HTTP/1.1", 0) >= 0)?
   // default UA should be present
   assertTrue(strFind(s, "User-Agent: ", 0) >= 0)?
-  assertTrue(std.option.isSome(httplib.core.strFindOpt(s, "User-Agent: ", 0)))?
-  assertTrue(std.option.isNone(httplib.core.strFindOpt(s, "Nope", 0)))?
+  assertTrue(std.option.isSome(stringlib.strFindOpt(s, "User-Agent: ", 0)))?
+  assertTrue(std.option.isNone(stringlib.strFindOpt(s, "Nope", 0)))?
 
 test "httplib-buildRequest-content-length" -> do:
   let body = bytesFromList(Cons(1, Cons(2, Cons(3, Nil))))
   let req = buildRequest("POST", "example.com", "/x", Nil, body)
-  let s = asciiFromBytes(req)
+  let s = asciilib.asciiFromBytes(req)
   assertTrue(strFind(s, "POST /x HTTP/1.1", 0) >= 0)?
   assertTrue(strFind(s, "Content-Length: 3", 0) >= 0)?
 
@@ -83,13 +85,13 @@ test "httplib-buildPathWithQuery" -> do:
 
 test "httplib-decodeChunked" -> do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
-  let b = bytesConcatAll(Cons(asciiToBytes("5"), Cons(crlf, Cons(asciiToBytes("hello"), Cons(crlf, Cons(asciiToBytes("0"), Cons(crlf, Cons(crlf, Nil))))))))
+  let b = bytesConcatAll(Cons(asciilib.asciiToBytes("5"), Cons(crlf, Cons(asciilib.asciiToBytes("hello"), Cons(crlf, Cons(asciilib.asciiToBytes("0"), Cons(crlf, Cons(crlf, Nil))))))))
   let out = decodeChunked(b)?
   assertEq(bytesLen(out), 5)?
   assertEq(bytesGet(out, 0), 104)?
   assertEq(bytesGet(out, 4), 111)?
-  assertEq(httplib.core.bytesFindOpt(out, asciiToBytes("ll"), 0), Some(2))?
-  assertEq(httplib.core.bytesFindOpt(out, asciiToBytes("zz"), 0), None)?
+  assertEq(bytelib.bytesFindOpt(out, asciilib.asciiToBytes("ll"), 0), Some(2))?
+  assertEq(bytelib.bytesFindOpt(out, asciilib.asciiToBytes("zz"), 0), None)?
 
 test "httplib-parseResponse-chunked" -> do:
   let raw = _mkRespChunked()
@@ -101,6 +103,6 @@ test "httplib-parseResponse-chunked" -> do:
 
 test "httplib-buildJsonRequest" -> do:
   let req = buildJsonRequest("POST", "example.com", "/x", Nil, "{\"a\":1}")
-  let s = asciiFromBytes(req)
+  let s = asciilib.asciiFromBytes(req)
   assertTrue(strFind(s, "Content-Type: application/json", 0) >= 0)?
   assertTrue(strFind(s, "Accept: application/json", 0) >= 0)?

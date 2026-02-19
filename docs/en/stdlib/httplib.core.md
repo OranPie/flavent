@@ -15,9 +15,10 @@ Limitations:
 - No chunked *request* encoding
 - No streaming
 
-Parsing helpers:
-- `strFindOpt` and `bytesFindOpt` are provided for Option-first parsing flows.
-- `strFind` and `bytesFind` are kept for compatibility with `-1` sentinel style.
+Shared helpers:
+- Uses `stringlib` for string search/trim operations.
+- Uses `bytelib` for bytes search operations.
+- Uses `asciilib` for ASCII bytes/text conversions.
 
 ## Import
 ```flavent
@@ -26,8 +27,13 @@ use httplib.core
 
 ## Examples
 ```flavent
+use asciilib
+use stringlib
+use httplib.core
+
 let req = buildGetRequest("example.com", "/")
-let idx = strFindOpt("HTTP/1.1 200 OK", "200", 0) // Some(9)
+let idx = stringlib.strFindOpt("HTTP/1.1 200 OK", "200", 0) // Some(9)
+let body = asciilib.asciiToBytes("hello")
 ```
 
 ## Types
@@ -57,14 +63,7 @@ fn buildRequest(method: Str, host: Str, path: Str, headers: List[Header], body: 
 fn urlEncode(s: Str) -> Str = _urlEncodeAcc(s, 0, strLen(s), "")
 fn buildQuery(xs: List[QueryParam]) -> Str = _buildQueryAcc(xs, "")
 fn buildPathWithQuery(path: Str, xs: List[QueryParam]) -> Str = match xs:
-fn asciiFromBytes(b: Bytes) -> Str = _asciiFromBytesAcc(b, 0, bytesLen(b), "")
-fn asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLen(s), Nil))
-fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
-fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
 fn parseIntDigits(s: Str) -> Int = _parseIntDigitsAcc(s, 0, strLen(s), 0)
-fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
-fn bytesFindOpt(h: Bytes, needle: Bytes, start: Int) -> Option[Int] = do:
-fn trimLeftSpaces(s: Str) -> Str = _trimLeftSpacesAcc(s, 0, strLen(s))
 fn parseHeadersBytes(b: Bytes) -> List[Header] = _parseHeadersBytesAcc(b, Nil)
 fn buildGetRequest(host: Str, path: Str) -> Bytes = do:
 fn buildGetRequestWith(host: Str, path: Str, headers: List[Header]) -> Bytes = buildRequest("GET", host, path, headers, b"")

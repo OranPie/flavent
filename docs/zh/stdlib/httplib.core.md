@@ -15,9 +15,10 @@ HTTP/1.1 的纯函数工具：构造请求、解析响应。
 - 不支持 chunked 请求编码
 - 不支持流式 body
 
-解析辅助：
-- 提供 `strFindOpt` 与 `bytesFindOpt`，方便使用 `Option` 风格分支。
-- 保留 `strFind` 与 `bytesFind` 的 `-1` 语义以兼容旧代码。
+共享能力：
+- 字符串查找/裁剪复用 `stringlib`。
+- 字节查找复用 `bytelib`。
+- ASCII 字节/文本转换复用 `asciilib`。
 
 ## 导入
 ```flavent
@@ -26,8 +27,13 @@ use httplib.core
 
 ## 示例
 ```flavent
+use asciilib
+use stringlib
+use httplib.core
+
 let req = buildGetRequest("example.com", "/")
-let idx = strFindOpt("HTTP/1.1 200 OK", "200", 0) // Some(9)
+let idx = stringlib.strFindOpt("HTTP/1.1 200 OK", "200", 0) // Some(9)
+let body = asciilib.asciiToBytes("hello")
 ```
 
 ## 类型
@@ -57,14 +63,7 @@ fn buildRequest(method: Str, host: Str, path: Str, headers: List[Header], body: 
 fn urlEncode(s: Str) -> Str = _urlEncodeAcc(s, 0, strLen(s), "")
 fn buildQuery(xs: List[QueryParam]) -> Str = _buildQueryAcc(xs, "")
 fn buildPathWithQuery(path: Str, xs: List[QueryParam]) -> Str = match xs:
-fn asciiFromBytes(b: Bytes) -> Str = _asciiFromBytesAcc(b, 0, bytesLen(b), "")
-fn asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLen(s), Nil))
-fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
-fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
 fn parseIntDigits(s: Str) -> Int = _parseIntDigitsAcc(s, 0, strLen(s), 0)
-fn bytesFind(h: Bytes, needle: Bytes, start: Int) -> Int = do:
-fn bytesFindOpt(h: Bytes, needle: Bytes, start: Int) -> Option[Int] = do:
-fn trimLeftSpaces(s: Str) -> Str = _trimLeftSpacesAcc(s, 0, strLen(s))
 fn parseHeadersBytes(b: Bytes) -> List[Header] = _parseHeadersBytesAcc(b, Nil)
 fn buildGetRequest(host: Str, path: Str) -> Bytes = do:
 fn buildGetRequestWith(host: Str, path: Str, headers: List[Header]) -> Bytes = buildRequest("GET", host, path, headers, b"")

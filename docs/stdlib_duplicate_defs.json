@@ -1,0 +1,258 @@
+{
+  "duplicate_count": 11,
+  "duplicates": [
+    {
+      "kind": "fn",
+      "name": "exists",
+      "module_count": 2,
+      "modules": [
+        "file",
+        "fslib"
+      ],
+      "locations": [
+        {
+          "module": "file",
+          "file": "file/__init__.flv",
+          "line": 45,
+          "sig": "fn exists(path: Str) -> Result[Bool, Str] = rpc fslib.exists(path)"
+        },
+        {
+          "module": "fslib",
+          "file": "fslib/__init__.flv",
+          "line": 12,
+          "sig": "fn exists(path: Str) -> Result[Bool, Str] = rpc _bridge_python.fsExists(path)"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "foo",
+      "module_count": 2,
+      "modules": [
+        "testns.a",
+        "testns.b"
+      ],
+      "locations": [
+        {
+          "module": "testns.a",
+          "file": "testns/a.flv",
+          "line": 1,
+          "sig": "fn foo() -> Int = 1"
+        },
+        {
+          "module": "testns.b",
+          "file": "testns/b.flv",
+          "line": 1,
+          "sig": "fn foo() -> Int = 2"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "listDir",
+      "module_count": 2,
+      "modules": [
+        "file",
+        "fslib"
+      ],
+      "locations": [
+        {
+          "module": "file",
+          "file": "file/__init__.flv",
+          "line": 47,
+          "sig": "fn listDir(path: Str) -> Result[List[Str], Str] = rpc fslib.listDir(path)"
+        },
+        {
+          "module": "fslib",
+          "file": "fslib/__init__.flv",
+          "line": 11,
+          "sig": "fn listDir(path: Str) -> Result[List[Str], Str] = rpc _bridge_python.fsListDir(path)"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "monoMillis",
+      "module_count": 2,
+      "modules": [
+        "_bridge_python",
+        "time"
+      ],
+      "locations": [
+        {
+          "module": "_bridge_python",
+          "file": "_bridge_python.flv",
+          "line": 58,
+          "sig": "fn monoMillis() -> Int = 0"
+        },
+        {
+          "module": "time",
+          "file": "time/__init__.flv",
+          "line": 37,
+          "sig": "fn monoMillis() -> Int = rpc _bridge_python.monoMillis()"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "monoNanos",
+      "module_count": 2,
+      "modules": [
+        "_bridge_python",
+        "time"
+      ],
+      "locations": [
+        {
+          "module": "_bridge_python",
+          "file": "_bridge_python.flv",
+          "line": 59,
+          "sig": "fn monoNanos() -> Int = 0"
+        },
+        {
+          "module": "time",
+          "file": "time/__init__.flv",
+          "line": 38,
+          "sig": "fn monoNanos() -> Int = rpc _bridge_python.monoNanos()"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "nowMillis",
+      "module_count": 2,
+      "modules": [
+        "_bridge_python",
+        "time"
+      ],
+      "locations": [
+        {
+          "module": "_bridge_python",
+          "file": "_bridge_python.flv",
+          "line": 56,
+          "sig": "fn nowMillis() -> Int = 0"
+        },
+        {
+          "module": "time",
+          "file": "time/__init__.flv",
+          "line": 32,
+          "sig": "fn nowMillis() -> Int = rpc _bridge_python.nowMillis()"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "nowNanos",
+      "module_count": 2,
+      "modules": [
+        "_bridge_python",
+        "time"
+      ],
+      "locations": [
+        {
+          "module": "_bridge_python",
+          "file": "_bridge_python.flv",
+          "line": 57,
+          "sig": "fn nowNanos() -> Int = 0"
+        },
+        {
+          "module": "time",
+          "file": "time/__init__.flv",
+          "line": 33,
+          "sig": "fn nowNanos() -> Int = rpc _bridge_python.nowNanos()"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "remove",
+      "module_count": 2,
+      "modules": [
+        "file",
+        "fslib"
+      ],
+      "locations": [
+        {
+          "module": "file",
+          "file": "file/__init__.flv",
+          "line": 42,
+          "sig": "fn remove(path: Str) -> Result[Unit, Str] = do:"
+        },
+        {
+          "module": "fslib",
+          "file": "fslib/__init__.flv",
+          "line": 14,
+          "sig": "fn remove(path: Str) -> Result[Unit, Str] = rpc _bridge_python.fsRemove(path)"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "sleep",
+      "module_count": 2,
+      "modules": [
+        "_bridge_python",
+        "time"
+      ],
+      "locations": [
+        {
+          "module": "_bridge_python",
+          "file": "_bridge_python.flv",
+          "line": 60,
+          "sig": "fn sleep(ms: Int) -> Unit = ()"
+        },
+        {
+          "module": "time",
+          "file": "time/__init__.flv",
+          "line": 43,
+          "sig": "fn sleep(ms: Int) -> Unit = sleepMillis(ms)"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "tempDir",
+      "module_count": 2,
+      "modules": [
+        "file",
+        "fslib"
+      ],
+      "locations": [
+        {
+          "module": "file",
+          "file": "file/__init__.flv",
+          "line": 51,
+          "sig": "fn tempDir(prefix: Str) -> Result[Str, Str] = rpc fslib.tempDir(prefix)"
+        },
+        {
+          "module": "fslib",
+          "file": "fslib/__init__.flv",
+          "line": 17,
+          "sig": "fn tempDir(prefix: Str) -> Result[Str, Str] = rpc _bridge_python.fsTempDir(prefix)"
+        }
+      ]
+    },
+    {
+      "kind": "fn",
+      "name": "tempFile",
+      "module_count": 2,
+      "modules": [
+        "file",
+        "fslib"
+      ],
+      "locations": [
+        {
+          "module": "file",
+          "file": "file/__init__.flv",
+          "line": 49,
+          "sig": "fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = rpc fslib.tempFile(prefix, suffix)"
+        },
+        {
+          "module": "fslib",
+          "file": "fslib/__init__.flv",
+          "line": 16,
+          "sig": "fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = rpc _bridge_python.fsTempFile(prefix, suffix)"
+        }
+      ]
+    }
+  ]
+}

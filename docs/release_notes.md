@@ -20,7 +20,6 @@ Date: 2026-02-19
 - `bytelib` now exposes:
   - `bytesFindOpt(h, needle, start) -> Option[Int]`
   - Existing `bytesFind(...) -> Int` remains supported (`-1` when not found).
-- `httplib.core` now also exposes `strFindOpt` and `bytesFindOpt` for parsing flows.
 - `stringlib` alias additions:
   - `strStartsWith` alias of `startsWith`
   - `strEndsWith` alias of `endsWith`
@@ -59,6 +58,10 @@ Compatibility note:
   - static bridge symbol references across stdlib modules,
   - audited bridge call usage across expanded `tests_flv` cases.
 - `stdlib/flvrepr` now avoids direct `_bridge_python` imports by using `stringlib`/`collections.list` helpers.
+- `stdlib/httplib.core` now delegates shared helpers to connected stdlib modules (`stringlib`, `bytelib`, `asciilib`) for find/trim/ascii conversions.
+- Added duplicate-definition detector/report for stdlib cross-module symbols:
+  - `scripts/stdlib_duplicate_defs.py`
+  - `docs/stdlib_duplicate_defs.md`
 
 ## Grammar Planning Notes
 

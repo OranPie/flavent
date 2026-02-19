@@ -29,7 +29,7 @@ fn pair(key: Str, value: Str) -> MetaPair = { key = key, value = value }
 fn encodePair(p: MetaPair) -> Str = p.key + "=" + p.value
 fn encodePairs(xs: List[MetaPair]) -> Str = match xs:
 fn encodeFunctionTarget(target: Str, point: Str, priority: Str, at: Str) -> Str = encodePairs(
-fn decodePairs(meta: Str) -> List[MetaPair] = _decodeFrom(meta, 0, strLen(meta), Nil)
+fn decodePairs(meta: Str) -> List[MetaPair] = _decodePairsFrom(split(meta, ";"), Nil)
 fn metaGet(meta: Str, key: Str) -> Option[Str] = _findPair(decodePairs(meta), key)
 fn metaSet(meta: Str, key: Str, value: Str) -> Str = encodePairs(_upsertAcc(decodePairs(meta), key, value, Nil, false))
 ```
