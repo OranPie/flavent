@@ -58,6 +58,7 @@
   - `stdlib/_bridge_python.flv` 的 bridge 原语表面，
   - 标准库模块对 bridge 符号的静态引用，
   - 展开 `tests_flv` 用例后的 bridge 调用审计统计。
+- `stdlib/flvrepr` 已改为不直接依赖 `_bridge_python`，改用 `stringlib`/`collections.list` 组合实现。
 
 ## 语法规划说明
 

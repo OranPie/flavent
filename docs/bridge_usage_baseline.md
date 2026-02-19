@@ -1,6 +1,6 @@
 # Bridge Usage Baseline
 
-Date: 2026-02-18
+Date: 2026-02-19
 
 ## Bridge Surface
 - Pure bridge primitives: `24`

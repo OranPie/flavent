@@ -246,6 +246,8 @@ _RUNTIME_CASES.extend(
                 "    assertEq(metaGet(m, \"target\"), Some(\"main.base\"))?\n"
                 "    let m2 = metaSet(m, \"priority\", \"20\")\n"
                 "    assertEq(metaGet(m2, \"priority\"), Some(\"20\"))?\n"
+                "    let m3 = metaSet(\"\", \"k\", \"a=b\")\n"
+                "    assertEq(metaGet(m3, \"k\"), Some(\"a=b\"))?\n"
             ),
             uses="use flvrepr\n",
         ),

@@ -58,6 +58,7 @@ Compatibility note:
   - bridge primitive surface in `stdlib/_bridge_python.flv`,
   - static bridge symbol references across stdlib modules,
   - audited bridge call usage across expanded `tests_flv` cases.
+- `stdlib/flvrepr` now avoids direct `_bridge_python` imports by using `stringlib`/`collections.list` helpers.
 
 ## Grammar Planning Notes
 

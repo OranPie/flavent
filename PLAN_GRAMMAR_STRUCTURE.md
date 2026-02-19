@@ -75,9 +75,12 @@ Priority order:
 3. Keep only unavoidable host-integration primitives (IO/network/OS).
 
 Tasks:
-- [ ] Introduce pure-Flavent replacements module-by-module.
+- [~] Introduce pure-Flavent replacements module-by-module.
+  - [x] `flvrepr` no longer imports `_bridge_python` directly; metadata decode now uses `stringlib`/`collections.list` helpers.
+  - [ ] Continue replacing direct bridge usage in deterministic utility modules where feasible.
 - [ ] Keep bridge fallbacks only where host access is required.
-- [ ] Add CI check/report for bridge-usage trend (target downward each release).
+- [~] Add CI check/report for bridge-usage trend (target downward each release).
+  - [x] Refreshed baseline artifacts on 2026-02-19 after stdlib updates.
 
 ## Exit Criteria
 - [ ] Full test suite green.
