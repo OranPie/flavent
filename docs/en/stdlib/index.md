@@ -32,6 +32,7 @@ This directory contains **one page per stdlib module**.
 - [regex](./regex.md)
 - [hashlib](./hashlib.md)
 - [struct](./struct.md)
+- [flvrepr](./flvrepr.md)
 - [random](./random.md)
 - [statistics](./statistics.md)
 - [u32](./u32.md)

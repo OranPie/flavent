@@ -55,6 +55,9 @@ Improve language grammar clarity and compiler structure while reducing runtime d
     - reject unknown `with(...)` option keys
     - enforce `cancelable=true` return type as `Option[targetRet]`
     - enforce tail `returnDep` value set and previous-return param typing
+  - docs coverage:
+    - add `flvrepr` stdlib docs pages (`docs/en/stdlib/flvrepr.md`, `docs/zh/stdlib/flvrepr.md`)
+    - include `flvrepr` in stdlib index pages
 
 ## Phase 3: Compiler Structure Improvements
 - [ ] Split parser/lexer helper logic into clearer internal units (without public API breakage).

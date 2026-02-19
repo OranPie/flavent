@@ -1,6 +1,6 @@
 # Release Notes (Working Draft)
 
-Date: 2026-02-18
+Date: 2026-02-19
 
 ## Stdlib API Compatibility Notes
 
@@ -72,4 +72,8 @@ Compatibility note:
     - `hook head|tail|invoke fn ... with(...) = ...`
     - option keys include `id`, `priority`, `depends`, `at`, `cancelable`, `returnDep`, `const`.
   - resolver now supports hook call-stack ordering with priority/dependency resolution and locator checks (`at`).
+  - hook semantic checks were tightened:
+    - unknown `with(...)` option keys are now rejected,
+    - `head + cancelable=true` now requires return type `Option[targetReturnType]`,
+    - `tail + returnDep` now validates allowed values and previous-return parameter typing.
   - added `flvrepr` stdlib package for string-based metadata encoding/decoding (`encodeFunctionTarget`, `metaGet`, `metaSet`).

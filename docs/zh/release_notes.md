@@ -1,6 +1,6 @@
 # 发布说明（草案）
 
-日期：2026-02-18
+日期：2026-02-19
 
 ## 标准库 API 兼容性说明
 
@@ -72,4 +72,8 @@
     - `hook head|tail|invoke fn ... with(...) = ...`
     - 支持 `id`、`priority`、`depends`、`at`、`cancelable`、`returnDep`、`const` 等选项。
   - resolver 支持基于优先级与依赖的 hook 调用栈解析，并支持 `at` 定位检查。
+  - 补强了 hook 语义校验：
+    - 未知 `with(...)` 选项键会报错，
+    - `head + cancelable=true` 需要返回 `Option[targetReturnType]`，
+    - `tail + returnDep` 会校验取值范围与前置返回参数类型。
   - 新增 `flvrepr` 标准库包，用于字符串元数据编解码（`encodeFunctionTarget`、`metaGet`、`metaSet`）。
