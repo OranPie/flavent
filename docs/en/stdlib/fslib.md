@@ -5,6 +5,12 @@ Low-level filesystem operations (thin wrappers over `_bridge_python`).
 
 If you only need common read/write helpers, prefer the higher-level `file` module.
 
+## API Ownership & Migration
+- `fslib` is the canonical bridge-near filesystem layer.
+- For app code, prefer `file.*` for overlapping names:
+  - `exists`, `listDir`, `remove`, `tempFile`, `tempDir`
+- Keep using `fslib` when you need low-level bridge-oriented primitives directly.
+
 ## Import
 ```flavent
 use fslib

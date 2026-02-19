@@ -41,3 +41,6 @@
 ## Python 适配器
 - [py](./py.md)
 - [pyadapters（自动生成 wrapper）](./pyadapters.md)
+
+## 策略
+- [Stdlib API 归属表](../../stdlib_api_ownership.md)

@@ -10,6 +10,11 @@
 性能提示：
 - `appendBytes/appendText` 当前实现是 **read+concat+write**，对大文件不适合。
 
+## API 归属与迁移建议
+- `file` 是面向应用代码的规范文件系统命名空间。
+- 与 `fslib` 重名的 API（`exists`、`listDir`、`remove`、`tempFile`、`tempDir`）是有意保留的兼容层。
+- 新代码优先使用 `file.*`。
+
 ## 导入
 ```flavent
 use file
@@ -42,4 +47,3 @@ fn appendLine(path: Str, line: Str) -> Result[Unit, Str] = appendText(path, "\n"
 fn appendLines(path: Str, xs: List[Str]) -> Result[Unit, Str] = match xs:
 ```
 <!-- AUTO-GEN:END FUNCTIONS -->
-

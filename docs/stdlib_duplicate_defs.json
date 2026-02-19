@@ -1,5 +1,9 @@
 {
-  "duplicate_count": 11,
+  "duplicate_count": 5,
+  "approved_count": 5,
+  "unapproved_count": 0,
+  "stale_allowlist_count": 0,
+  "stale_allowlist_entries": [],
   "duplicates": [
     {
       "kind": "fn",
@@ -22,30 +26,10 @@
           "line": 12,
           "sig": "fn exists(path: Str) -> Result[Bool, Str] = rpc _bridge_python.fsExists(path)"
         }
-      ]
-    },
-    {
-      "kind": "fn",
-      "name": "foo",
-      "module_count": 2,
-      "modules": [
-        "testns.a",
-        "testns.b"
       ],
-      "locations": [
-        {
-          "module": "testns.a",
-          "file": "testns/a.flv",
-          "line": 1,
-          "sig": "fn foo() -> Int = 1"
-        },
-        {
-          "module": "testns.b",
-          "file": "testns/b.flv",
-          "line": 1,
-          "sig": "fn foo() -> Int = 2"
-        }
-      ]
+      "approved": true,
+      "canonical": "file",
+      "note": "Keep `file.exists` as the app-facing API; `fslib.exists` remains as low-level bridge surface."
     },
     {
       "kind": "fn",
@@ -68,99 +52,10 @@
           "line": 11,
           "sig": "fn listDir(path: Str) -> Result[List[Str], Str] = rpc _bridge_python.fsListDir(path)"
         }
-      ]
-    },
-    {
-      "kind": "fn",
-      "name": "monoMillis",
-      "module_count": 2,
-      "modules": [
-        "_bridge_python",
-        "time"
       ],
-      "locations": [
-        {
-          "module": "_bridge_python",
-          "file": "_bridge_python.flv",
-          "line": 58,
-          "sig": "fn monoMillis() -> Int = 0"
-        },
-        {
-          "module": "time",
-          "file": "time/__init__.flv",
-          "line": 37,
-          "sig": "fn monoMillis() -> Int = rpc _bridge_python.monoMillis()"
-        }
-      ]
-    },
-    {
-      "kind": "fn",
-      "name": "monoNanos",
-      "module_count": 2,
-      "modules": [
-        "_bridge_python",
-        "time"
-      ],
-      "locations": [
-        {
-          "module": "_bridge_python",
-          "file": "_bridge_python.flv",
-          "line": 59,
-          "sig": "fn monoNanos() -> Int = 0"
-        },
-        {
-          "module": "time",
-          "file": "time/__init__.flv",
-          "line": 38,
-          "sig": "fn monoNanos() -> Int = rpc _bridge_python.monoNanos()"
-        }
-      ]
-    },
-    {
-      "kind": "fn",
-      "name": "nowMillis",
-      "module_count": 2,
-      "modules": [
-        "_bridge_python",
-        "time"
-      ],
-      "locations": [
-        {
-          "module": "_bridge_python",
-          "file": "_bridge_python.flv",
-          "line": 56,
-          "sig": "fn nowMillis() -> Int = 0"
-        },
-        {
-          "module": "time",
-          "file": "time/__init__.flv",
-          "line": 32,
-          "sig": "fn nowMillis() -> Int = rpc _bridge_python.nowMillis()"
-        }
-      ]
-    },
-    {
-      "kind": "fn",
-      "name": "nowNanos",
-      "module_count": 2,
-      "modules": [
-        "_bridge_python",
-        "time"
-      ],
-      "locations": [
-        {
-          "module": "_bridge_python",
-          "file": "_bridge_python.flv",
-          "line": 57,
-          "sig": "fn nowNanos() -> Int = 0"
-        },
-        {
-          "module": "time",
-          "file": "time/__init__.flv",
-          "line": 33,
-          "sig": "fn nowNanos() -> Int = rpc _bridge_python.nowNanos()"
-        }
-      ]
+      "approved": true,
+      "canonical": "file",
+      "note": "Keep `file.listDir` as the app-facing API; `fslib.listDir` remains as low-level bridge surface."
     },
     {
       "kind": "fn",
@@ -183,30 +78,10 @@
           "line": 14,
           "sig": "fn remove(path: Str) -> Result[Unit, Str] = rpc _bridge_python.fsRemove(path)"
         }
-      ]
-    },
-    {
-      "kind": "fn",
-      "name": "sleep",
-      "module_count": 2,
-      "modules": [
-        "_bridge_python",
-        "time"
       ],
-      "locations": [
-        {
-          "module": "_bridge_python",
-          "file": "_bridge_python.flv",
-          "line": 60,
-          "sig": "fn sleep(ms: Int) -> Unit = ()"
-        },
-        {
-          "module": "time",
-          "file": "time/__init__.flv",
-          "line": 43,
-          "sig": "fn sleep(ms: Int) -> Unit = sleepMillis(ms)"
-        }
-      ]
+      "approved": true,
+      "canonical": "file",
+      "note": "Keep `file.remove` as the app-facing API; `fslib.remove` remains as low-level bridge surface."
     },
     {
       "kind": "fn",
@@ -229,7 +104,10 @@
           "line": 17,
           "sig": "fn tempDir(prefix: Str) -> Result[Str, Str] = rpc _bridge_python.fsTempDir(prefix)"
         }
-      ]
+      ],
+      "approved": true,
+      "canonical": "file",
+      "note": "Keep `file.tempDir` as the app-facing API; `fslib.tempDir` remains as low-level bridge surface."
     },
     {
       "kind": "fn",
@@ -252,7 +130,10 @@
           "line": 16,
           "sig": "fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = rpc _bridge_python.fsTempFile(prefix, suffix)"
         }
-      ]
+      ],
+      "approved": true,
+      "canonical": "file",
+      "note": "Keep `file.tempFile` as the app-facing API; `fslib.tempFile` remains as low-level bridge surface."
     }
   ]
 }

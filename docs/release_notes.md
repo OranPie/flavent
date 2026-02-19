@@ -62,6 +62,12 @@ Compatibility note:
 - Added duplicate-definition detector/report for stdlib cross-module symbols:
   - `scripts/stdlib_duplicate_defs.py`
   - `docs/stdlib_duplicate_defs.md`
+- Added duplicate policy allowlist + ownership table:
+  - `docs/stdlib_duplicate_allowlist.json`
+  - `docs/stdlib_api_ownership.md`
+- Duplicate CI policy now fails only on **unapproved** public duplicates:
+  - internal modules (`_bridge_python`, `testns.*`) are excluded by default,
+  - approved `file`/`fslib` overlap is tracked explicitly by allowlist entries.
 
 ## Grammar Planning Notes
 

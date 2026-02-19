@@ -42,3 +42,11 @@ This checklist defines the first-pass refinement targets for stdlib API consiste
   - Updated module notes/examples for `regex`, `stringlib`, `bytelib`, and `httplib.core`.
 - [x] Include deprecation/compat note in release notes for new additive aliases/APIs.
   - Added `docs/release_notes.md` and `docs/zh/release_notes.md`.
+
+## 6) Phase 1 Ownership and Duplicate Policy
+- [x] Canonical ownership table defined:
+  - `docs/stdlib_api_ownership.md`
+- [x] Duplicate policy allowlist added:
+  - `docs/stdlib_duplicate_allowlist.json`
+- [x] Duplicate detector supports allowlisted approvals and CI fail-on-unapproved mode.
+- [x] Public duplicate scan now excludes internal modules by default (`_...`, `testns.*`).

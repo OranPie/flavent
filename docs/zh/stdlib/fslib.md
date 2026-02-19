@@ -6,6 +6,12 @@
 建议：
 - 若只需要常用读写，优先使用 `file` 模块。
 
+## API 归属与迁移建议
+- `fslib` 是贴近 bridge 的底层文件系统层。
+- 对应用代码，重名能力优先使用 `file.*`：
+  - `exists`、`listDir`、`remove`、`tempFile`、`tempDir`
+- 仅在需要底层 bridge 原语时直接使用 `fslib`。
+
 ## 导入
 ```flavent
 use fslib
@@ -32,4 +38,3 @@ fn tempFile(prefix: Str, suffix: Str) -> Result[Str, Str] = rpc _bridge_python.f
 fn tempDir(prefix: Str) -> Result[Str, Str] = rpc _bridge_python.fsTempDir(prefix)
 ```
 <!-- AUTO-GEN:END FUNCTIONS -->
-

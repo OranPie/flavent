@@ -41,3 +41,6 @@ This directory contains **one page per stdlib module**.
 ## Python adapters
 - [py](./py.md)
 - [pyadapters (generated wrappers)](./pyadapters.md)
+
+## Policy
+- [Stdlib API ownership table](../../stdlib_api_ownership.md)

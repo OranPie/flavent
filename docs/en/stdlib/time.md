@@ -3,6 +3,11 @@
 ## Overview
 (Edit this page freely. The generator only updates the marked API blocks.)
 
+## API Ownership & Migration
+- `time` is the canonical public time namespace.
+- `_bridge_python` contains internal host primitives that back `time.*`.
+- Public duplicate checks treat `_bridge_python` as internal-only; user code should continue using `time.*`.
+
 ## Import
 ```flavent
 use time

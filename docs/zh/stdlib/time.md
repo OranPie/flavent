@@ -3,6 +3,11 @@
 ## 概述
 （自动生成的 API 参考页。可在此基础上补充示例与行为/边界说明。）
 
+## API 归属与迁移建议
+- `time` 是公开时间能力的规范命名空间。
+- `_bridge_python` 仅提供 `time.*` 背后的内部 host 原语。
+- 公共重复检查默认不把 `_bridge_python` 计入公开 API；用户代码应继续使用 `time.*`。
+
 ## 导入
 ```flavent
 use time
@@ -40,4 +45,3 @@ fn sleepDuration(d: Duration) -> Unit = sleepMillis(d.millis)
 fn elapsedSince(t0: Instant) -> Duration = durationMillis(nowMillis() - t0.millis)
 fn sleep(ms: Int) -> Unit = sleepMillis(ms)
 ```
-

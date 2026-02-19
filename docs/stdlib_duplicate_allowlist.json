@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "kind": "fn",
+      "name": "exists",
+      "modules": ["file", "fslib"],
+      "canonical": "file",
+      "note": "Keep `file.exists` as the app-facing API; `fslib.exists` remains as low-level bridge surface."
+    },
+    {
+      "kind": "fn",
+      "name": "listDir",
+      "modules": ["file", "fslib"],
+      "canonical": "file",
+      "note": "Keep `file.listDir` as the app-facing API; `fslib.listDir` remains as low-level bridge surface."
+    },
+    {
+      "kind": "fn",
+      "name": "remove",
+      "modules": ["file", "fslib"],
+      "canonical": "file",
+      "note": "Keep `file.remove` as the app-facing API; `fslib.remove` remains as low-level bridge surface."
+    },
+    {
+      "kind": "fn",
+      "name": "tempDir",
+      "modules": ["file", "fslib"],
+      "canonical": "file",
+      "note": "Keep `file.tempDir` as the app-facing API; `fslib.tempDir` remains as low-level bridge surface."
+    },
+    {
+      "kind": "fn",
+      "name": "tempFile",
+      "modules": ["file", "fslib"],
+      "canonical": "file",
+      "note": "Keep `file.tempFile` as the app-facing API; `fslib.tempFile` remains as low-level bridge surface."
+    }
+  ]
+}

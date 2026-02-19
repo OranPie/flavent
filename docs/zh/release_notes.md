@@ -62,6 +62,12 @@
 - 新增 stdlib 跨模块重复定义检测与报告：
   - `scripts/stdlib_duplicate_defs.py`
   - `docs/stdlib_duplicate_defs.md`
+- 新增重复策略白名单与归属表：
+  - `docs/stdlib_duplicate_allowlist.json`
+  - `docs/stdlib_api_ownership.md`
+- CI 重复策略改为仅对“未批准”的公开重复失败：
+  - 默认排除内部模块（`_bridge_python`、`testns.*`），
+  - `file`/`fslib` 的兼容性重名通过白名单显式追踪。
 
 ## 语法规划说明
 

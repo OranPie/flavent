@@ -11,6 +11,11 @@ Performance:
 - `appendBytes/appendText` is implemented as **read + concat + write**.
   Avoid using it for large files.
 
+## API Ownership & Migration
+- `file` is the canonical app-facing filesystem namespace.
+- Overlapping names (`exists`, `listDir`, `remove`, `tempFile`, `tempDir`) are intentionally mirrored in `fslib` for low-level compatibility.
+- New user code should prefer `file.*`.
+
 ## Import
 ```flavent
 use file
