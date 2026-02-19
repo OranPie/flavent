@@ -71,6 +71,9 @@ Compatibility note:
 
 ## Stdlib Expansion (Phase 2 Kickoff)
 
+- Added new `path` stdlib module with pure-Flavent helpers:
+  - `pathNormalize` / `pathJoin` / `pathJoinAll`
+  - `pathBase` / `pathDir` / `pathExt` / `pathStem`
 - Added new `csv` stdlib module with pure-Flavent helpers:
   - `csvParseLine` / `csvParse`
   - `csvStringifyLine` / `csvStringify`
@@ -80,6 +83,8 @@ Compatibility note:
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - Added EN/ZH docs pages and index links:
+  - `docs/en/stdlib/path.md`
+  - `docs/zh/stdlib/path.md`
   - `docs/en/stdlib/csv.md`
   - `docs/zh/stdlib/csv.md`
   - `docs/en/stdlib/url.md`

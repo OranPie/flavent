@@ -1,0 +1,123 @@
+use collections.list
+use stringlib
+
+fn _charSlice(s: Str, i: Int) -> Str = strSlice(s, i, i + 1)
+
+fn _canonSepAcc(s: Str, i: Int, n: Int, acc: Str) -> Str = match i >= n:
+  true -> acc
+  false -> do:
+    let c = strCodeAt(s, i)
+    let ch = match c == 92:
+      true -> "/"
+      false -> _charSlice(s, i)
+    return _canonSepAcc(s, i + 1, n, acc + ch)
+
+fn _canonSep(p: Str) -> Str = _canonSepAcc(p, 0, strLen(p), "")
+
+fn pathIsAbs(p: Str) -> Bool = startsWith(_canonSep(p), "/")
+
+fn _normalizeSegsAcc(segs: List[Str], abs: Bool, stackRev: List[Str]) -> List[Str] = match segs:
+  Nil -> reverse(stackRev)
+  Cons(seg, rest) -> match strLen(seg) == 0 or seg == ".":
+    true -> _normalizeSegsAcc(rest, abs, stackRev)
+    false -> match seg == "..":
+      true -> match stackRev:
+        Nil -> match abs:
+          true -> _normalizeSegsAcc(rest, abs, stackRev)
+          false -> _normalizeSegsAcc(rest, abs, Cons("..", stackRev))
+        Cons(top, tail) -> match top == "..":
+          true -> match abs:
+            true -> _normalizeSegsAcc(rest, abs, stackRev)
+            false -> _normalizeSegsAcc(rest, abs, Cons("..", stackRev))
+          false -> _normalizeSegsAcc(rest, abs, tail)
+      false -> _normalizeSegsAcc(rest, abs, Cons(seg, stackRev))
+
+fn _composeNormalized(abs: Bool, segs: List[Str]) -> Str = do:
+  let body = join(segs, "/")
+  return match abs:
+    true -> match strLen(body) == 0:
+      true -> "/"
+      false -> "/" + body
+    false -> match strLen(body) == 0:
+      true -> "."
+      false -> body
+
+fn pathNormalize(p: Str) -> Str = do:
+  let c = _canonSep(p)
+  let abs = startsWith(c, "/")
+  let segs0 = split(c, "/")
+  let segs = _normalizeSegsAcc(segs0, abs, Nil)
+  return _composeNormalized(abs, segs)
+
+fn pathJoin(a: Str, b: Str) -> Str = do:
+  let bc = _canonSep(b)
+  return match startsWith(bc, "/"):
+    true -> pathNormalize(bc)
+    false -> do:
+      let ac = _canonSep(a)
+      let sep = match strLen(ac) == 0 or endsWith(ac, "/"):
+        true -> ""
+        false -> "/"
+      return pathNormalize(ac + sep + bc)
+
+fn _pathJoinAllAcc(parts: List[Str], acc: Str) -> Str = match parts:
+  Nil -> pathNormalize(acc)
+  Cons(p, rest) -> _pathJoinAllAcc(rest, pathJoin(acc, p))
+
+fn pathJoinAll(parts: List[Str]) -> Str = _pathJoinAllAcc(parts, "")
+
+fn _dropLast(xs: List[Str]) -> List[Str] = match xs:
+  Nil -> Nil
+  Cons(x, rest) -> match rest:
+    Nil -> Nil
+    Cons(_, _) -> Cons(x, _dropLast(rest))
+
+fn _nonEmptySegs(parts: List[Str], acc: List[Str]) -> List[Str] = match parts:
+  Nil -> reverse(acc)
+  Cons(p, rest) -> match strLen(p) == 0:
+    true -> _nonEmptySegs(rest, acc)
+    false -> _nonEmptySegs(rest, Cons(p, acc))
+
+fn _lastDotAcc(s: Str, i: Int, prev: Int) -> Int = do:
+  let pos = strFind(s, ".", i)
+  return match pos < 0:
+    true -> prev
+    false -> _lastDotAcc(s, pos + 1, pos)
+
+fn pathBase(p: Str) -> Str = do:
+  let n = pathNormalize(p)
+  return match n == "/":
+    true -> "/"
+    false -> do:
+      let segs = _nonEmptySegs(split(n, "/"), Nil)
+      return match last(segs):
+        None -> "."
+        Some(x) -> x
+
+fn pathDir(p: Str) -> Str = do:
+  let n = pathNormalize(p)
+  return match n == "/":
+    true -> "/"
+    false -> do:
+      let abs = startsWith(n, "/")
+      let segs = _nonEmptySegs(split(n, "/"), Nil)
+      let head = _dropLast(segs)
+      return _composeNormalized(abs, head)
+
+fn pathExt(p: Str) -> Str = do:
+  let b = pathBase(p)
+  return match b == "/" or b == "." or b == "..":
+    true -> ""
+    false -> do:
+      let dot = _lastDotAcc(b, 0, 0 - 1)
+      let n = strLen(b)
+      return match dot <= 0 or dot >= n - 1:
+        true -> ""
+        false -> strSlice(b, dot, n)
+
+fn pathStem(p: Str) -> Str = do:
+  let b = pathBase(p)
+  let ext = pathExt(p)
+  return match strLen(ext) == 0:
+    true -> b
+    false -> strSlice(b, 0, strLen(b) - strLen(ext))

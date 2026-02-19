@@ -34,6 +34,7 @@ use glob
 use tempfile
 use json
 use csv
+use path
 use struct
 use socket
 use httplib
@@ -167,6 +168,8 @@ sector s:
     let _j1 = loads(s0)
     let _csvRow = csvParseLine("a,\\\"b,c\\\"")
     let _csvTxt = csvStringify(Cons(Cons("a", Cons("b,c", Nil)), Nil))
+    let _pn = pathNormalize("./a/../b")
+    let _pj = pathJoin("a", "b")
 
     let o0 = Some(1)
     let _os = isSome(o0)

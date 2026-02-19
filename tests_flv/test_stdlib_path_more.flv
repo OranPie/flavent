@@ -1,0 +1,29 @@
+use flvtest
+use path
+use collections.list
+
+test "path-normalize" -> do:
+  assertEq(pathNormalize("./a/../b//c"), "b/c")?
+  assertEq(pathNormalize("/a/./b/../c"), "/a/c")?
+  assertEq(pathNormalize(""), ".")?
+  assertEq(pathNormalize("/"), "/")?
+  assertEq(pathNormalize("a\\\\b\\\\c"), "a/b/c")?
+
+test "path-join" -> do:
+  assertEq(pathJoin("a/b", "c"), "a/b/c")?
+  assertEq(pathJoin("a/b/", "c"), "a/b/c")?
+  assertEq(pathJoin("/a/b", "../c"), "/a/c")?
+  assertEq(pathJoin("a/b", "/x/y"), "/x/y")?
+  assertEq(pathJoinAll(Cons("a", Cons("b", Cons("c", Nil)))), "a/b/c")?
+
+test "path-parts" -> do:
+  assertEq(pathBase("/tmp/x.txt"), "x.txt")?
+  assertEq(pathDir("/tmp/x.txt"), "/tmp")?
+  assertEq(pathExt("/tmp/x.txt"), ".txt")?
+  assertEq(pathStem("/tmp/x.txt"), "x")?
+  assertEq(pathExt("/tmp/.bashrc"), "")?
+  assertEq(pathStem("/tmp/.bashrc"), ".bashrc")?
+
+test "path-abs" -> do:
+  assertTrue(pathIsAbs("/tmp/x"))?
+  assertTrue(not pathIsAbs("tmp/x"))?
