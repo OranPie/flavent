@@ -30,6 +30,25 @@ def test_lexer_rejects_invalid_hex_escape():
         lex("test.flv", r'b"\xzz"' + "\n")
 
 
+def test_lexer_invalid_hex_escape_diagnostic_has_hint():
+    with pytest.raises(LexError, match=r"expected two hex digits after \\x"):
+        lex("test.flv", r'"\x"' + "\n")
+    with pytest.raises(LexError, match=r"bytes literal"):
+        lex("test.flv", r'b"\xg1"' + "\n")
+
+
 def test_lexer_rejects_non_byte_chars_in_bytes_literal():
     with pytest.raises(LexError, match="byte-range"):
         lex("test.flv", 'b"😀"\n')
+
+
+def test_lexer_reports_unterminated_literal_kind():
+    with pytest.raises(LexError, match="Unterminated string literal"):
+        lex("test.flv", '"abc\n')
+    with pytest.raises(LexError, match="Unterminated bytes literal"):
+        lex("test.flv", 'b"abc\n')
+
+
+def test_lexer_unknown_escapes_remain_compatible():
+    tok = _single_token(r'"\q\d"' + "\n", TokenKind.STR)
+    assert tok.text == r"\q\d"

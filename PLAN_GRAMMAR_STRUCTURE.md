@@ -25,7 +25,11 @@ Improve language grammar clarity and compiler structure while reducing runtime d
 ## Phase 2: Grammar Refinement
 - [x] Publish a compact EBNF-style grammar supplement in docs.
   - Added: `docs/grammar_ebnf.md`
-- [ ] Tighten literal grammar and diagnostics (invalid escapes, malformed bytes/hex, recoverable parser errors).
+- [~] Tighten literal grammar and diagnostics (invalid escapes, malformed bytes/hex, recoverable parser errors).
+  - [x] Improved literal diagnostics in lexer:
+    - invalid `\x` now reports explicit expectation of two hex digits
+    - unterminated literals now distinguish `string` vs `bytes`
+  - [ ] Parser-side recovery diagnostics follow-up remains.
 - [ ] Add parser/lexer regression tests for ambiguous and edge-case constructs.
 - [ ] Improve user-facing error messages with expected-token hints.
 

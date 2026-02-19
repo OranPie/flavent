@@ -404,8 +404,22 @@ def _lex_string(
     *,
     bytes_prefix: bool,
 ) -> None:
+    literal_kind = "bytes" if bytes_prefix else "string"
+
     def _err_here(msg: str) -> None:
         raise LexError(msg, Span(file=st.file, start=start_i, end=max(start_i + 1, st.i), line=start_line, col=start_col))
+
+    def _err_at_current(msg: str, width: int = 1) -> None:
+        raise LexError(
+            msg,
+            Span(
+                file=st.file,
+                start=st.i,
+                end=max(st.i + width, st.i + 1),
+                line=st.line,
+                col=st.col,
+            ),
+        )
 
     def _append_char(out: str, ch: str) -> str:
         if bytes_prefix and ord(ch) > 255:
@@ -417,7 +431,10 @@ def _lex_string(
         h2 = st.peek(1)
         hex_digits = "0123456789abcdefABCDEF"
         if not h1 or not h2 or h1 not in hex_digits or h2 not in hex_digits:
-            _err_here("Invalid hex escape in string literal")
+            _err_at_current(
+                f"Invalid hex escape in {literal_kind} literal: expected two hex digits after \\x",
+                width=2,
+            )
         st.advance(2)
         return chr(int(h1 + h2, 16))
 
@@ -437,10 +454,16 @@ def _lex_string(
     }
     while True:
         if st.eof():
-            raise LexError("Unterminated string literal", Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col))
+            raise LexError(
+                f"Unterminated {literal_kind} literal",
+                Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col),
+            )
         ch = st.peek()
         if ch == "\n":
-            raise LexError("Unterminated string literal", Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col))
+            raise LexError(
+                f"Unterminated {literal_kind} literal",
+                Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col),
+            )
         if ch == '"':
             st.advance(1)
             break
@@ -448,7 +471,10 @@ def _lex_string(
             st.advance(1)
             esc = st.peek()
             if esc == "" or esc == "\n":
-                raise LexError("Unterminated string literal", Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col))
+                raise LexError(
+                    f"Unterminated {literal_kind} literal",
+                    Span(file=st.file, start=start_i, end=st.i, line=start_line, col=start_col),
+                )
             if esc == "x":
                 st.advance(1)
                 out = _append_char(out, _read_hex_byte())
