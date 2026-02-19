@@ -88,12 +88,12 @@ fn processWithStderr(spec: ProcessSpec, err: Str) -> ProcessSpec = {
 
 fn _argsCharLen(xs: List[Str]) -> Int = match xs:
   Nil -> 0
-  Cons(x, rest) -> strLen(x) + _argsCharLen(rest)
+  Cons(x, rest) -> strLength(x) + _argsCharLen(rest)
 
-fn _computeProcessId(spec: ProcessSpec) -> Int = strLen(spec.program) * 1000 + length(spec.args) + _argsCharLen(spec.args)
+fn _computeProcessId(spec: ProcessSpec) -> Int = strLength(spec.program) * 1000 + length(spec.args) + _argsCharLen(spec.args)
 
 fn processValidate(spec: ProcessSpec) -> Result[Unit, ProcessError] = do:
-  if strLen(spec.program) == 0:
+  if strLength(spec.program) == 0:
     return Err(_processErr("empty_program", "process: empty program"))
   if spec.simulateExitCode < 0:
     return Err(_processErr("invalid_exit_code", "process: exit code must be >= 0"))

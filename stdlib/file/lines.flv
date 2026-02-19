@@ -2,16 +2,17 @@ use collections.list
 use std.result
 use std.option
 use stringfmt
+use stringlib
 
 // Line-oriented helpers for file module.
 
-fn _linesSplitAcc(s: Str, i: Int, start: Int, pieces: List[Str]) -> List[Str] = match i >= strLen(s):
-  true -> reverse(Cons(strSlice(s, start, strLen(s)), pieces))
+fn _linesSplitAcc(s: Str, i: Int, start: Int, pieces: List[Str]) -> List[Str] = match i >= strLength(s):
+  true -> reverse(Cons(strSliceRange(s, start, strLength(s)), pieces))
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     return match c == 10:
       true -> do:
-        let part = strSlice(s, start, i)
+        let part = strSliceRange(s, start, i)
         return _linesSplitAcc(s, i + 1, i + 1, Cons(part, pieces))
       false -> _linesSplitAcc(s, i + 1, start, pieces)
 

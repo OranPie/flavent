@@ -1,10 +1,10 @@
-use _bridge_python
 use collections.list
 use fslib
+use stringlib
 
-fn _glLen(s: Str) -> Int = strLen(s)
-fn _glCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
-fn _glSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn _glLen(s: Str) -> Int = strLength(s)
+fn _glCodeAt(s: Str, i: Int) -> Int = strCode(s, i)
+fn _glSlice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
 
 fn _glMatch(pat: Str, pi: Int, s: Str, si: Int) -> Bool = do:
   let plen = _glLen(pat)

@@ -65,16 +65,12 @@
     ]
   },
   "stdlib_references": {
-    "total_references": 90,
+    "total_references": 66,
     "distinct_symbols_referenced": 55,
-    "distinct_modules_referencing": 17,
+    "distinct_modules_referencing": 12,
     "per_symbol": {
-      "strLen": 11,
-      "strCodeAt": 7,
-      "strSlice": 7,
       "nowMillis": 5,
       "pyAdapterCall": 3,
-      "strFromCode": 3,
       "floatToStr": 2,
       "monoMillis": 2,
       "monoNanos": 2,
@@ -122,6 +118,10 @@
       "sockTcpAccept": 1,
       "sockTcpConnect": 1,
       "sockTcpListen": 1,
+      "strCodeAt": 1,
+      "strFromCode": 1,
+      "strLen": 1,
+      "strSlice": 1,
       "strToFloat": 1,
       "uuid4Bytes": 1
     },
@@ -133,16 +133,11 @@
       "consoleIO/__init__": 6,
       "hashlib/__init__": 6,
       "bytelib/__init__": 5,
-      "file/lines": 5,
-      "stringfmt/__init__": 5,
       "stringlib/__init__": 4,
-      "uuid/__init__": 4,
-      "asciilib/__init__": 3,
-      "base64/core": 3,
-      "glob/__init__": 3,
-      "process/__init__": 3,
       "py/__init__": 3,
-      "json/__init__": 2
+      "json/__init__": 2,
+      "stringfmt/__init__": 1,
+      "uuid/__init__": 1
     },
     "symbol_to_modules": {
       "_pyBytesConcat": [
@@ -294,36 +289,16 @@
         "socket/api"
       ],
       "strCodeAt": [
-        "asciilib/__init__",
-        "base64/core",
-        "file/lines",
-        "glob/__init__",
-        "stringfmt/__init__",
-        "stringlib/__init__",
-        "uuid/__init__"
+        "stringlib/__init__"
       ],
       "strFromCode": [
-        "asciilib/__init__",
-        "stringfmt/__init__",
         "stringlib/__init__"
       ],
       "strLen": [
-        "asciilib/__init__",
-        "base64/core",
-        "file/lines",
-        "glob/__init__",
-        "process/__init__",
-        "stringfmt/__init__",
-        "stringlib/__init__",
-        "uuid/__init__"
+        "stringlib/__init__"
       ],
       "strSlice": [
-        "base64/core",
-        "file/lines",
-        "glob/__init__",
-        "stringfmt/__init__",
-        "stringlib/__init__",
-        "uuid/__init__"
+        "stringlib/__init__"
       ],
       "strToFloat": [
         "json/__init__"
@@ -337,17 +312,17 @@
     "programs_analyzed": 83,
     "files_analyzed": 25,
     "files_failed": 0,
-    "total_bridge_calls": 640,
+    "total_bridge_calls": 562,
     "kind_counts": {
-      "pure_call": 564,
+      "pure_call": 486,
       "rpc": 66,
       "call": 10
     },
     "counts": {
-      "pure_call:strLen": 85,
-      "pure_call:strCodeAt": 71,
-      "pure_call:strSlice": 68,
-      "pure_call:strFromCode": 66,
+      "pure_call:strCodeAt": 53,
+      "pure_call:strFromCode": 53,
+      "pure_call:strLen": 53,
+      "pure_call:strSlice": 53,
       "pure_call:_pyBytesConcat": 28,
       "pure_call:_pyBytesFromByte": 28,
       "pure_call:_pyBytesGet": 28,
@@ -401,16 +376,16 @@
       },
       {
         "file": "tests_flv/test_stdlib_httplib_more.flv",
-        "bridge_calls": 160,
+        "bridge_calls": 136,
         "counts": {
-          "pure_call:strCodeAt": 16,
-          "pure_call:strFromCode": 16,
-          "pure_call:strLen": 16,
           "pure_call:_pyBytesConcat": 8,
           "pure_call:_pyBytesFromByte": 8,
           "pure_call:_pyBytesGet": 8,
           "pure_call:_pyBytesLen": 8,
           "pure_call:_pyBytesSlice": 8,
+          "pure_call:strCodeAt": 8,
+          "pure_call:strFromCode": 8,
+          "pure_call:strLen": 8,
           "pure_call:strSlice": 8,
           "rpc:sockClose": 8,
           "rpc:sockRecv": 8,
@@ -442,23 +417,13 @@
       },
       {
         "file": "tests_flv/test_stdlib_csv_more.flv",
-        "bridge_calls": 70,
+        "bridge_calls": 25,
         "counts": {
-          "pure_call:strLen": 20,
-          "pure_call:strSlice": 20,
-          "pure_call:strCodeAt": 15,
-          "pure_call:strFromCode": 10,
-          "pure_call:floatToStr": 5
-        }
-      },
-      {
-        "file": "tests_flv/test_stdlib_process_more.flv",
-        "bridge_calls": 21,
-        "counts": {
-          "pure_call:strLen": 12,
-          "pure_call:strCodeAt": 3,
-          "pure_call:strFromCode": 3,
-          "pure_call:strSlice": 3
+          "pure_call:floatToStr": 5,
+          "pure_call:strCodeAt": 5,
+          "pure_call:strFromCode": 5,
+          "pure_call:strLen": 5,
+          "pure_call:strSlice": 5
         }
       },
       {
@@ -542,6 +507,16 @@
           "call:consolePrintln": 2,
           "call:consolePrintlnErr": 2,
           "rpc:consoleReadLine": 2
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_process_more.flv",
+        "bridge_calls": 12,
+        "counts": {
+          "pure_call:strCodeAt": 3,
+          "pure_call:strFromCode": 3,
+          "pure_call:strLen": 3,
+          "pure_call:strSlice": 3
         }
       },
       {

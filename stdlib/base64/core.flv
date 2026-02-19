@@ -1,12 +1,12 @@
-use _bridge_python
 use collections.list
 use bytelib
+use stringlib
 
-fn _b64Len(s: Str) -> Int = strLen(s)
+fn _b64Len(s: Str) -> Int = strLength(s)
 
-fn _b64CodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn _b64CodeAt(s: Str, i: Int) -> Int = strCode(s, i)
 
-fn _b64Slice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn _b64Slice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
 
 fn _b64Mod(x: Int, m: Int) -> Int = x - (x / m) * m
 

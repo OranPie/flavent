@@ -14,16 +14,17 @@ fn surround(s: Str, left: Str, right: Str) -> Str = left + s + right
 use _bridge_python
 use collections.list
 use collections.map
+use stringlib
 
 type FmtArg = FmtStr(Str) | FmtInt(Int) | FmtFloat(Float) | FmtBool(Bool)
 
-fn _sfLen(s: Str) -> Int = strLen(s)
+fn _sfLen(s: Str) -> Int = strLength(s)
 
-fn _sfCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn _sfCodeAt(s: Str, i: Int) -> Int = strCode(s, i)
 
-fn _sfChar(code: Int) -> Str = strFromCode(code)
+fn _sfChar(code: Int) -> Str = strFromCodePoint(code)
 
-fn _sfSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn _sfSlice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
 
 fn _sfArgAt(args: List[FmtArg], idx: Int) -> FmtArg = match idx < 0:
   true -> FmtStr("")

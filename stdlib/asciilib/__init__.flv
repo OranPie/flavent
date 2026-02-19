@@ -1,16 +1,17 @@
 use collections.list
 use bytelib
+use stringlib
 
 fn crlfBytes() -> Bytes = bytesFromList(Cons(13, Cons(10, Nil)))
 
 fn _asciiFromBytesAcc(b: Bytes, i: Int, n: Int, acc: Str) -> Str = match i >= n:
   true -> acc
-  false -> _asciiFromBytesAcc(b, i + 1, n, acc + strFromCode(bytesGet(b, i)))
+  false -> _asciiFromBytesAcc(b, i + 1, n, acc + strFromCodePoint(bytesGet(b, i)))
 
 fn asciiFromBytes(b: Bytes) -> Str = _asciiFromBytesAcc(b, 0, bytesLen(b), "")
 
 fn _asciiCodesAcc(s: Str, i: Int, n: Int, acc: List[Int]) -> List[Int] = match i >= n:
   true -> reverse(acc)
-  false -> _asciiCodesAcc(s, i + 1, n, Cons(strCodeAt(s, i), acc))
+  false -> _asciiCodesAcc(s, i + 1, n, Cons(strCode(s, i), acc))
 
-fn asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLen(s), Nil))
+fn asciiToBytes(s: Str) -> Bytes = bytesFromList(_asciiCodesAcc(s, 0, strLength(s), Nil))

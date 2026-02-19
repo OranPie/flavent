@@ -2,12 +2,13 @@ use _bridge_python
 use collections.list
 use std.option
 use bytelib
+use stringlib
 
 type UUID = { bytes: Bytes }
 
-fn _uLen(s: Str) -> Int = strLen(s)
-fn _uCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
-fn _uSlice(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn _uLen(s: Str) -> Int = strLength(s)
+fn _uCodeAt(s: Str, i: Int) -> Int = strCode(s, i)
+fn _uSlice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
 
 fn _uHexVal(c: Int) -> Int = match c >= 48 and c <= 57:
   true -> c - 48
