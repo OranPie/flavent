@@ -57,6 +57,10 @@ Compatibility note:
   - bridge primitive surface in `stdlib/_bridge_python.flv`,
   - static bridge symbol references across stdlib modules,
   - audited bridge call usage across expanded `tests_flv` cases.
+- Refreshed baseline after Phase 3 stdlib expansion (`2026-02-19`):
+  - total bridge symbols: `55` (24 pure + 31 effectful),
+  - stdlib bridge references: `226` across `26` modules,
+  - audited `tests_flv` bridge calls: `1711` (pure_call `1635`, rpc `66`, call `10`).
 - `stdlib/flvrepr` now avoids direct `_bridge_python` imports by using `stringlib`/`collections.list` helpers.
 - `stdlib/httplib.core` now delegates shared helpers to connected stdlib modules (`stringlib`, `bytelib`, `asciilib`) for find/trim/ascii conversions.
 - Added duplicate-definition detector/report for stdlib cross-module symbols:

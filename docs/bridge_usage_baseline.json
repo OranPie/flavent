@@ -65,14 +65,14 @@
     ]
   },
   "stdlib_references": {
-    "total_references": 166,
+    "total_references": 226,
     "distinct_symbols_referenced": 55,
-    "distinct_modules_referencing": 20,
+    "distinct_modules_referencing": 26,
     "per_symbol": {
-      "strLen": 38,
-      "strCodeAt": 29,
-      "strSlice": 25,
-      "strFromCode": 12,
+      "strLen": 69,
+      "strSlice": 45,
+      "strCodeAt": 32,
+      "strFromCode": 18,
       "nowMillis": 5,
       "pyAdapterCall": 3,
       "floatToStr": 2,
@@ -126,13 +126,18 @@
       "uuid4Bytes": 1
     },
     "per_module": {
-      "httplib/core": 33,
+      "httplib/core": 23,
+      "url/__init__": 23,
       "stringlib/__init__": 19,
+      "datetime/__init__": 15,
+      "path/__init__": 14,
       "time/__init__": 13,
       "struct/__init__": 12,
       "fslib/__init__": 10,
       "regex/__init__": 10,
+      "csv/__init__": 8,
       "socket/api": 8,
+      "cliargs/__init__": 7,
       "u32/__init__": 7,
       "consoleIO/__init__": 6,
       "hashlib/__init__": 6,
@@ -145,6 +150,7 @@
       "asciilib/__init__": 3,
       "base64/core": 3,
       "glob/__init__": 3,
+      "process/__init__": 3,
       "hashlib/sha256": 2
     },
     "symbol_to_modules": {
@@ -299,50 +305,66 @@
       "strCodeAt": [
         "asciilib/__init__",
         "base64/core",
+        "datetime/__init__",
         "file/lines",
         "glob/__init__",
         "httplib/core",
         "json/__init__",
+        "path/__init__",
         "py/__init__",
         "regex/__init__",
         "stringfmt/__init__",
         "stringlib/__init__",
         "struct/__init__",
+        "url/__init__",
         "uuid/__init__"
       ],
       "strFromCode": [
         "asciilib/__init__",
+        "datetime/__init__",
         "httplib/core",
         "json/__init__",
         "py/__init__",
         "regex/__init__",
-        "stringfmt/__init__"
+        "stringfmt/__init__",
+        "url/__init__"
       ],
       "strLen": [
         "asciilib/__init__",
         "base64/core",
+        "cliargs/__init__",
+        "csv/__init__",
+        "datetime/__init__",
         "file/lines",
         "glob/__init__",
         "hashlib/sha256",
         "httplib/core",
         "json/__init__",
+        "path/__init__",
+        "process/__init__",
         "py/__init__",
         "regex/__init__",
         "stringfmt/__init__",
         "stringlib/__init__",
         "struct/__init__",
+        "url/__init__",
         "uuid/__init__"
       ],
       "strSlice": [
         "base64/core",
+        "cliargs/__init__",
+        "csv/__init__",
+        "datetime/__init__",
         "file/lines",
         "glob/__init__",
         "hashlib/sha256",
         "httplib/core",
         "json/__init__",
+        "path/__init__",
         "regex/__init__",
         "stringfmt/__init__",
         "stringlib/__init__",
+        "url/__init__",
         "uuid/__init__"
       ],
       "strToFloat": [
@@ -354,19 +376,20 @@
     }
   },
   "tests_flv_runtime_baseline": {
-    "programs_analyzed": 52,
-    "files_analyzed": 16,
+    "programs_analyzed": 82,
+    "files_analyzed": 25,
     "files_failed": 0,
-    "total_bridge_calls": 838,
+    "total_bridge_calls": 1711,
     "kind_counts": {
-      "pure_call": 774,
-      "rpc": 64
+      "pure_call": 1635,
+      "rpc": 66,
+      "call": 10
     },
     "counts": {
-      "pure_call:strLen": 180,
-      "pure_call:strCodeAt": 171,
-      "pure_call:strSlice": 91,
-      "pure_call:strFromCode": 63,
+      "pure_call:strLen": 649,
+      "pure_call:strCodeAt": 309,
+      "pure_call:strSlice": 307,
+      "pure_call:strFromCode": 96,
       "pure_call:_pyBytesConcat": 28,
       "pure_call:_pyBytesFromByte": 28,
       "pure_call:_pyBytesGet": 28,
@@ -379,6 +402,7 @@
       "pure_call:_pyU32Shr": 18,
       "pure_call:_pyU32Wrap": 18,
       "pure_call:_pyU32Xor": 18,
+      "pure_call:floatToStr": 8,
       "rpc:sockClose": 8,
       "rpc:sockRecv": 8,
       "rpc:sockSend": 8,
@@ -387,17 +411,22 @@
       "rpc:sockTcpAccept": 8,
       "rpc:sockTcpConnect": 8,
       "rpc:sockTcpListen": 8,
-      "pure_call:floatToStr": 3
+      "call:consoleFlush": 2,
+      "call:consolePrint": 2,
+      "call:consolePrintErr": 2,
+      "call:consolePrintln": 2,
+      "call:consolePrintlnErr": 2,
+      "rpc:consoleReadLine": 2
     },
     "files": [
       {
         "file": "tests_flv/test_stdlib_httplib_more.flv",
-        "bridge_calls": 368,
+        "bridge_calls": 464,
         "counts": {
-          "pure_call:strLen": 96,
-          "pure_call:strCodeAt": 64,
+          "pure_call:strLen": 160,
+          "pure_call:strCodeAt": 72,
+          "pure_call:strSlice": 72,
           "pure_call:strFromCode": 56,
-          "pure_call:strSlice": 48,
           "pure_call:_pyBytesConcat": 8,
           "pure_call:_pyBytesFromByte": 8,
           "pure_call:_pyBytesGet": 8,
@@ -434,6 +463,46 @@
         }
       },
       {
+        "file": "tests_flv/test_stdlib_csv_more.flv",
+        "bridge_calls": 185,
+        "counts": {
+          "pure_call:strLen": 90,
+          "pure_call:strSlice": 55,
+          "pure_call:strCodeAt": 30,
+          "pure_call:floatToStr": 5,
+          "pure_call:strFromCode": 5
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_url_more.flv",
+        "bridge_calls": 168,
+        "counts": {
+          "pure_call:strLen": 84,
+          "pure_call:strCodeAt": 36,
+          "pure_call:strSlice": 28,
+          "pure_call:strFromCode": 20
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_datetime_more.flv",
+        "bridge_calls": 136,
+        "counts": {
+          "pure_call:strLen": 60,
+          "pure_call:strSlice": 48,
+          "pure_call:strCodeAt": 20,
+          "pure_call:strFromCode": 8
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_path_more.flv",
+        "bridge_calls": 132,
+        "counts": {
+          "pure_call:strLen": 84,
+          "pure_call:strSlice": 28,
+          "pure_call:strCodeAt": 20
+        }
+      },
+      {
         "file": "tests_flv/test_stdlib_random.flv",
         "bridge_calls": 84,
         "counts": {
@@ -449,6 +518,24 @@
           "pure_call:_pyU32Shr": 7,
           "pure_call:_pyU32Wrap": 7,
           "pure_call:_pyU32Xor": 7
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_cliargs_more.flv",
+        "bridge_calls": 78,
+        "counts": {
+          "pure_call:strLen": 45,
+          "pure_call:strSlice": 21,
+          "pure_call:strCodeAt": 12
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_process_more.flv",
+        "bridge_calls": 66,
+        "counts": {
+          "pure_call:strLen": 42,
+          "pure_call:strCodeAt": 12,
+          "pure_call:strSlice": 12
         }
       },
       {
@@ -479,6 +566,18 @@
           "pure_call:strFromCode": 3,
           "pure_call:strLen": 3,
           "pure_call:strSlice": 3
+        }
+      },
+      {
+        "file": "tests_flv/test_stdlib_log_more.flv",
+        "bridge_calls": 12,
+        "counts": {
+          "call:consoleFlush": 2,
+          "call:consolePrint": 2,
+          "call:consolePrintErr": 2,
+          "call:consolePrintln": 2,
+          "call:consolePrintlnErr": 2,
+          "rpc:consoleReadLine": 2
         }
       },
       {
@@ -513,7 +612,17 @@
         "counts": {}
       },
       {
+        "file": "tests_flv/test_stdlib_deque_more.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
         "file": "tests_flv/test_stdlib_enum_more.flv",
+        "bridge_calls": 0,
+        "counts": {}
+      },
+      {
+        "file": "tests_flv/test_stdlib_env_more.flv",
         "bridge_calls": 0,
         "counts": {}
       },

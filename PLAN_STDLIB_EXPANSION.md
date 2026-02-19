@@ -35,19 +35,19 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Add `log` module (leveled logging helpers over `consoleIO`)
 
 ## Phase 4: Quality Gates Per Module
-- [ ] EN docs page in `docs/en/stdlib/*.md`
-- [ ] ZH docs page in `docs/zh/stdlib/*.md`
-- [ ] Python tests under `tests/test_stdlib_*.py`
-- [ ] Behavior tests under `tests_flv/test_stdlib_*.flv`
-- [ ] Add release note entry with compatibility notes
+- [x] EN docs page in `docs/en/stdlib/*.md`
+- [x] ZH docs page in `docs/zh/stdlib/*.md`
+- [x] Python tests under `tests/test_stdlib_*.py`
+- [x] Behavior tests under `tests_flv/test_stdlib_*.flv`
+- [x] Add release note entry with compatibility notes
 
 ## Phase 5: Bridge-Reduction Track
-- [ ] Snapshot bridge usage after each batch (`scripts/bridge_usage_snapshot.py`)
+- [x] Snapshot bridge usage after each batch (`scripts/bridge_usage_snapshot.py`)
 - [ ] Prioritize replacing deterministic bridge-backed helpers with pure-Flavent versions
 - [ ] Keep bridge-only functionality limited to IO/network/OS boundaries
 
 ## Exit Criteria
-- [ ] New modules documented in EN/ZH indexes
-- [ ] Full suite green (`python3 -m pytest -q tests tests_flv`)
-- [ ] Duplicate report trend non-increasing for public symbols
-- [ ] Bridge usage trend documented release-to-release
+- [x] New modules documented in EN/ZH indexes
+- [x] Full suite green (`python3 -m pytest -q tests tests_flv`)
+- [x] Duplicate report trend non-increasing for public symbols
+- [x] Bridge usage trend documented release-to-release
