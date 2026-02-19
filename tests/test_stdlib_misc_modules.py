@@ -34,6 +34,7 @@ use glob
 use tempfile
 use json
 use csv
+use datetime
 use path
 use struct
 use socket
@@ -168,6 +169,9 @@ sector s:
     let _j1 = loads(s0)
     let _csvRow = csvParseLine("a,\\\"b,c\\\"")
     let _csvTxt = csvStringify(Cons(Cons("a", Cons("b,c", Nil)), Nil))
+    let _dt0 = parseDate("2024-01-02")
+    let _dt1 = parseTime("03:04:05")
+    let _dt2 = parseDateTime("2024-01-02T03:04:05.006")
     let _pn = pathNormalize("./a/../b")
     let _pj = pathJoin("a", "b")
 

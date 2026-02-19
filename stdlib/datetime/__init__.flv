@@ -1,0 +1,155 @@
+use stringlib
+
+type Date = { year: Int, month: Int, day: Int }
+
+type Time = { hour: Int, minute: Int, second: Int, millis: Int }
+
+type DateTime = { date: Date, time: Time }
+
+fn makeDate(year: Int, month: Int, day: Int) -> Date = { year = year, month = month, day = day }
+
+fn makeTime(hour: Int, minute: Int, second: Int, millis: Int) -> Time = { hour = hour, minute = minute, second = second, millis = millis }
+
+fn makeDateTime(date: Date, time: Time) -> DateTime = { date = date, time = time }
+
+fn _mod(x: Int, m: Int) -> Int = x - (x / m) * m
+
+fn isLeapYear(year: Int) -> Bool = (_mod(year, 4) == 0) and ((_mod(year, 100) != 0) or (_mod(year, 400) == 0))
+
+fn daysInMonth(year: Int, month: Int) -> Int = match month == 1 or month == 3 or month == 5 or month == 7 or month == 8 or month == 10 or month == 12:
+  true -> 31
+  false -> match month == 4 or month == 6 or month == 9 or month == 11:
+    true -> 30
+    false -> match month == 2:
+      true -> match isLeapYear(year):
+        true -> 29
+        false -> 28
+      false -> 0
+
+fn dateIsValid(d: Date) -> Bool = do:
+  let dim = daysInMonth(d.year, d.month)
+  return d.month >= 1 and d.month <= 12 and d.day >= 1 and d.day <= dim
+
+fn timeIsValid(t: Time) -> Bool = t.hour >= 0 and t.hour <= 23 and t.minute >= 0 and t.minute <= 59 and t.second >= 0 and t.second <= 59 and t.millis >= 0 and t.millis <= 999
+
+fn dateTimeIsValid(dt: DateTime) -> Bool = dateIsValid(dt.date) and timeIsValid(dt.time)
+
+fn _isDigit(c: Int) -> Bool = c >= 48 and c <= 57
+
+fn _parseFixedUIntAcc(s: Str, i: Int, left: Int, acc: Int) -> Result[Int, Str] = match left <= 0:
+  true -> Ok(acc)
+  false -> do:
+    let n = strLen(s)
+    if i >= n:
+      return Err("datetime: numeric parse out of range")
+    let c = strCodeAt(s, i)
+    return match _isDigit(c):
+      true -> _parseFixedUIntAcc(s, i + 1, left - 1, acc * 10 + (c - 48))
+      false -> Err("datetime: invalid digit")
+
+fn _parseFixedUInt(s: Str, i: Int, width: Int) -> Result[Int, Str] = _parseFixedUIntAcc(s, i, width, 0)
+
+fn parseDate(s: Str) -> Result[Date, Str] = do:
+  let n = strLen(s)
+  if n != 10:
+    return Err("datetime: expected YYYY-MM-DD")
+  if strSlice(s, 4, 5) != "-" or strSlice(s, 7, 8) != "-":
+    return Err("datetime: expected YYYY-MM-DD")
+  let ry = _parseFixedUInt(s, 0, 4)
+  return match ry:
+    Err(e) -> Err(e)
+    Ok(y) -> do:
+      let rm = _parseFixedUInt(s, 5, 2)
+      return match rm:
+        Err(e) -> Err(e)
+        Ok(m) -> do:
+          let rd = _parseFixedUInt(s, 8, 2)
+          return match rd:
+            Err(e) -> Err(e)
+            Ok(d0) -> do:
+              let d = makeDate(y, m, d0)
+              return match dateIsValid(d):
+                true -> Ok(d)
+                false -> Err("datetime: invalid date")
+
+fn parseTime(s: Str) -> Result[Time, Str] = do:
+  let n = strLen(s)
+  if n != 8 and n != 12:
+    return Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm")
+  if strSlice(s, 2, 3) != ":" or strSlice(s, 5, 6) != ":":
+    return Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm")
+  if n == 12 and strSlice(s, 8, 9) != ".":
+    return Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm")
+  let rh = _parseFixedUInt(s, 0, 2)
+  return match rh:
+    Err(e) -> Err(e)
+    Ok(h) -> do:
+      let rm = _parseFixedUInt(s, 3, 2)
+      return match rm:
+        Err(e) -> Err(e)
+        Ok(m) -> do:
+          let rs = _parseFixedUInt(s, 6, 2)
+          return match rs:
+            Err(e) -> Err(e)
+            Ok(sec) -> do:
+              let rms = match n == 12:
+                true -> _parseFixedUInt(s, 9, 3)
+                false -> Ok(0)
+              return match rms:
+                Err(e) -> Err(e)
+                Ok(ms) -> do:
+                  let t = makeTime(h, m, sec, ms)
+                  return match timeIsValid(t):
+                    true -> Ok(t)
+                    false -> Err("datetime: invalid time")
+
+fn parseDateTime(s: Str) -> Result[DateTime, Str] = do:
+  let n = strLen(s)
+  if n != 19 and n != 23:
+    return Err("datetime: expected YYYY-MM-DDTHH:MM:SS(.mmm)")
+  if strSlice(s, 10, 11) != "T":
+    return Err("datetime: expected YYYY-MM-DDTHH:MM:SS(.mmm)")
+  let rd = parseDate(strSlice(s, 0, 10))
+  return match rd:
+    Err(e) -> Err(e)
+    Ok(d) -> do:
+      let rt = parseTime(strSlice(s, 11, n))
+      return match rt:
+        Err(e) -> Err(e)
+        Ok(t) -> Ok(makeDateTime(d, t))
+
+fn _intToStrPos(x: Int) -> Str = match x < 10:
+  true -> strFromCode(48 + x)
+  false -> _intToStrPos(x / 10) + strFromCode(48 + _mod(x, 10))
+
+fn _intToStr(x: Int) -> Str = match x < 0:
+  true -> "-" + _intToStrPos(0 - x)
+  false -> _intToStrPos(x)
+
+fn _pad2(n: Int) -> Str = match n < 10:
+  true -> "0" + _intToStr(n)
+  false -> _intToStr(n)
+
+fn _pad3(n: Int) -> Str = match n < 10:
+  true -> "00" + _intToStr(n)
+  false -> match n < 100:
+    true -> "0" + _intToStr(n)
+    false -> _intToStr(n)
+
+fn _pad4(n: Int) -> Str = match n < 10:
+  true -> "000" + _intToStr(n)
+  false -> match n < 100:
+    true -> "00" + _intToStr(n)
+    false -> match n < 1000:
+      true -> "0" + _intToStr(n)
+      false -> _intToStr(n)
+
+fn formatDate(d: Date) -> Str = _pad4(d.year) + "-" + _pad2(d.month) + "-" + _pad2(d.day)
+
+fn formatTime(t: Time) -> Str = do:
+  let base = _pad2(t.hour) + ":" + _pad2(t.minute) + ":" + _pad2(t.second)
+  return match t.millis > 0:
+    true -> base + "." + _pad3(t.millis)
+    false -> base
+
+fn formatDateTime(dt: DateTime) -> Str = formatDate(dt.date) + "T" + formatTime(dt.time)

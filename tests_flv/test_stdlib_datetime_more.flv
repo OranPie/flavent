@@ -1,0 +1,26 @@
+use flvtest
+use datetime
+
+test "datetime-leap-and-days" -> do:
+  assertTrue(isLeapYear(2024))?
+  assertTrue(not isLeapYear(2100))?
+  assertEq(daysInMonth(2024, 2), 29)?
+  assertEq(daysInMonth(2023, 2), 28)?
+
+test "datetime-parse-date" -> do:
+  assertEq(parseDate("2024-02-29"), Ok(makeDate(2024, 2, 29)))?
+  assertEq(parseDate("2023-02-29"), Err("datetime: invalid date"))?
+  assertEq(parseDate("2024/02/29"), Err("datetime: expected YYYY-MM-DD"))?
+
+test "datetime-parse-time" -> do:
+  assertEq(parseTime("12:34:56"), Ok(makeTime(12, 34, 56, 0)))?
+  assertEq(parseTime("12:34:56.789"), Ok(makeTime(12, 34, 56, 789)))?
+  assertEq(parseTime("25:00:00"), Err("datetime: invalid time"))?
+  assertEq(parseTime("12-34-56"), Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm"))?
+
+test "datetime-parse-format-datetime" -> do:
+  let dt = makeDateTime(makeDate(2024, 1, 2), makeTime(3, 4, 5, 6))
+  let s = formatDateTime(dt)
+  assertEq(s, "2024-01-02T03:04:05.006")?
+  assertEq(parseDateTime(s), Ok(dt))?
+  assertEq(parseDateTime("2024-01-02 03:04:05"), Err("datetime: expected YYYY-MM-DDTHH:MM:SS(.mmm)"))?

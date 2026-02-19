@@ -71,6 +71,10 @@
 
 ## 标准库扩展（Phase 2 启动）
 
+- 新增 `datetime` 标准库模块（纯 Flavent 实现）：
+  - `parseDate` / `parseTime` / `parseDateTime`
+  - `formatDate` / `formatTime` / `formatDateTime`
+  - `Date` / `Time` / `DateTime` 结构与有效性检查
 - 新增 `path` 标准库模块（纯 Flavent 实现）：
   - `pathNormalize` / `pathJoin` / `pathJoinAll`
   - `pathBase` / `pathDir` / `pathExt` / `pathStem`
@@ -83,6 +87,8 @@
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - 已补充 EN/ZH 文档与索引入口：
+  - `docs/en/stdlib/datetime.md`
+  - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`
   - `docs/zh/stdlib/path.md`
   - `docs/en/stdlib/csv.md`

@@ -29,6 +29,7 @@
 
 ## 数据/工具
 - [csv](./csv.md)
+- [datetime](./datetime.md)
 - [path](./path.md)
 - [url](./url.md)
 - [json](./json.md)

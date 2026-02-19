@@ -29,6 +29,7 @@ This directory contains **one page per stdlib module**.
 
 ## Data / Utils
 - [csv](./csv.md)
+- [datetime](./datetime.md)
 - [path](./path.md)
 - [url](./url.md)
 - [json](./json.md)

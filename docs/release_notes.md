@@ -71,6 +71,10 @@ Compatibility note:
 
 ## Stdlib Expansion (Phase 2 Kickoff)
 
+- Added new `datetime` stdlib module with pure-Flavent helpers:
+  - `parseDate` / `parseTime` / `parseDateTime`
+  - `formatDate` / `formatTime` / `formatDateTime`
+  - `Date` / `Time` / `DateTime` validity helpers
 - Added new `path` stdlib module with pure-Flavent helpers:
   - `pathNormalize` / `pathJoin` / `pathJoinAll`
   - `pathBase` / `pathDir` / `pathExt` / `pathStem`
@@ -83,6 +87,8 @@ Compatibility note:
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - Added EN/ZH docs pages and index links:
+  - `docs/en/stdlib/datetime.md`
+  - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`
   - `docs/zh/stdlib/path.md`
   - `docs/en/stdlib/csv.md`
