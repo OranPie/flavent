@@ -65,3 +65,6 @@
     - type/const/let/need/pattern/function 中缺少 `=` 会给出更明确指导，
     - 在 sector 作用域误用赋值时会提示改用 `let`，
     - mixin 项目报错会按目标类型（sector/type）提示可用项。
+  - 进一步的解析器提示优化：
+    - 对 match arm 中 `->` 前后缺失 pattern/body 的报错更清晰，
+    - 明确提示不支持单行 block 形式（`if/for/match` 需换行+缩进）。

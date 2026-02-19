@@ -111,5 +111,44 @@ def test_parse_error_mixin_item_context_hint():
     src = """mixin M v1 into sector main:
   let x = 1
 """
-    with pytest.raises(ParseError, match=r"sector mixins support: pattern, fn, around"):
+    with pytest.raises(ParseError, match=r"let/need/on are not valid inside mixins"):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_error_type_mixin_assignment_hint():
+    src = """type User = { id: Int }
+
+mixin Extra v1 into type User:
+  x = 1
+"""
+    with pytest.raises(ParseError, match=r"assignment at mixin scope"):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_error_match_arm_requires_pattern():
+    src = """fn f(x: Int) -> Int = match x:
+  -> 1
+run()
+"""
+    with pytest.raises(ParseError, match=r"Expected match arm pattern"):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_error_match_arm_requires_body_after_arrow():
+    src = """fn f(x: Int) -> Int = match x:
+  _ ->
+run()
+"""
+    with pytest.raises(ParseError, match=r"Expected match arm body after '->'"):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_error_block_disallows_single_line_form():
+    src = """type Event.X = {}
+sector main:
+  on Event.X -> do:
+    if true: stop()
+run()
+"""
+    with pytest.raises(ParseError, match=r"single-line blocks are not supported"):
         parse_program(lex("test.flv", src))

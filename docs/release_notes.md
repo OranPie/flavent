@@ -65,3 +65,6 @@ Compatibility note:
     - missing `=` in type/const/let/need/pattern/function declarations,
     - sector-scope assignment misuse now suggests `let`,
     - mixin item errors now mention valid items per mixin target (sector vs type).
+  - additional parser guidance:
+    - clearer match-arm errors for missing pattern/body around `->`,
+    - explicit reminder that single-line block forms are unsupported (`if/for/match` require newline+indent blocks).

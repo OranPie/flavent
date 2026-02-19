@@ -348,7 +348,7 @@ def _parse_fn_body(cur: _Cursor) -> ast.FnBody:
 
 def _parse_block_after_colon(cur: _Cursor, start_span: Span) -> ast.Block:
     cur.expect(TokenKind.COLON, "Expected ':' before block body")
-    cur.expect(TokenKind.NL, "Expected newline after ':' before block body")
+    cur.expect(TokenKind.NL, "Expected newline after ':' before block body (single-line blocks are not supported)")
     cur.expect(TokenKind.INDENT, "Expected indented block body")
     stmts: list[ast.Stmt] = []
     while not cur.at(TokenKind.DEDENT) and not cur.at(TokenKind.EOF):
@@ -473,14 +473,25 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
         if cur.at(TokenKind.IDENT) and cur.peek(1).kind == TokenKind.COLON:
             items.append(_parse_mixin_field_add(cur))
             continue
+        bad = cur.peek()
+        if bad.kind == TokenKind.IDENT and cur.peek(1).kind == TokenKind.EQ:
+            raise ParseError(
+                "Unexpected mixin item: assignment at mixin scope; hint: use `fn ... = ...` or `name: Type` (type mixins)",
+                bad.span,
+            )
+        if bad.kind in (TokenKind.KW_LET, TokenKind.KW_NEED, TokenKind.KW_ON):
+            raise ParseError(
+                "Unexpected mixin item: declarations like let/need/on are not valid inside mixins",
+                bad.span,
+            )
         if isinstance(target, ast.MixinTargetSector):
             raise ParseError(
                 "Expected mixin item; sector mixins support: pattern, fn, around",
-                cur.peek().span,
+                bad.span,
             )
         raise ParseError(
             "Expected mixin item; type mixins support: pattern, fn, around, field: Type",
-            cur.peek().span,
+            bad.span,
         )
 
         if cur.at(TokenKind.NL):
@@ -829,16 +840,22 @@ def _parse_record_item(cur: _Cursor) -> ast.RecordItem:
 def _parse_match(cur: _Cursor) -> ast.MatchExpr:
     kw = cur.expect(TokenKind.KW_MATCH)
     scrut = _parse_expr(cur)
-    cur.expect(TokenKind.COLON)
-    cur.expect(TokenKind.NL)
-    cur.expect(TokenKind.INDENT)
+    cur.expect(TokenKind.COLON, "Expected ':' after match scrutinee")
+    cur.expect(TokenKind.NL, "Expected newline after match header")
+    cur.expect(TokenKind.INDENT, "Expected indented match arms")
     arms: list[ast.MatchArm] = []
     while not cur.at(TokenKind.DEDENT) and not cur.at(TokenKind.EOF):
         if cur.at(TokenKind.NL):
             cur.advance()
             continue
+        if cur.at(TokenKind.ARROW):
+            raise ParseError("Expected match arm pattern before '->'", cur.peek().span)
+        if cur.at(TokenKind.KW_DO):
+            raise ParseError("Expected match arm pattern before 'do:'", cur.peek().span)
         pat = _parse_pattern(cur)
-        cur.expect(TokenKind.ARROW)
+        cur.expect(TokenKind.ARROW, "Expected '->' after match arm pattern")
+        if cur.at(TokenKind.NL):
+            raise ParseError("Expected match arm body after '->' (expression or do: block)", cur.peek().span)
         if cur.at(TokenKind.KW_DO):
             kw_do = cur.advance()
             block = _parse_block_after_colon(cur, kw_do.span)

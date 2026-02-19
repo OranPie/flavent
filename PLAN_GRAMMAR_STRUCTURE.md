@@ -41,6 +41,8 @@ Improve language grammar clarity and compiler structure while reducing runtime d
     - [x] function/type/const/let/need/pattern declaration `'='` guidance
     - [x] sector-item scope hint (`let` vs assignment at sector scope)
     - [x] mixin target-specific expected-item guidance
+    - [x] match-arm structure hints (missing pattern/body around `->`)
+    - [x] explicit block-form hint for single-line `if/for/match` style misuse
     - [ ] continue expanding hints for additional malformed declaration patterns
 
 ## Phase 3: Compiler Structure Improvements
