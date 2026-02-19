@@ -257,6 +257,15 @@ class MixinAround:
     span: Span
 
 
+@dataclass(frozen=True, slots=True)
+class MixinHook:
+    point: str  # head | tail | invoke
+    sig: FnSignature
+    body: FnBody
+    opts: dict[str, str]
+    span: Span
+
+
 MixinItem = Any
 
 

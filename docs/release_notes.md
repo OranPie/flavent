@@ -68,3 +68,8 @@ Compatibility note:
   - additional parser guidance:
     - clearer match-arm errors for missing pattern/body around `->`,
     - explicit reminder that single-line block forms are unsupported (`if/for/match` require newline+indent blocks).
+  - mixin hook grammar added for sector mixins:
+    - `hook head|tail|invoke fn ... with(...) = ...`
+    - option keys include `id`, `priority`, `depends`, `at`, `cancelable`, `returnDep`, `const`.
+  - resolver now supports hook call-stack ordering with priority/dependency resolution and locator checks (`at`).
+  - added `flvrepr` stdlib package for string-based metadata encoding/decoding (`encodeFunctionTarget`, `metaGet`, `metaSet`).

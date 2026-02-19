@@ -65,6 +65,11 @@
     - type/const/let/need/pattern/function 中缺少 `=` 会给出更明确指导，
     - 在 sector 作用域误用赋值时会提示改用 `let`，
     - mixin 项目报错会按目标类型（sector/type）提示可用项。
-  - 进一步的解析器提示优化：
+- 进一步的解析器提示优化：
     - 对 match arm 中 `->` 前后缺失 pattern/body 的报错更清晰，
     - 明确提示不支持单行 block 形式（`if/for/match` 需换行+缩进）。
+  - 新增 sector mixin hook 语法：
+    - `hook head|tail|invoke fn ... with(...) = ...`
+    - 支持 `id`、`priority`、`depends`、`at`、`cancelable`、`returnDep`、`const` 等选项。
+  - resolver 支持基于优先级与依赖的 hook 调用栈解析，并支持 `at` 定位检查。
+  - 新增 `flvrepr` 标准库包，用于字符串元数据编解码（`encodeFunctionTarget`、`metaGet`、`metaSet`）。

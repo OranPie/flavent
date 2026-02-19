@@ -469,6 +469,11 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
         if cur.at(TokenKind.KW_AROUND):
             items.append(_parse_mixin_around(cur))
             continue
+        if cur.at(TokenKind.IDENT) and cur.peek().text == "hook":
+            if isinstance(target, ast.MixinTargetType):
+                raise ParseError("hook currently supports sector mixins only", cur.peek().span)
+            items.append(_parse_mixin_hook(cur))
+            continue
         # For type-target mixins, allow adding record fields as `name: Type`.
         if cur.at(TokenKind.IDENT) and cur.peek(1).kind == TokenKind.COLON:
             items.append(_parse_mixin_field_add(cur))
@@ -481,12 +486,12 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
             )
         if bad.kind in (TokenKind.KW_LET, TokenKind.KW_NEED, TokenKind.KW_ON):
             raise ParseError(
-                "Unexpected mixin item: declarations like let/need/on are not valid inside mixins",
+                "Unexpected mixin item: declarations like let/need/on are not valid inside mixins (use fn/around/hook/pattern)",
                 bad.span,
             )
         if isinstance(target, ast.MixinTargetSector):
             raise ParseError(
-                "Expected mixin item; sector mixins support: pattern, fn, around",
+                "Expected mixin item; sector mixins support: pattern, fn, around, hook",
                 bad.span,
             )
         raise ParseError(
@@ -549,6 +554,72 @@ def _parse_mixin_field_add(cur: _Cursor) -> ast.MixinFieldAdd:
     ty = _parse_type_ref(cur)
     span = name.span.merge(ty.span)
     return ast.MixinFieldAdd(name=name, ty=ty, span=span)
+
+
+def _parse_mixin_hook(cur: _Cursor) -> ast.MixinHook:
+    hook_kw = cur.expect(TokenKind.IDENT, "Expected 'hook' item in mixin body")
+    if hook_kw.text != "hook":
+        raise ParseError("Expected 'hook' item in mixin body", hook_kw.span)
+
+    point_tok = cur.expect(TokenKind.IDENT, "Expected hook point (head/tail/invoke)")
+    point = point_tok.text
+    if point not in ("head", "tail", "invoke"):
+        raise ParseError("Expected hook point (head/tail/invoke)", point_tok.span)
+
+    cur.expect(TokenKind.KW_FN)
+    name = _parse_ident(cur)
+    cur.expect(TokenKind.LPAREN)
+    params: list[ast.ParamDecl] = []
+    if not cur.at(TokenKind.RPAREN):
+        params.append(_parse_param(cur))
+        while cur.match(TokenKind.COMMA):
+            params.append(_parse_param(cur))
+    rp = cur.expect(TokenKind.RPAREN)
+    ret_ty: ast.TypeRef | None = None
+    if cur.match(TokenKind.ARROW):
+        ret_ty = _parse_type_ref(cur)
+    sig = ast.FnSignature(name=name, params=params, retType=ret_ty, span=hook_kw.span.merge(rp.span))
+
+    opts: dict[str, str] = {}
+    if cur.at(TokenKind.IDENT) and cur.peek().text == "with":
+        cur.advance()
+        cur.expect(TokenKind.LPAREN, "Expected '(' after hook with")
+        while not cur.at(TokenKind.RPAREN):
+            if cur.at(TokenKind.KW_CONST):
+                tkey = cur.advance()
+                k = ast.Ident(name=tkey.text, span=tkey.span)
+            else:
+                k = _parse_ident(cur)
+            cur.expect(TokenKind.EQ, "Expected '=' in hook with(...) option")
+            t = cur.peek()
+            if t.kind in (TokenKind.STR, TokenKind.BOOL, TokenKind.IDENT):
+                vtok = cur.advance()
+                opts[k.name] = vtok.text
+            elif t.kind == TokenKind.INT:
+                if cur.peek().text == "0" and cur.peek(1).kind == TokenKind.MINUS and cur.peek(2).kind == TokenKind.INT:
+                    # Backward compat for odd forms; keep parser robust.
+                    # Prefer plain negative ints in source.
+                    v0 = cur.advance().text
+                    cur.advance()
+                    v2 = cur.advance().text
+                    opts[k.name] = f"{v0}-{v2}"
+                else:
+                    vtok = cur.advance()
+                    opts[k.name] = vtok.text
+            elif t.kind == TokenKind.MINUS and cur.peek(1).kind == TokenKind.INT:
+                cur.advance()
+                vtok = cur.advance()
+                opts[k.name] = f"-{vtok.text}"
+            else:
+                raise ParseError("Expected hook option value (str/bool/int/ident)", t.span)
+            if not cur.match(TokenKind.COMMA):
+                break
+        cur.expect(TokenKind.RPAREN, "Expected ')' to close hook with(...)")
+
+    cur.expect(TokenKind.EQ, "Expected '=' after hook signature (use '= expr' or '= do:')")
+    body = _parse_fn_body(cur)
+    span = hook_kw.span.merge(body.span)
+    return ast.MixinHook(point=point, sig=sig, body=body, opts=opts, span=span)
 
 
 def _parse_use_mixin(cur: _Cursor) -> ast.UseMixinStmt:

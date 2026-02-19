@@ -1,0 +1,71 @@
+use _bridge_python
+use collections.list
+
+type MetaPair = { key: Str, value: Str }
+
+fn pair(key: Str, value: Str) -> MetaPair = { key = key, value = value }
+
+fn encodePair(p: MetaPair) -> Str = p.key + "=" + p.value
+
+fn _findCharAcc(s: Str, i: Int, n: Int, code: Int) -> Int = match i >= n:
+  true -> 0 - 1
+  false -> match strCodeAt(s, i) == code:
+    true -> i
+    false -> _findCharAcc(s, i + 1, n, code)
+
+fn _findChar(s: Str, i: Int, code: Int) -> Int = _findCharAcc(s, i, strLen(s), code)
+
+fn encodePairs(xs: List[MetaPair]) -> Str = match xs:
+  Nil -> ""
+  Cons(x, rest) -> match rest:
+    Nil -> encodePair(x)
+    Cons(_, _) -> encodePair(x) + ";" + encodePairs(rest)
+
+fn encodeFunctionTarget(target: Str, point: Str, priority: Str, at: Str) -> Str = encodePairs(
+  Cons(pair("target", target),
+  Cons(pair("point", point),
+  Cons(pair("priority", priority),
+  Cons(pair("at", at), Nil))))
+)
+
+fn _decodeOne(raw: Str) -> MetaPair = do:
+  let i = _findChar(raw, 0, 61)
+  return match i < 0:
+    true -> pair(raw, "")
+    false -> pair(strSlice(raw, 0, i), strSlice(raw, i + 1, strLen(raw)))
+
+fn _decodeFrom(meta: Str, i: Int, n: Int, acc: List[MetaPair]) -> List[MetaPair] = match i >= n:
+  true -> reverse(acc)
+  false -> do:
+    let j = _findChar(meta, i, 59)
+    let end = match j < 0:
+      true -> n
+      false -> j
+    let part = strSlice(meta, i, end)
+    let acc2 = match strLen(part) == 0:
+      true -> acc
+      false -> Cons(_decodeOne(part), acc)
+    let next = match j < 0:
+      true -> n
+      false -> j + 1
+    return _decodeFrom(meta, next, n, acc2)
+
+fn decodePairs(meta: Str) -> List[MetaPair] = _decodeFrom(meta, 0, strLen(meta), Nil)
+
+fn _findPair(xs: List[MetaPair], key: Str) -> Option[Str] = match xs:
+  Nil -> None
+  Cons(x, rest) -> match x.key == key:
+    true -> Some(x.value)
+    false -> _findPair(rest, key)
+
+fn metaGet(meta: Str, key: Str) -> Option[Str] = _findPair(decodePairs(meta), key)
+
+fn _upsertAcc(xs: List[MetaPair], key: Str, value: Str, acc: List[MetaPair], seen: Bool) -> List[MetaPair] = match xs:
+  Nil -> match seen:
+    true -> reverse(acc)
+    false -> reverse(Cons(pair(key, value), acc))
+  Cons(x, rest) -> match x.key == key:
+    true -> _upsertAcc(rest, key, value, Cons(pair(key, value), acc), true)
+    false -> _upsertAcc(rest, key, value, Cons(x, acc), seen)
+
+fn metaSet(meta: Str, key: Str, value: Str) -> Str = encodePairs(_upsertAcc(decodePairs(meta), key, value, Nil, false))

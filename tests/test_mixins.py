@@ -114,3 +114,52 @@ use mixin B v1
 run()
 """
     _resolve(src)
+
+
+def test_mixin_hook_invoke_dependency_resolves_call_stack():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin B v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="B", priority=10) = do:
+    return proceed(x * 2)
+
+mixin C v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="C", depends="B") = do:
+    return proceed(x + 10)
+
+use mixin C v1
+use mixin B v1
+run()
+"""
+    _resolve(src)
+
+
+def test_mixin_hook_unknown_dependency_is_error():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", depends="Missing") = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="Unknown hook dependency"):
+        _resolve(src)
+
+
+def test_mixin_hook_locator_anchor_mismatch_is_error():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", at="anchor:bar") = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="locator mismatch"):
+        _resolve(src)

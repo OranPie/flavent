@@ -1,0 +1,66 @@
+# Mixin Hooks and `flvrepr`
+
+Date: 2026-02-19
+
+This document describes the hook-oriented mixin extension and the `flvrepr` metadata helper package.
+
+## Hook Syntax
+
+Inside a sector-target mixin:
+
+```flv
+hook <point> fn <target>(<params>) -> <ret>
+  with(id="...", priority=10, depends="A,B", at="anchor:foo", ...)
+= <expr-or-do>
+```
+
+Hook points:
+- `head`: runs before target invocation.
+- `tail`: runs after target invocation.
+- `invoke`: full around-style interception (`proceed(...)` supported).
+
+## Hook Options
+
+- `id`: unique hook id within the target function stack.
+- `priority`: higher value has stronger precedence in call stack ordering.
+- `depends`: comma-separated hook ids that must run before this hook.
+- `at`: locator (`anchor:<fn>` or `line:<n>` / `line:<n>#<fn>`).
+- `cancelable` (head only): hook returns `Option[T]`; `Some(v)` short-circuits target with `v`, `None` continues.
+- `returnDep` (tail only):
+  - `none` (default)
+  - `use_return`: hook receives prior return as extra arg but final return stays original.
+  - `replace_return`: hook receives prior return as extra arg and its result becomes final return.
+- `const` / `constParams` / `constArgs`: comma-separated constant strings appended to hook call arguments.
+
+## Call Stack Resolver
+
+Per target function, hooks are resolved by:
+1. dependency graph (`depends`)
+2. priority (higher first among ready nodes)
+3. stable declaration order as tie-break
+
+Execution stack shape:
+- outer: `head` hooks
+- middle: `invoke` hooks
+- inner: `tail` hooks (arranged so tail post-phase remains priority-aware)
+
+## `flvrepr` Package
+
+`stdlib/flvrepr` provides lightweight string metadata encoding/decoding for hook/function target metadata.
+
+Key APIs:
+- `encodePairs(List[MetaPair]) -> Str`
+- `decodePairs(Str) -> List[MetaPair]`
+- `metaGet(meta, key) -> Option[Str]`
+- `metaSet(meta, key, value) -> Str`
+- `encodeFunctionTarget(target, point, priority, at) -> Str`
+
+Example:
+
+```flv
+use flvrepr
+
+let meta = encodeFunctionTarget("S.base", "invoke", "10", "anchor:base")
+let p = metaGet(meta, "priority")      // Some("10")
+let meta2 = metaSet(meta, "priority", "20")
+```

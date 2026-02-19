@@ -152,3 +152,36 @@ run()
 """
     with pytest.raises(ParseError, match=r"single-line blocks are not supported"):
         parse_program(lex("test.flv", src))
+
+
+def test_parse_mixin_hook_with_options():
+    src = """mixin M v1 into sector main:
+  hook head fn foo(x: Int, tag: Str) -> Option[Int] with(id="h1", priority=9, cancelable=true, const="TAG") = None
+run()
+"""
+    prog = parse_program(lex("test.flv", src))
+    mix = next(it for it in prog.items if isinstance(it, ast.MixinDecl))
+    hook = next(it for it in mix.items if isinstance(it, ast.MixinHook))
+    assert hook.point == "head"
+    assert hook.opts["id"] == "h1"
+    assert hook.opts["priority"] == "9"
+    assert hook.opts["cancelable"] == "true"
+
+
+def test_parse_mixin_hook_rejects_invalid_point():
+    src = """mixin M v1 into sector main:
+  hook middle fn foo(x: Int) -> Int = x
+run()
+"""
+    with pytest.raises(ParseError, match="head/tail/invoke"):
+        parse_program(lex("test.flv", src))
+
+
+def test_parse_mixin_hook_rejects_type_target():
+    src = """type User = { id: Int }
+mixin M v1 into type User:
+  hook head fn foo(x: Int) -> Int = x
+run()
+"""
+    with pytest.raises(ParseError, match="sector mixins only"):
+        parse_program(lex("test.flv", src))

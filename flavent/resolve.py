@@ -217,37 +217,47 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
     def _rewrite_proceed(expr: ast.Expr, *, callee: ast.Ident) -> ast.Expr:
         if isinstance(expr, ast.ProceedExpr):
             v = ast.VarExpr(name=_clone_ident(callee), span=callee.span)
-            return ast.CallExpr(callee=v, args=expr.args, span=expr.span)
-        if hasattr(expr, "__dict__"):
-            # Best-effort structural recursion over known expr nodes.
-            if isinstance(expr, ast.CallExpr):
-                return ast.CallExpr(callee=_rewrite_proceed(expr.callee, callee=callee), args=[_rewrite_proceed(a, callee=callee) for a in expr.args], span=expr.span)
-            if isinstance(expr, ast.MemberExpr):
-                return ast.MemberExpr(object=_rewrite_proceed(expr.object, callee=callee), field=expr.field, span=expr.span)
-            if isinstance(expr, ast.IndexExpr):
-                return ast.IndexExpr(object=_rewrite_proceed(expr.object, callee=callee), index=_rewrite_proceed(expr.index, callee=callee), span=expr.span)
-            if isinstance(expr, ast.UnaryExpr):
-                return ast.UnaryExpr(op=expr.op, expr=_rewrite_proceed(expr.expr, callee=callee), span=expr.span)
-            if isinstance(expr, ast.BinaryExpr):
-                return ast.BinaryExpr(op=expr.op, left=_rewrite_proceed(expr.left, callee=callee), right=_rewrite_proceed(expr.right, callee=callee), span=expr.span)
-            if isinstance(expr, ast.PipeExpr):
-                return ast.PipeExpr(head=_rewrite_proceed(expr.head, callee=callee), stages=[_rewrite_proceed(s, callee=callee) for s in expr.stages], span=expr.span)
-            if isinstance(expr, ast.TupleLitExpr):
-                return ast.TupleLitExpr(items=[_rewrite_proceed(a, callee=callee) for a in expr.items], span=expr.span)
-            if isinstance(expr, ast.RecordLitExpr):
-                items = [ast.RecordItem(key=i.key, value=_rewrite_proceed(i.value, callee=callee), span=i.span) for i in expr.items]
-                return ast.RecordLitExpr(items=items, span=expr.span)
-            if isinstance(expr, ast.MatchExpr):
-                arms = [ast.MatchArm(pat=a.pat, body=_rewrite_proceed(a.body, callee=callee), span=a.span) for a in expr.arms]
-                return ast.MatchExpr(scrutinee=_rewrite_proceed(expr.scrutinee, callee=callee), arms=arms, span=expr.span)
-            if isinstance(expr, ast.TrySuffixExpr):
-                return ast.TrySuffixExpr(inner=_rewrite_proceed(expr.inner, callee=callee), span=expr.span)
-            if isinstance(expr, ast.AwaitExpr):
-                return expr
-            if isinstance(expr, ast.RpcExpr):
-                return ast.RpcExpr(sector=expr.sector, fnName=expr.fnName, args=[_rewrite_proceed(a, callee=callee) for a in expr.args], span=expr.span)
-            if isinstance(expr, ast.CallSectorExpr):
-                return ast.CallSectorExpr(sector=expr.sector, fnName=expr.fnName, args=[_rewrite_proceed(a, callee=callee) for a in expr.args], span=expr.span)
+            return ast.CallExpr(callee=v, args=[ast.CallArgPos(value=_rewrite_proceed(a, callee=callee), span=expr.span) for a in expr.args], span=expr.span)
+        if isinstance(expr, ast.CallExpr):
+            args: list[ast.CallArg] = []
+            for a in expr.args:
+                if isinstance(a, ast.CallArgPos):
+                    args.append(ast.CallArgPos(value=_rewrite_proceed(a.value, callee=callee), span=a.span))
+                elif isinstance(a, ast.CallArgStar):
+                    args.append(ast.CallArgStar(value=_rewrite_proceed(a.value, callee=callee), span=a.span))
+                elif isinstance(a, ast.CallArgKw):
+                    args.append(ast.CallArgKw(name=a.name, value=_rewrite_proceed(a.value, callee=callee), span=a.span))
+                elif isinstance(a, ast.CallArgStarStar):
+                    args.append(ast.CallArgStarStar(value=_rewrite_proceed(a.value, callee=callee), span=a.span))
+                else:
+                    args.append(ast.CallArgPos(value=_rewrite_proceed(a, callee=callee), span=expr.span))
+            return ast.CallExpr(callee=_rewrite_proceed(expr.callee, callee=callee), args=args, span=expr.span)
+        if isinstance(expr, ast.MemberExpr):
+            return ast.MemberExpr(object=_rewrite_proceed(expr.object, callee=callee), field=expr.field, span=expr.span)
+        if isinstance(expr, ast.IndexExpr):
+            return ast.IndexExpr(object=_rewrite_proceed(expr.object, callee=callee), index=_rewrite_proceed(expr.index, callee=callee), span=expr.span)
+        if isinstance(expr, ast.UnaryExpr):
+            return ast.UnaryExpr(op=expr.op, expr=_rewrite_proceed(expr.expr, callee=callee), span=expr.span)
+        if isinstance(expr, ast.BinaryExpr):
+            return ast.BinaryExpr(op=expr.op, left=_rewrite_proceed(expr.left, callee=callee), right=_rewrite_proceed(expr.right, callee=callee), span=expr.span)
+        if isinstance(expr, ast.PipeExpr):
+            return ast.PipeExpr(head=_rewrite_proceed(expr.head, callee=callee), stages=[_rewrite_proceed(s, callee=callee) for s in expr.stages], span=expr.span)
+        if isinstance(expr, ast.TupleLitExpr):
+            return ast.TupleLitExpr(items=[_rewrite_proceed(a, callee=callee) for a in expr.items], span=expr.span)
+        if isinstance(expr, ast.RecordLitExpr):
+            items = [ast.RecordItem(key=i.key, value=_rewrite_proceed(i.value, callee=callee), span=i.span) for i in expr.items]
+            return ast.RecordLitExpr(items=items, span=expr.span)
+        if isinstance(expr, ast.MatchExpr):
+            arms = [ast.MatchArm(pat=a.pat, body=_rewrite_proceed(a.body, callee=callee), span=a.span) for a in expr.arms]
+            return ast.MatchExpr(scrutinee=_rewrite_proceed(expr.scrutinee, callee=callee), arms=arms, span=expr.span)
+        if isinstance(expr, ast.TrySuffixExpr):
+            return ast.TrySuffixExpr(inner=_rewrite_proceed(expr.inner, callee=callee), span=expr.span)
+        if isinstance(expr, ast.AwaitExpr):
+            return expr
+        if isinstance(expr, ast.RpcExpr):
+            return ast.RpcExpr(sector=expr.sector, fnName=expr.fnName, args=[_rewrite_proceed(a, callee=callee) for a in expr.args], span=expr.span)
+        if isinstance(expr, ast.CallSectorExpr):
+            return ast.CallSectorExpr(sector=expr.sector, fnName=expr.fnName, args=[_rewrite_proceed(a, callee=callee) for a in expr.args], span=expr.span)
         return expr
 
     def _rewrite_proceed_in_stmt(st: ast.Stmt, *, callee: ast.Ident) -> ast.Stmt:
@@ -340,20 +350,172 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             if _contains_proceed_block(body.block):
                 raise ResolveError("proceed() appears in an unsupported position in mixin weaving", span)
 
+    @dataclass(frozen=True, slots=True)
+    class _AroundSpec:
+        mixin_key: str
+        around: ast.MixinAround
+        point: str
+        hook_id: str
+        priority: int
+        depends: list[str]
+        at: str | None
+        span: Span
+
+    def _mk_qname(name: str, span: Span) -> ast.QualifiedName:
+        return ast.QualifiedName(parts=[ast.Ident(name=name, span=span)], span=span)
+
+    def _mk_var(name: str, span: Span) -> ast.VarExpr:
+        return ast.VarExpr(name=ast.Ident(name=name, span=span), span=span)
+
+    def _mk_call(name: str, args: list[ast.Expr], span: Span) -> ast.CallExpr:
+        return ast.CallExpr(
+            callee=_mk_var(name, span),
+            args=[ast.CallArgPos(value=a, span=span) for a in args],
+            span=span,
+        )
+
+    def _mk_proceed(args: list[ast.Expr], span: Span) -> ast.ProceedExpr:
+        return ast.ProceedExpr(args=args, span=span)
+
+    def _body_to_block(body: ast.FnBody, *, span: Span) -> ast.Block:
+        if isinstance(body, ast.BodyDo):
+            return body.block
+        if isinstance(body, ast.BodyExpr):
+            return ast.Block(stmts=[ast.ReturnStmt(expr=body.expr, span=body.span)], span=body.span)
+        return ast.Block(stmts=[ast.ReturnStmt(expr=ast.LitExpr(lit=ast.Literal(kind="LitInt", value="0", span=span), span=span), span=span)], span=span)
+
+    def _parse_int(s: str | None, *, default: int, span: Span, key: str) -> int:
+        if s is None or s == "":
+            return default
+        try:
+            return int(s)
+        except ValueError as exc:
+            raise ResolveError(f"Invalid hook option `{key}` int value: {s!r}", span) from exc
+
+    def _parse_bool(s: str | None, *, default: bool, span: Span, key: str) -> bool:
+        if s is None or s == "":
+            return default
+        if s == "true":
+            return True
+        if s == "false":
+            return False
+        raise ResolveError(f"Invalid hook option `{key}` bool value: {s!r}", span)
+
+    def _split_csv(s: str | None) -> list[str]:
+        if s is None:
+            return []
+        parts = [p.strip() for p in s.split(",")]
+        return [p for p in parts if p]
+
+    def _safe_name(s: str) -> str:
+        out = []
+        for ch in s:
+            if ch.isalnum() or ch == "_":
+                out.append(ch)
+            else:
+                out.append("_")
+        return "".join(out)
+
+    def _validate_locator(locator: str | None, *, target: ast.FnDecl, sec_name: str, hook_id: str, span: Span) -> None:
+        if locator is None or locator == "":
+            return
+        text = locator
+        line_part: int | None = None
+        anchor_part: str | None = None
+        if text.startswith("line:"):
+            rest = text[len("line:") :]
+            if "#" in rest:
+                a, b = rest.split("#", 1)
+                rest = a
+                anchor_part = b
+            try:
+                line_part = int(rest)
+            except ValueError as exc:
+                raise ResolveError(f"Invalid hook locator line in `at`: {locator!r}", span) from exc
+        elif text.startswith("anchor:"):
+            anchor_part = text[len("anchor:") :]
+        elif text.startswith("name:"):
+            anchor_part = text[len("name:") :]
+        else:
+            anchor_part = text
+
+        if line_part is not None and target.span.line != line_part:
+            raise ResolveError(
+                f"Hook locator mismatch for {hook_id}: expected line {line_part}, got {target.span.line} on {sec_name}.{target.name.name}",
+                span,
+            )
+        if anchor_part is not None and anchor_part != "" and anchor_part != target.name.name:
+            raise ResolveError(
+                f"Hook locator mismatch for {hook_id}: expected anchor {anchor_part!r}, got {target.name.name!r}",
+                span,
+            )
+
+    def _resolve_specs(specs: list[_AroundSpec], *, span: Span) -> list[_AroundSpec]:
+        if not specs:
+            return []
+        by_id: dict[str, _AroundSpec] = {}
+        for sp in specs:
+            if sp.hook_id in by_id:
+                raise ResolveError(f"Duplicate hook id in same target: {sp.hook_id}", sp.span)
+            by_id[sp.hook_id] = sp
+
+        edges: dict[str, set[str]] = {sp.hook_id: set() for sp in specs}
+        indeg: dict[str, int] = {sp.hook_id: 0 for sp in specs}
+        order_idx: dict[str, int] = {sp.hook_id: i for i, sp in enumerate(specs)}
+
+        for sp in specs:
+            for dep in sp.depends:
+                if dep not in by_id:
+                    raise ResolveError(f"Unknown hook dependency: {dep} (needed by {sp.hook_id})", sp.span)
+                if sp.hook_id not in edges[dep]:
+                    edges[dep].add(sp.hook_id)
+                    indeg[sp.hook_id] += 1
+
+        ready: list[str] = [hid for hid, d in indeg.items() if d == 0]
+        out: list[_AroundSpec] = []
+        while ready:
+            ready.sort(key=lambda hid: (-by_id[hid].priority, order_idx[hid], hid))
+            hid = ready.pop(0)
+            out.append(by_id[hid])
+            for nxt in sorted(edges[hid]):
+                indeg[nxt] -= 1
+                if indeg[nxt] == 0:
+                    ready.append(nxt)
+
+        if len(out) != len(specs):
+            raise ResolveError("Cyclic hook dependencies in mixin call stack resolver", span)
+        return out
+
     def apply_to_sector(sd: ast.SectorDecl, mixin_keys: list[str]) -> ast.SectorDecl:
         items = list(sd.items)
         existing_fn_by_name: dict[str, ast.FnDecl] = {it.name.name: it for it in items if isinstance(it, ast.FnDecl)}
 
+        def _clone_params(ps: list[ast.ParamDecl]) -> list[ast.ParamDecl]:
+            out: list[ast.ParamDecl] = []
+            for p in ps:
+                out.append(
+                    ast.ParamDecl(
+                        name=ast.Ident(name=p.name.name, span=p.name.span),
+                        ty=p.ty,
+                        kind=p.kind,
+                        span=p.span,
+                    )
+                )
+            return out
+
         # Collect add candidates across all mixins.
         add_cands: dict[str, list[tuple[str, ast.MixinFnAdd]]] = {}
-        around_ordered: list[tuple[str, ast.MixinAround]] = []
+        raw_arounds: list[tuple[str, ast.MixinAround]] = []
+        raw_hooks: list[tuple[str, ast.MixinHook]] = []
         for key in mixin_keys:
             md = mixins[key]
             for mi in md.items:
                 if isinstance(mi, ast.MixinFnAdd):
                     add_cands.setdefault(mi.sig.name.name, []).append((key, mi))
                 elif isinstance(mi, ast.MixinAround):
-                    around_ordered.append((key, mi))
+                    raw_arounds.append((key, mi))
+                elif isinstance(mi, ast.MixinHook):
+                    raw_hooks.append((key, mi))
 
         # Resolve adds.
         for fname, cands in add_cands.items():
@@ -377,12 +539,202 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             items.append(fd)
             existing_fn_by_name[fname] = fd
 
+        # Build around/hook specs by function target.
+        around_by_fn: dict[str, list[_AroundSpec]] = {}
+        hook_counter = 0
+
+        for key, ar in raw_arounds:
+            hook_counter += 1
+            hook_id = f"{_safe_name(key)}__invoke__{ar.sig.name.name}__{hook_counter}"
+            around_by_fn.setdefault(ar.sig.name.name, []).append(
+                _AroundSpec(
+                    mixin_key=key,
+                    around=ar,
+                    point="invoke",
+                    hook_id=hook_id,
+                    priority=0,
+                    depends=[],
+                    at=None,
+                    span=ar.span,
+                )
+            )
+
+        for key, hk in raw_hooks:
+            fname = hk.sig.name.name
+            target = existing_fn_by_name.get(fname)
+            if target is None:
+                raise ResolveError(f"Mixin {key} hook target fn not found: {sd.name.name}.{fname}", hk.span)
+
+            if len(hk.sig.params) < len(target.params):
+                raise ResolveError(f"Mixin {key} hook signature arity mismatch for {sd.name.name}.{fname}", hk.span)
+            for ap, tp in zip(hk.sig.params, target.params, strict=False):
+                if not _type_ref_eq(ap.ty, tp.ty):
+                    raise ResolveError(f"Mixin {key} hook signature param type mismatch for {sd.name.name}.{fname}", ap.span)
+
+            opts = hk.opts
+            priority = _parse_int(opts.get("priority"), default=0, span=hk.span, key="priority")
+            hook_id = opts.get("id") or f"{_safe_name(key)}__{hk.point}__{fname}__{hook_counter}"
+            hook_counter += 1
+            depends = _split_csv(opts.get("depends"))
+            at = opts.get("at")
+            cancelable = _parse_bool(opts.get("cancelable"), default=False, span=hk.span, key="cancelable")
+            return_dep = opts.get("returnDep", "none")
+            const_values = _split_csv(opts.get("const")) + _split_csv(opts.get("constParams")) + _split_csv(opts.get("constArgs"))
+
+            if hk.point == "invoke":
+                if cancelable or return_dep != "none":
+                    raise ResolveError("hook invoke does not support cancelable/returnDep; use head/tail hook points", hk.span)
+                if const_values:
+                    raise ResolveError("hook invoke does not support const parameters", hk.span)
+                if len(hk.sig.params) != len(target.params):
+                    raise ResolveError(f"Mixin {key} hook invoke arity mismatch for {sd.name.name}.{fname}", hk.span)
+                if hk.sig.retType is not None and not _type_ref_eq(hk.sig.retType, target.retType):
+                    raise ResolveError(f"Mixin {key} hook invoke return type mismatch for {sd.name.name}.{fname}", hk.sig.span)
+                around = ast.MixinAround(sig=hk.sig, block=_body_to_block(hk.body, span=hk.span), span=hk.span)
+                around_by_fn.setdefault(fname, []).append(
+                    _AroundSpec(
+                        mixin_key=key,
+                        around=around,
+                        point="invoke",
+                        hook_id=hook_id,
+                        priority=priority,
+                        depends=depends,
+                        at=at,
+                        span=hk.span,
+                    )
+                )
+                continue
+
+            if hk.point not in ("head", "tail"):
+                raise ResolveError(f"Unsupported hook point: {hk.point}", hk.span)
+
+            extra_ret = 1 if hk.point == "tail" and return_dep in ("use_return", "replace_return") else 0
+            expected_n = len(target.params) + extra_ret + len(const_values)
+            if len(hk.sig.params) != expected_n:
+                raise ResolveError(
+                    f"Mixin {key} hook {hk.point} signature arity mismatch for {sd.name.name}.{fname}: expected {expected_n}",
+                    hk.span,
+                )
+            if hk.point == "head" and return_dep != "none":
+                raise ResolveError("hook head supports returnDep=none only", hk.span)
+            if hk.point == "tail" and cancelable:
+                raise ResolveError("hook tail does not support cancelable", hk.span)
+
+            helper_name = f"__hook_{_safe_name(key)}_{_safe_name(sd.name.name)}_{_safe_name(fname)}_{hook_counter}_impl"
+            helper_ident = ast.Ident(name=helper_name, span=hk.sig.name.span)
+            helper_fn = ast.FnDecl(
+                name=helper_ident,
+                sectorQual=None,
+                typeParams=None,
+                params=hk.sig.params,
+                retType=hk.sig.retType,
+                body=hk.body,
+                span=hk.span,
+            )
+            items.append(helper_fn)
+            existing_fn_by_name[helper_name] = helper_fn
+
+            arg_exprs: list[ast.Expr] = [_mk_var(p.name.name, hk.span) for p in target.params]
+            proceed_expr = _mk_proceed(arg_exprs, hk.span)
+            helper_call_args: list[ast.Expr] = list(arg_exprs)
+            if extra_ret:
+                helper_call_args.append(_mk_var("__hook_prev", hk.span))
+            for raw in const_values:
+                helper_call_args.append(ast.LitExpr(lit=ast.Literal(kind="LitStr", value=raw, span=hk.span), span=hk.span))
+            helper_call = _mk_call(helper_name, helper_call_args, hk.span)
+
+            wrapper_block: ast.Block
+            if hk.point == "head":
+                if cancelable:
+                    chooser_name = ast.Ident(name="__hook_choice", span=hk.span)
+                    ret_match = ast.MatchExpr(
+                        scrutinee=_mk_var("__hook_choice", hk.span),
+                        arms=[
+                            ast.MatchArm(
+                                pat=ast.PConstructor(
+                                    name=_mk_qname("Some", hk.span),
+                                    args=[ast.PVar(name=ast.Ident(name="v", span=hk.span), span=hk.span)],
+                                    span=hk.span,
+                                ),
+                                body=_mk_var("v", hk.span),
+                                span=hk.span,
+                            ),
+                            ast.MatchArm(
+                                pat=ast.PConstructor(name=_mk_qname("None", hk.span), args=None, span=hk.span),
+                                body=proceed_expr,
+                                span=hk.span,
+                            ),
+                        ],
+                        span=hk.span,
+                    )
+                    wrapper_block = ast.Block(
+                        stmts=[
+                            ast.LetStmt(name=chooser_name, value=helper_call, span=hk.span),
+                            ast.ReturnStmt(expr=ret_match, span=hk.span),
+                        ],
+                        span=hk.span,
+                    )
+                else:
+                    wrapper_block = ast.Block(
+                        stmts=[
+                            ast.ExprStmt(expr=helper_call, span=hk.span),
+                            ast.ReturnStmt(expr=proceed_expr, span=hk.span),
+                        ],
+                        span=hk.span,
+                    )
+            else:
+                prev_name = ast.Ident(name="__hook_prev", span=hk.span)
+                stmts: list[ast.Stmt] = [ast.LetStmt(name=prev_name, value=proceed_expr, span=hk.span)]
+                if return_dep == "replace_return":
+                    stmts.append(ast.ReturnStmt(expr=helper_call, span=hk.span))
+                elif return_dep == "use_return":
+                    stmts.append(ast.ExprStmt(expr=helper_call, span=hk.span))
+                    stmts.append(ast.ReturnStmt(expr=_mk_var("__hook_prev", hk.span), span=hk.span))
+                else:
+                    stmts.append(ast.ExprStmt(expr=helper_call, span=hk.span))
+                    stmts.append(ast.ReturnStmt(expr=_mk_var("__hook_prev", hk.span), span=hk.span))
+                wrapper_block = ast.Block(stmts=stmts, span=hk.span)
+
+            around_sig = ast.FnSignature(
+                name=ast.Ident(name=fname, span=hk.sig.name.span),
+                params=target.params,
+                retType=target.retType,
+                span=hk.sig.span,
+            )
+            around_by_fn.setdefault(fname, []).append(
+                _AroundSpec(
+                    mixin_key=key,
+                    around=ast.MixinAround(sig=around_sig, block=wrapper_block, span=hk.span),
+                    point=hk.point,
+                    hook_id=hook_id,
+                    priority=priority,
+                    depends=depends,
+                    at=at,
+                    span=hk.span,
+                )
+            )
+
+        around_ordered: list[_AroundSpec] = []
+        for fname, specs in around_by_fn.items():
+            head_specs = [sp for sp in specs if sp.point == "head"]
+            invoke_specs = [sp for sp in specs if sp.point == "invoke"]
+            tail_specs = [sp for sp in specs if sp.point == "tail"]
+            ordered_head = _resolve_specs(head_specs, span=specs[0].span if specs else sd.span)
+            ordered_invoke = _resolve_specs(invoke_specs, span=specs[0].span if specs else sd.span)
+            ordered_tail = _resolve_specs(tail_specs, span=specs[0].span if specs else sd.span)
+            # Outer stack order: heads then invokes then tails; tail executes after proceed so reverse it.
+            outer_stack = [*ordered_head, *ordered_invoke, *reversed(ordered_tail)]
+            around_ordered.extend(reversed(outer_stack))
+
         # Apply arounds: least-preferred first, so preferred becomes outermost.
-        for key, ar in around_ordered:
+        for spec in around_ordered:
+            key = spec.mixin_key
+            ar = spec.around
             fname = ar.sig.name.name
             target = next((it for it in items if isinstance(it, ast.FnDecl) and it.name.name == fname), None)
             if target is None:
                 raise ResolveError(f"Mixin {key} around-target fn not found: {sd.name.name}.{fname}", ar.span)
+            _validate_locator(spec.at, target=target, sec_name=sd.name.name, hook_id=spec.hook_id, span=spec.span)
 
             if len(ar.sig.params) != len(target.params):
                 raise ResolveError(f"Mixin {key} around signature arity mismatch for {sd.name.name}.{fname}", ar.span)
@@ -397,7 +749,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                 name=orig_name,
                 sectorQual=None,
                 typeParams=target.typeParams,
-                params=target.params,
+                params=_clone_params(target.params),
                 retType=target.retType,
                 body=target.body,
                 span=target.span,
@@ -410,7 +762,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                 name=target.name,
                 sectorQual=target.sectorQual,
                 typeParams=target.typeParams,
-                params=target.params,
+                params=_clone_params(target.params),
                 retType=target.retType,
                 body=new_body,
                 span=target.span,

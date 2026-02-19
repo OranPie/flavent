@@ -194,6 +194,64 @@ _RUNTIME_CASES.extend(
     ]
 )
 
+_RUNTIME_CASES.extend(
+    [
+        Case(
+            name="mixin-hook-invoke-priority-and-dependency-runtime",
+            body=(
+                "    assertEq(rpc S.base(3), 16)?\n"
+            ),
+            uses=(
+                "sector S:\n"
+                "  fn base(x: Int) -> Int = x\n"
+                "\n"
+                "mixin B v1 into sector S:\n"
+                "  hook invoke fn base(x: Int) -> Int with(id=\"B\", priority=10) = do:\n"
+                "    return proceed(x * 2)\n"
+                "\n"
+                "mixin C v1 into sector S:\n"
+                "  hook invoke fn base(x: Int) -> Int with(id=\"C\", depends=\"B\") = do:\n"
+                "    return proceed(x + 10)\n"
+                "\n"
+                "use mixin C v1\n"
+                "use mixin B v1\n"
+            ),
+        ),
+        Case(
+            name="mixin-hook-head-cancelable-tail-replace-runtime",
+            body=(
+                "    assertEq(rpc S.base(2), 13)?\n"
+                "    assertEq(rpc S.base(0), 999)?\n"
+            ),
+            uses=(
+                "sector S:\n"
+                "  fn base(x: Int) -> Int = x + 1\n"
+                "\n"
+                "mixin Head v1 into sector S:\n"
+                "  hook head fn base(x: Int) -> Option[Int] with(id=\"head\", cancelable=true) = match x == 0:\n"
+                "    true -> Some(999)\n"
+                "    false -> None\n"
+                "\n"
+                "mixin Tail v1 into sector S:\n"
+                "  hook tail fn base(x: Int, ret: Int) -> Int with(id=\"tail\", returnDep=\"replace_return\") = ret + 10\n"
+                "\n"
+                "use mixin Head v1\n"
+                "use mixin Tail v1\n"
+            ),
+        ),
+        Case(
+            name="flvrepr-metadata-roundtrip-runtime",
+            body=(
+                "    let m = encodeFunctionTarget(\"main.base\", \"invoke\", \"10\", \"anchor:base\")\n"
+                "    assertEq(metaGet(m, \"target\"), Some(\"main.base\"))?\n"
+                "    let m2 = metaSet(m, \"priority\", \"20\")\n"
+                "    assertEq(metaGet(m2, \"priority\"), Some(\"20\"))?\n"
+            ),
+            uses="use flvrepr\n",
+        ),
+    ]
+)
+
 
 @pytest.mark.parametrize("case", _RUNTIME_CASES, ids=lambda c: c.name)
 def test_runtime_cases(case: Case):

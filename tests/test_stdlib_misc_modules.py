@@ -39,6 +39,7 @@ use httplib
 use py
 use std.option
 use std.result
+use flvrepr
 
 type Event.X = {}
 
@@ -239,6 +240,8 @@ sector s:
     let _re0 = std.result.unwrapOrEmptyStr(Err("e"))
     let _oe0 = toOptionErr(Err("e"))
     let _okb = isOkAndBool(Ok(true))
+    let _meta = encodeFunctionTarget("main.f", "invoke", "10", "anchor:f")
+    let _mg = metaGet(_meta, "target")
 
     stop()
 

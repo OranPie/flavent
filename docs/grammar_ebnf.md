@@ -55,14 +55,22 @@ version            ::= ident  (* must look like v<digits> *)
 
 mixin_decl      ::= "mixin" qualified_name version "into" ( ("sector" ident) | [ "type" ] qualified_name )
                     ":" NL INDENT { mixin_item [ NL ] } DEDENT
-mixin_item      ::= pattern_decl | mixin_fn_add | mixin_around | mixin_field_add
+mixin_item      ::= pattern_decl | mixin_fn_add | mixin_around | mixin_hook | mixin_field_add
 mixin_fn_add    ::= "fn" ident "(" [ param { "," param } ] ")" [ "->" type_ref ] "=" fn_body
 mixin_around    ::= "around" "fn" ident "(" [ param { "," param } ] ")" [ "->" type_ref ] ":" block
+mixin_hook      ::= "hook" hook_point "fn" ident "(" [ param { "," param } ] ")" [ "->" type_ref ]
+                    [ "with" "(" [ hook_opt { "," hook_opt } ] ")" ] "=" fn_body
+hook_point      ::= "head" | "tail" | "invoke"
+hook_opt        ::= ident "=" (STR | BOOL | INT | ident)
 mixin_field_add ::= ident ":" type_ref
 
 sector_decl     ::= "sector" ident ":" NL INDENT { sector_item [ NL ] } DEDENT
 sector_item     ::= let_decl | need_decl | fn_decl | on_handler
 ```
+
+Current implementation note:
+- `hook` items are currently supported for sector-target mixins.
+- Type-target mixins currently support `pattern`, `fn`, `around`, and field additions.
 
 ## Handlers, Blocks, and Statements
 

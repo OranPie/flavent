@@ -34,6 +34,7 @@ Improve language grammar clarity and compiler structure while reducing runtime d
     - [ ] expand recoverable multi-error parsing in future pass
 - [~] Add parser/lexer regression tests for ambiguous and edge-case constructs.
   - [x] Added parser regression coverage for precedence and trailing-comma forms.
+  - [x] Added parser/runtime coverage for sector mixin hook forms (`head`/`tail`/`invoke`) and resolver ordering.
   - [ ] Expand to additional ambiguity classes (match arms, mixin forms, nested blocks).
 - [~] Improve user-facing error messages with expected-token hints.
   - [x] Added expected-token hints in core parser `expect` paths.
@@ -44,6 +45,12 @@ Improve language grammar clarity and compiler structure while reducing runtime d
     - [x] match-arm structure hints (missing pattern/body around `->`)
     - [x] explicit block-form hint for single-line `if/for/match` style misuse
     - [ ] continue expanding hints for additional malformed declaration patterns
+  - [x] Added hook-target locator diagnostics (`at` anchor/line mismatch).
+
+- [x] Prototype hook-oriented mixin extension and metadata helper package:
+  - sector mixin `hook head|tail|invoke` syntax with `with(...)` options
+  - priority/dependency call-stack resolver for hooks
+  - `flvrepr` package for string metadata encoding/decoding
 
 ## Phase 3: Compiler Structure Improvements
 - [ ] Split parser/lexer helper logic into clearer internal units (without public API breakage).
