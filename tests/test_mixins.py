@@ -163,3 +163,74 @@ run()
 """
     with pytest.raises(ResolveError, match="locator mismatch"):
         _resolve(src)
+
+
+def test_mixin_hook_rejects_unknown_option_key():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(unknown="x") = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="Unknown hook option"):
+        _resolve(src)
+
+
+def test_mixin_hook_head_cancelable_requires_option_return():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook head fn foo(x: Int) -> Int with(cancelable=true) = x
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="cancelable=true requires return type Option"):
+        _resolve(src)
+
+
+def test_mixin_hook_head_cancelable_option_type_must_match_target_return():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook head fn foo(x: Int) -> Option[Str] with(cancelable=true) = None
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="must match target return type"):
+        _resolve(src)
+
+
+def test_mixin_hook_tail_returndep_requires_matching_prev_return_param_type():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook tail fn foo(x: Int, ret: Str) -> Int with(returnDep="use_return") = x
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="extra return parameter type matching target return type"):
+        _resolve(src)
+
+
+def test_mixin_hook_tail_returndep_rejects_invalid_value():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook tail fn foo(x: Int) -> Int with(returnDep="later") = x
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="returnDep must be one of"):
+        _resolve(src)

@@ -214,6 +214,23 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             return all(_type_ref_eq(x, y) for x, y in zip(a.args, b.args, strict=True))
         return False
 
+    def _type_ref_strip_paren(t: ast.TypeRef | None) -> ast.TypeRef | None:
+        cur = t
+        while isinstance(cur, ast.TypeParen):
+            cur = cur.inner
+        return cur
+
+    def _option_inner_type(t: ast.TypeRef | None) -> ast.TypeRef | None:
+        core = _type_ref_strip_paren(t)
+        if not isinstance(core, ast.TypeName):
+            return None
+        qn = _qname_str(core.name)
+        if qn != "Option" and not qn.endswith(".Option"):
+            return None
+        if core.args is None or len(core.args) != 1:
+            return None
+        return core.args[0]
+
     def _rewrite_proceed(expr: ast.Expr, *, callee: ast.Ident) -> ast.Expr:
         if isinstance(expr, ast.ProceedExpr):
             v = ast.VarExpr(name=_clone_ident(callee), span=callee.span)
@@ -572,6 +589,17 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                     raise ResolveError(f"Mixin {key} hook signature param type mismatch for {sd.name.name}.{fname}", ap.span)
 
             opts = hk.opts
+            allowed_opts = {"id", "priority", "depends", "at", "cancelable", "returnDep", "const", "constParams", "constArgs"}
+            unknown_opts = sorted(k for k in opts if k not in allowed_opts)
+            if unknown_opts:
+                raise ResolveError(f"Unknown hook option: {unknown_opts[0]}", hk.span)
+            if hk.point != "head" and "cancelable" in opts:
+                raise ResolveError(f"hook {hk.point} does not support cancelable", hk.span)
+            if hk.point != "tail" and "returnDep" in opts:
+                raise ResolveError(f"hook {hk.point} does not support returnDep", hk.span)
+            if hk.point == "invoke" and ("const" in opts or "constParams" in opts or "constArgs" in opts):
+                raise ResolveError("hook invoke does not support const parameters", hk.span)
+
             priority = _parse_int(opts.get("priority"), default=0, span=hk.span, key="priority")
             hook_id = opts.get("id") or f"{_safe_name(key)}__{hk.point}__{fname}__{hook_counter}"
             hook_counter += 1
@@ -579,11 +607,11 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             at = opts.get("at")
             cancelable = _parse_bool(opts.get("cancelable"), default=False, span=hk.span, key="cancelable")
             return_dep = opts.get("returnDep", "none")
+            if return_dep not in ("none", "use_return", "replace_return"):
+                raise ResolveError("hook returnDep must be one of: none, use_return, replace_return", hk.span)
             const_values = _split_csv(opts.get("const")) + _split_csv(opts.get("constParams")) + _split_csv(opts.get("constArgs"))
 
             if hk.point == "invoke":
-                if cancelable or return_dep != "none":
-                    raise ResolveError("hook invoke does not support cancelable/returnDep; use head/tail hook points", hk.span)
                 if const_values:
                     raise ResolveError("hook invoke does not support const parameters", hk.span)
                 if len(hk.sig.params) != len(target.params):
@@ -616,9 +644,21 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                     hk.span,
                 )
             if hk.point == "head" and return_dep != "none":
-                raise ResolveError("hook head supports returnDep=none only", hk.span)
+                raise ResolveError("hook head does not support returnDep", hk.span)
             if hk.point == "tail" and cancelable:
                 raise ResolveError("hook tail does not support cancelable", hk.span)
+            if hk.point == "head" and cancelable:
+                inner = _option_inner_type(hk.sig.retType)
+                if inner is None:
+                    raise ResolveError("hook head cancelable=true requires return type Option[T]", hk.sig.span)
+                if target.retType is not None and not _type_ref_eq(inner, target.retType):
+                    raise ResolveError("hook head cancelable=true Option[T] must match target return type", hk.sig.span)
+            if hk.point == "tail" and return_dep in ("use_return", "replace_return"):
+                prev_ret_param = hk.sig.params[len(target.params)]
+                if target.retType is not None and not _type_ref_eq(prev_ret_param.ty, target.retType):
+                    raise ResolveError("hook tail returnDep requires extra return parameter type matching target return type", prev_ret_param.span)
+                if return_dep == "replace_return" and hk.sig.retType is not None and target.retType is not None and not _type_ref_eq(hk.sig.retType, target.retType):
+                    raise ResolveError("hook tail returnDep=replace_return requires hook return type matching target return type", hk.sig.span)
 
             helper_name = f"__hook_{_safe_name(key)}_{_safe_name(sd.name.name)}_{_safe_name(fname)}_{hook_counter}_impl"
             helper_ident = ast.Ident(name=helper_name, span=hk.sig.name.span)

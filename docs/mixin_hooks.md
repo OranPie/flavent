@@ -31,6 +31,11 @@ Hook points:
   - `use_return`: hook receives prior return as extra arg but final return stays original.
   - `replace_return`: hook receives prior return as extra arg and its result becomes final return.
 - `const` / `constParams` / `constArgs`: comma-separated constant strings appended to hook call arguments.
+- Unknown option keys are rejected during resolve.
+- Validation rules:
+  - `head + cancelable=true` requires return type `Option[targetReturnType]`.
+  - `tail + returnDep in {use_return, replace_return}` requires an extra `ret`-style parameter typed as target return type.
+  - `tail + returnDep="replace_return"` must return the target return type.
 
 ## Call Stack Resolver
 
