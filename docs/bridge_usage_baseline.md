@@ -8,42 +8,42 @@ Date: 2026-02-19
 - Total bridge symbols: `55`
 
 ## Stdlib Bridge Symbol References (Static)
-- Total symbol references: `226`
+- Total symbol references: `144`
 - Distinct bridge symbols referenced: `55`
-- Distinct stdlib modules referencing bridge symbols: `26`
+- Distinct stdlib modules referencing bridge symbols: `21`
 - Top referenced bridge symbols:
-- `strLen`: `69`
-- `strSlice`: `45`
-- `strCodeAt`: `32`
-- `strFromCode`: `18`
+- `strLen`: `27`
+- `strCodeAt`: `22`
+- `strSlice`: `21`
+- `strFromCode`: `12`
 - `nowMillis`: `5`
 - `pyAdapterCall`: `3`
 - `floatToStr`: `2`
 - `monoMillis`: `2`
 - Top stdlib modules by bridge references:
 - `httplib/core`: `23`
-- `url/__init__`: `23`
-- `stringlib/__init__`: `19`
-- `datetime/__init__`: `15`
-- `path/__init__`: `14`
 - `time/__init__`: `13`
 - `struct/__init__`: `12`
 - `fslib/__init__`: `10`
+- `regex/__init__`: `10`
+- `socket/api`: `8`
+- `u32/__init__`: `7`
+- `consoleIO/__init__`: `6`
 
 ## tests_flv Bridge Call Baseline
-- Programs analyzed (expanded test cases): `82`
+- Programs analyzed (expanded test cases): `83`
 - Files analyzed: `25`
 - Files failed to analyze: `0`
-- Total audited bridge calls: `1711`
+- Total audited bridge calls: `936`
 - Bridge call kinds:
-- `pure_call`: `1635`
+- `pure_call`: `860`
 - `rpc`: `66`
 - `call`: `10`
 - Top audited calls:
-- `pure_call:strLen`: `649`
-- `pure_call:strCodeAt`: `309`
-- `pure_call:strSlice`: `307`
-- `pure_call:strFromCode`: `96`
+- `pure_call:strLen`: `182`
+- `pure_call:strCodeAt`: `180`
+- `pure_call:strSlice`: `121`
+- `pure_call:strFromCode`: `103`
 - `pure_call:_pyBytesConcat`: `28`
 - `pure_call:_pyBytesFromByte`: `28`
 - `pure_call:_pyBytesGet`: `28`

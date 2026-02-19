@@ -143,6 +143,8 @@ sector s:
     let _sf0 = stringlib.strFind("abcabc", "bc", 0)
     let _sf1 = startsWith("hello", "he")
     let _sf2 = trimSpaces("  x  ")
+    let _sf3 = strLength("abc")
+    let _sf4 = strSliceRange("abc", 0, 1)
     let _ca0 = cliParse(Cons("--x", Cons("file", Nil)))
     let _lg0 = logPrepare(logDefault(), logLevelInfo(), "ok")
 

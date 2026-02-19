@@ -31,3 +31,9 @@ test "stringlib-split-join" -> do:
   let xs = split("a,b,c", ",")
   assertEq(xs, Cons("a", Cons("b", Cons("c", Nil))))?
   assertEq(join(xs, ","), "a,b,c")?
+
+test "stringlib-bridge-wrapper-helpers" -> do:
+  assertEq(strLength("abc"), 3)?
+  assertEq(strCode("ABC", 1), 66)?
+  assertEq(strSliceRange("hello", 1, 4), "ell")?
+  assertEq(strFromCodePoint(65), "A")?

@@ -1,4 +1,3 @@
-use _bridge_python
 use collections.list
 use stringlib
 
@@ -15,8 +14,8 @@ fn _isAlpha(c: Int) -> Bool = _isUpper(c) or _isLower(c)
 fn _isUnreserved(c: Int) -> Bool = _isAlpha(c) or _isDigit(c) or c == 45 or c == 46 or c == 95 or c == 126
 
 fn _hexDigit(n: Int) -> Str = match n < 10:
-  true -> strFromCode(48 + n)
-  false -> strFromCode(65 + (n - 10))
+  true -> strFromCodePoint(48 + n)
+  false -> strFromCodePoint(65 + (n - 10))
 
 fn _hexByte(x: Int) -> Str = do:
   let hi = x / 16
@@ -34,51 +33,51 @@ fn _hexVal(c: Int) -> Int = match _isDigit(c):
 fn _encodeAcc(s: Str, i: Int, n: Int, plusForSpace: Bool, acc: Str) -> Str = match i >= n:
   true -> acc
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     let part = match plusForSpace and c == 32:
       true -> "+"
       false -> match _isUnreserved(c):
-        true -> strFromCode(c)
+        true -> strFromCodePoint(c)
         false -> "%" + _hexByte(c)
     return _encodeAcc(s, i + 1, n, plusForSpace, acc + part)
 
 fn _decodeAcc(s: Str, i: Int, n: Int, plusAsSpace: Bool, acc: Str) -> Result[Str, Str] = match i >= n:
   true -> Ok(acc)
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     return match c == 37:
       true -> do:
         if i + 2 >= n:
           return Err("url: incomplete percent escape")
-        let h = _hexVal(strCodeAt(s, i + 1))
-        let l = _hexVal(strCodeAt(s, i + 2))
+        let h = _hexVal(strCode(s, i + 1))
+        let l = _hexVal(strCode(s, i + 2))
         return match h < 0 or l < 0:
           true -> Err("url: invalid percent escape")
-          false -> _decodeAcc(s, i + 3, n, plusAsSpace, acc + strFromCode(h * 16 + l))
+          false -> _decodeAcc(s, i + 3, n, plusAsSpace, acc + strFromCodePoint(h * 16 + l))
       false -> match plusAsSpace and c == 43:
         true -> _decodeAcc(s, i + 1, n, plusAsSpace, acc + " ")
-        false -> _decodeAcc(s, i + 1, n, plusAsSpace, acc + strFromCode(c))
+        false -> _decodeAcc(s, i + 1, n, plusAsSpace, acc + strFromCodePoint(c))
 
-fn encodeComponent(s: Str) -> Str = _encodeAcc(s, 0, strLen(s), false, "")
+fn encodeComponent(s: Str) -> Str = _encodeAcc(s, 0, strLength(s), false, "")
 
-fn decodeComponent(s: Str) -> Result[Str, Str] = _decodeAcc(s, 0, strLen(s), false, "")
+fn decodeComponent(s: Str) -> Result[Str, Str] = _decodeAcc(s, 0, strLength(s), false, "")
 
-fn queryEncode(s: Str) -> Str = _encodeAcc(s, 0, strLen(s), true, "")
+fn queryEncode(s: Str) -> Str = _encodeAcc(s, 0, strLength(s), true, "")
 
-fn queryDecode(s: Str) -> Result[Str, Str] = _decodeAcc(s, 0, strLen(s), true, "")
+fn queryDecode(s: Str) -> Result[Str, Str] = _decodeAcc(s, 0, strLength(s), true, "")
 
-fn _queryNoPrefix(q: Str) -> Str = match strLen(q) > 0 and strCodeAt(q, 0) == 63:
-  true -> strSlice(q, 1, strLen(q))
+fn _queryNoPrefix(q: Str) -> Str = match strLength(q) > 0 and strCode(q, 0) == 63:
+  true -> strSliceRange(q, 1, strLength(q))
   false -> q
 
 fn _parseOne(seg: Str) -> Result[UrlQueryParam, Str] = do:
   let eq = strFind(seg, "=", 0)
   let k0 = match eq < 0:
     true -> seg
-    false -> strSlice(seg, 0, eq)
+    false -> strSliceRange(seg, 0, eq)
   let v0 = match eq < 0:
     true -> ""
-    false -> strSlice(seg, eq + 1, strLen(seg))
+    false -> strSliceRange(seg, eq + 1, strLength(seg))
   let rk = queryDecode(k0)
   return match rk:
     Err(e) -> Err(e)
@@ -90,7 +89,7 @@ fn _parseOne(seg: Str) -> Result[UrlQueryParam, Str] = do:
 
 fn _parseMany(parts: List[Str], acc: List[UrlQueryParam]) -> Result[List[UrlQueryParam], Str] = match parts:
   Nil -> Ok(reverse(acc))
-  Cons(seg, rest) -> match strLen(seg) == 0:
+  Cons(seg, rest) -> match strLength(seg) == 0:
     true -> _parseMany(rest, acc)
     false -> do:
       let rp = _parseOne(seg)
@@ -100,7 +99,7 @@ fn _parseMany(parts: List[Str], acc: List[UrlQueryParam]) -> Result[List[UrlQuer
 
 fn queryParse(q: Str) -> Result[List[UrlQueryParam], Str] = do:
   let clean = _queryNoPrefix(q)
-  return match strLen(clean) == 0:
+  return match strLength(clean) == 0:
     true -> Ok(Nil)
     false -> _parseMany(split(clean, "&"), Nil)
 
@@ -108,7 +107,7 @@ fn _buildMany(parts: List[UrlQueryParam], acc: Str) -> Str = match parts:
   Nil -> acc
   Cons(p, rest) -> do:
     let piece = queryEncode(p.key) + "=" + queryEncode(p.value)
-    return match strLen(acc) == 0:
+    return match strLength(acc) == 0:
       true -> _buildMany(rest, piece)
       false -> _buildMany(rest, acc + "&" + piece)
 

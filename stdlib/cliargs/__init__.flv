@@ -1,4 +1,3 @@
-use _bridge_python
 use collections.list
 use collections.map
 use collections.set
@@ -15,12 +14,12 @@ fn cliEmpty() -> CliArgs = { flags = setEmpty(), options = mapEmpty(), positiona
 
 fn _isDashPrefixed(s: Str) -> Bool = startsWith(s, "-")
 
-fn _sliceFrom(s: Str, i: Int) -> Str = strSlice(s, i, strLen(s))
+fn _sliceFrom(s: Str, i: Int) -> Str = strSliceRange(s, i, strLength(s))
 
 fn _parseShortFlags(tok: Str, i: Int, n: Int, flags: Set[Str]) -> Result[Set[Str], Str] = match i >= n:
   true -> Ok(flags)
   false -> do:
-    let ch = strSlice(tok, i, i + 1)
+    let ch = strSliceRange(tok, i, i + 1)
     let f2 = setAdd(flags, ch)
     return _parseShortFlags(tok, i + 1, n, f2)
 
@@ -51,14 +50,14 @@ fn _parseAcc(
             let eq = strFind(x, "=", 0)
             return match eq >= 0:
               true -> do:
-                let key = strSlice(x, 2, eq)
+                let key = strSliceRange(x, 2, eq)
                 let value = _sliceFrom(x, eq + 1)
-                return match strLen(key) == 0:
+                return match strLength(key) == 0:
                   true -> Err("cliargs: empty long option name")
                   false -> _parseAcc(rest, false, flags, mapPut(options, key, value), posRev, raw2)
               false -> do:
                 let key = _sliceFrom(x, 2)
-                return match strLen(key) == 0:
+                return match strLength(key) == 0:
                   true -> Err("cliargs: empty long option name")
                   false -> match rest:
                     Nil -> _parseAcc(rest, false, setAdd(flags, key), options, posRev, raw2)
@@ -67,7 +66,7 @@ fn _parseAcc(
                       false -> _parseAcc(rest2, false, flags, mapPut(options, key, y), posRev, Cons(y, raw2))
           false -> match _isDashPrefixed(x):
             true -> do:
-              let n = strLen(x)
+              let n = strLength(x)
               return match n <= 1:
                 true -> Err("cliargs: invalid short option token")
                 false -> do:

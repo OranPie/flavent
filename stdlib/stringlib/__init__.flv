@@ -1,11 +1,19 @@
 use _bridge_python
 use collections.list
 
+fn strLength(s: Str) -> Int = strLen(s)
+
+fn strCode(s: Str, i: Int) -> Int = strCodeAt(s, i)
+
+fn strSliceRange(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+
+fn strFromCodePoint(code: Int) -> Str = strFromCode(code)
+
 fn _strEqAt(h: Str, hi: Int, hn: Int, needle: Str, ni: Int, nn: Int) -> Bool = match ni >= nn:
   true -> true
   false -> match (hi + ni) >= hn:
     true -> false
-    false -> match strCodeAt(h, hi + ni) == strCodeAt(needle, ni):
+    false -> match strCode(h, hi + ni) == strCode(needle, ni):
       true -> _strEqAt(h, hi, hn, needle, ni + 1, nn)
       false -> false
 
@@ -16,8 +24,8 @@ fn _strFindFrom(h: Str, needle: Str, i: Int, hn: Int, nn: Int) -> Int = match i 
     false -> _strFindFrom(h, needle, i + 1, hn, nn)
 
 fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
-  let hn = strLen(h)
-  let nn = strLen(needle)
+  let hn = strLength(h)
+  let nn = strLength(needle)
   return match nn == 0:
     true -> start
     false -> _strFindFrom(h, needle, start, hn, nn)
@@ -31,15 +39,15 @@ fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
 fn strContains(h: Str, needle: Str) -> Bool = strFind(h, needle, 0) >= 0
 
 fn startsWith(h: Str, prefix: Str) -> Bool = do:
-  let hn = strLen(h)
-  let pn = strLen(prefix)
+  let hn = strLength(h)
+  let pn = strLength(prefix)
   return match pn > hn:
     true -> false
     false -> _strEqAt(h, 0, hn, prefix, 0, pn)
 
 fn endsWith(h: Str, suffix: Str) -> Bool = do:
-  let hn = strLen(h)
-  let sn = strLen(suffix)
+  let hn = strLength(h)
+  let sn = strLength(suffix)
   return match sn > hn:
     true -> false
     false -> _strEqAt(h, hn - sn, hn, suffix, 0, sn)
@@ -52,25 +60,25 @@ fn _isSpace(c: Int) -> Bool = c == 32
 
 fn _trimLeftSpacesAcc(s: Str, i: Int, n: Int) -> Int = match i >= n:
   true -> n
-  false -> match _isSpace(strCodeAt(s, i)):
+  false -> match _isSpace(strCode(s, i)):
     true -> _trimLeftSpacesAcc(s, i + 1, n)
     false -> i
 
 fn _trimRightSpacesAcc(s: Str, i: Int) -> Int = match i <= 0:
   true -> 0
-  false -> match _isSpace(strCodeAt(s, i - 1)):
+  false -> match _isSpace(strCode(s, i - 1)):
     true -> _trimRightSpacesAcc(s, i - 1)
     false -> i
 
 fn trimLeftSpaces(s: Str) -> Str = do:
-  let n = strLen(s)
+  let n = strLength(s)
   let i = _trimLeftSpacesAcc(s, 0, n)
-  return strSlice(s, i, n)
+  return strSliceRange(s, i, n)
 
 fn trimRightSpaces(s: Str) -> Str = do:
-  let n = strLen(s)
+  let n = strLength(s)
   let j = _trimRightSpacesAcc(s, n)
-  return strSlice(s, 0, j)
+  return strSliceRange(s, 0, j)
 
 fn trimSpaces(s: Str) -> Str = trimRightSpaces(trimLeftSpaces(s))
 
@@ -81,21 +89,21 @@ type _SplitAcc = { parts: List[Str], cur: Int }
 fn _splitAcc(s: Str, sep: Str, sn: Int, sepn: Int, cur: Int, parts: List[Str]) -> List[Str] = do:
   let i = strFind(s, sep, cur)
   return match i < 0:
-    true -> reverse(Cons(strSlice(s, cur, sn), parts))
+    true -> reverse(Cons(strSliceRange(s, cur, sn), parts))
     false -> do:
-      let part = strSlice(s, cur, i)
+      let part = strSliceRange(s, cur, i)
       return _splitAcc(s, sep, sn, sepn, i + sepn, Cons(part, parts))
 
 fn split(s: Str, sep: Str) -> List[Str] = do:
-  let sn = strLen(s)
-  let sepn = strLen(sep)
+  let sn = strLength(s)
+  let sepn = strLength(sep)
   return match sepn == 0:
     true -> Cons(s, Nil)
     false -> _splitAcc(s, sep, sn, sepn, 0, Nil)
 
 fn _joinAcc(xs: List[Str], sep: Str, acc: Str) -> Str = match xs:
   Nil -> acc
-  Cons(x, rest) -> match strLen(acc) == 0:
+  Cons(x, rest) -> match strLength(acc) == 0:
     true -> _joinAcc(rest, sep, x)
     false -> _joinAcc(rest, sep, acc + sep + x)
 

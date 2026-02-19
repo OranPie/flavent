@@ -43,6 +43,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 
 ## Phase 5: Bridge-Reduction Track
 - [x] Snapshot bridge usage after each batch (`scripts/bridge_usage_snapshot.py`)
+- [x] Consolidate low-level string bridge usage through `stringlib` wrappers (`strLength`/`strCode`/`strSliceRange`/`strFromCodePoint`)
 - [ ] Prioritize replacing deterministic bridge-backed helpers with pure-Flavent versions
 - [ ] Keep bridge-only functionality limited to IO/network/OS boundaries
 

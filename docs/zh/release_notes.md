@@ -57,10 +57,11 @@
   - `stdlib/_bridge_python.flv` 的 bridge 原语表面，
   - 标准库模块对 bridge 符号的静态引用，
   - 展开 `tests_flv` 用例后的 bridge 调用审计统计。
-- 已在 Phase 3 标准库扩展后刷新基线（`2026-02-19`）：
+- 已在 bridge 封装收敛后刷新基线（`2026-02-19`）：
   - bridge 符号总数：`55`（pure `24` + effectful `31`），
-  - stdlib 静态 bridge 引用：`226`（覆盖 `26` 个模块），
-  - `tests_flv` 审计 bridge 调用：`1711`（pure_call `1635`、rpc `66`、call `10`）。
+  - stdlib 静态 bridge 引用：`144`（覆盖 `21` 个模块，较 `226` / `26` 下降），
+  - `tests_flv` 审计 bridge 调用：`936`（pure_call `860`、rpc `66`、call `10`，较 `1711` 下降）。
+- 在 `stringlib` 新增可复用的低层字符串封装，并将核心模块（`url`、`path`、`datetime`、`csv`、`cliargs`）迁移到该封装，降低对 bridge 的直接耦合。
 - `stdlib/flvrepr` 已改为不直接依赖 `_bridge_python`，改用 `stringlib`/`collections.list` 组合实现。
 - `stdlib/httplib.core` 已改为连接复用 `stringlib`、`bytelib`、`asciilib` 的共享能力（find/trim/ascii 转换）。
 - 新增 stdlib 跨模块重复定义检测与报告：

@@ -39,10 +39,10 @@ fn _isDigit(c: Int) -> Bool = c >= 48 and c <= 57
 fn _parseFixedUIntAcc(s: Str, i: Int, left: Int, acc: Int) -> Result[Int, Str] = match left <= 0:
   true -> Ok(acc)
   false -> do:
-    let n = strLen(s)
+    let n = strLength(s)
     if i >= n:
       return Err("datetime: numeric parse out of range")
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     return match _isDigit(c):
       true -> _parseFixedUIntAcc(s, i + 1, left - 1, acc * 10 + (c - 48))
       false -> Err("datetime: invalid digit")
@@ -50,10 +50,10 @@ fn _parseFixedUIntAcc(s: Str, i: Int, left: Int, acc: Int) -> Result[Int, Str] =
 fn _parseFixedUInt(s: Str, i: Int, width: Int) -> Result[Int, Str] = _parseFixedUIntAcc(s, i, width, 0)
 
 fn parseDate(s: Str) -> Result[Date, Str] = do:
-  let n = strLen(s)
+  let n = strLength(s)
   if n != 10:
     return Err("datetime: expected YYYY-MM-DD")
-  if strSlice(s, 4, 5) != "-" or strSlice(s, 7, 8) != "-":
+  if strSliceRange(s, 4, 5) != "-" or strSliceRange(s, 7, 8) != "-":
     return Err("datetime: expected YYYY-MM-DD")
   let ry = _parseFixedUInt(s, 0, 4)
   return match ry:
@@ -73,12 +73,12 @@ fn parseDate(s: Str) -> Result[Date, Str] = do:
                 false -> Err("datetime: invalid date")
 
 fn parseTime(s: Str) -> Result[Time, Str] = do:
-  let n = strLen(s)
+  let n = strLength(s)
   if n != 8 and n != 12:
     return Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm")
-  if strSlice(s, 2, 3) != ":" or strSlice(s, 5, 6) != ":":
+  if strSliceRange(s, 2, 3) != ":" or strSliceRange(s, 5, 6) != ":":
     return Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm")
-  if n == 12 and strSlice(s, 8, 9) != ".":
+  if n == 12 and strSliceRange(s, 8, 9) != ".":
     return Err("datetime: expected HH:MM:SS or HH:MM:SS.mmm")
   let rh = _parseFixedUInt(s, 0, 2)
   return match rh:
@@ -104,23 +104,23 @@ fn parseTime(s: Str) -> Result[Time, Str] = do:
                     false -> Err("datetime: invalid time")
 
 fn parseDateTime(s: Str) -> Result[DateTime, Str] = do:
-  let n = strLen(s)
+  let n = strLength(s)
   if n != 19 and n != 23:
     return Err("datetime: expected YYYY-MM-DDTHH:MM:SS(.mmm)")
-  if strSlice(s, 10, 11) != "T":
+  if strSliceRange(s, 10, 11) != "T":
     return Err("datetime: expected YYYY-MM-DDTHH:MM:SS(.mmm)")
-  let rd = parseDate(strSlice(s, 0, 10))
+  let rd = parseDate(strSliceRange(s, 0, 10))
   return match rd:
     Err(e) -> Err(e)
     Ok(d) -> do:
-      let rt = parseTime(strSlice(s, 11, n))
+      let rt = parseTime(strSliceRange(s, 11, n))
       return match rt:
         Err(e) -> Err(e)
         Ok(t) -> Ok(makeDateTime(d, t))
 
 fn _intToStrPos(x: Int) -> Str = match x < 10:
-  true -> strFromCode(48 + x)
-  false -> _intToStrPos(x / 10) + strFromCode(48 + _mod(x, 10))
+  true -> strFromCodePoint(48 + x)
+  false -> _intToStrPos(x / 10) + strFromCodePoint(48 + _mod(x, 10))
 
 fn _intToStr(x: Int) -> Str = match x < 0:
   true -> "-" + _intToStrPos(0 - x)

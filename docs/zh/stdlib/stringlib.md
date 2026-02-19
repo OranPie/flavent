@@ -7,6 +7,7 @@
 - `strFind` 未找到时返回 `-1`。
 - `strFindOpt` 返回 `Some(index)` / `None`，新代码建议优先使用。
 - `startsWith`/`endsWith` 与 `strStartsWith`/`strEndsWith` 等价（兼容别名）。
+- `strLength`/`strCode`/`strSliceRange`/`strFromCodePoint` 提供低层字符串桥接封装，便于其他 stdlib 模块复用。
 
 ## 导入
 ```flavent
@@ -26,6 +27,10 @@ let out = trimSpaces("  hi  ")          // "hi"
 fn strFind(h: Str, needle: Str, start: Int) -> Int = do:
 fn strFindOpt(h: Str, needle: Str, start: Int) -> Option[Int] = do:
 fn strContains(h: Str, needle: Str) -> Bool = strFind(h, needle, 0) >= 0
+fn strLength(s: Str) -> Int = strLen(s)
+fn strCode(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn strSliceRange(s: Str, a: Int, b: Int) -> Str = strSlice(s, a, b)
+fn strFromCodePoint(code: Int) -> Str = strFromCode(code)
 fn startsWith(h: Str, prefix: Str) -> Bool = do:
 fn endsWith(h: Str, suffix: Str) -> Bool = do:
 fn strStartsWith(h: Str, prefix: Str) -> Bool = startsWith(h, prefix)

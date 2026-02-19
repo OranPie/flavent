@@ -6,9 +6,9 @@ type CsvOptions = { delimiter: Str, quote: Str }
 
 fn csvDefaultOptions() -> CsvOptions = { delimiter = ",", quote = "\"" }
 
-fn _csvNormChar(s: Str, fallback: Str) -> Str = match strLen(s) <= 0:
+fn _csvNormChar(s: Str, fallback: Str) -> Str = match strLength(s) <= 0:
   true -> fallback
-  false -> strSlice(s, 0, 1)
+  false -> strSliceRange(s, 0, 1)
 
 fn _csvParseAcc(
   line: Str,
@@ -24,10 +24,10 @@ fn _csvParseAcc(
     true -> Err("csv: unterminated quoted field")
     false -> Ok(reverse(Cons(field, fieldsRev)))
   false -> do:
-    let c = strSlice(line, i, i + 1)
+    let c = strSliceRange(line, i, i + 1)
     return match inQuote:
       true -> match c == quote:
-        true -> match i + 1 < n and strSlice(line, i + 1, i + 2) == quote:
+        true -> match i + 1 < n and strSliceRange(line, i + 1, i + 2) == quote:
           true -> _csvParseAcc(line, i + 2, n, delim, quote, true, field + quote, fieldsRev)
           false -> _csvParseAcc(line, i + 1, n, delim, quote, false, field, fieldsRev)
         false -> _csvParseAcc(line, i + 1, n, delim, quote, true, field + c, fieldsRev)
@@ -40,7 +40,7 @@ fn _csvParseAcc(
 fn csvParseLineWith(line: Str, opts: CsvOptions) -> Result[List[Str], Str] = do:
   let delim = _csvNormChar(opts.delimiter, ",")
   let quote = _csvNormChar(opts.quote, "\"")
-  return _csvParseAcc(line, 0, strLen(line), delim, quote, false, "", Nil)
+  return _csvParseAcc(line, 0, strLength(line), delim, quote, false, "", Nil)
 
 fn csvParseLine(line: Str) -> Result[List[Str], Str] = csvParseLineWith(line, csvDefaultOptions())
 
@@ -61,7 +61,7 @@ fn csvParse(text: Str) -> Result[List[List[Str]], Str] = csvParseWith(text, csvD
 fn _csvEscapeQuoteAcc(s: Str, i: Int, n: Int, quote: Str, acc: Str) -> Str = match i >= n:
   true -> acc
   false -> do:
-    let c = strSlice(s, i, i + 1)
+    let c = strSliceRange(s, i, i + 1)
     let part = match c == quote:
       true -> quote + quote
       false -> c
@@ -70,7 +70,7 @@ fn _csvEscapeQuoteAcc(s: Str, i: Int, n: Int, quote: Str, acc: Str) -> Str = mat
 fn csvEncodeFieldWith(field: Str, opts: CsvOptions) -> Str = do:
   let delim = _csvNormChar(opts.delimiter, ",")
   let quote = _csvNormChar(opts.quote, "\"")
-  let esc = _csvEscapeQuoteAcc(field, 0, strLen(field), quote, "")
+  let esc = _csvEscapeQuoteAcc(field, 0, strLength(field), quote, "")
   let needsQuote = strFind(field, delim, 0) >= 0 or strFind(field, quote, 0) >= 0 or strFind(field, "\n", 0) >= 0 or strFind(field, "\r", 0) >= 0
   return match needsQuote:
     true -> quote + esc + quote
@@ -84,7 +84,7 @@ fn _csvJoinFieldsAcc(fields: List[Str], opts: CsvOptions, acc: Str) -> Str = do:
     Nil -> acc
     Cons(f, rest) -> do:
       let enc = csvEncodeFieldWith(f, opts)
-      return match strLen(acc) == 0:
+      return match strLength(acc) == 0:
         true -> _csvJoinFieldsAcc(rest, opts, enc)
         false -> _csvJoinFieldsAcc(rest, opts, acc + delim + enc)
 

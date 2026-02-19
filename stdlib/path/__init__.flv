@@ -1,24 +1,24 @@
 use collections.list
 use stringlib
 
-fn _charSlice(s: Str, i: Int) -> Str = strSlice(s, i, i + 1)
+fn _charSlice(s: Str, i: Int) -> Str = strSliceRange(s, i, i + 1)
 
 fn _canonSepAcc(s: Str, i: Int, n: Int, acc: Str) -> Str = match i >= n:
   true -> acc
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     let ch = match c == 92:
       true -> "/"
       false -> _charSlice(s, i)
     return _canonSepAcc(s, i + 1, n, acc + ch)
 
-fn _canonSep(p: Str) -> Str = _canonSepAcc(p, 0, strLen(p), "")
+fn _canonSep(p: Str) -> Str = _canonSepAcc(p, 0, strLength(p), "")
 
 fn pathIsAbs(p: Str) -> Bool = startsWith(_canonSep(p), "/")
 
 fn _normalizeSegsAcc(segs: List[Str], abs: Bool, stackRev: List[Str]) -> List[Str] = match segs:
   Nil -> reverse(stackRev)
-  Cons(seg, rest) -> match strLen(seg) == 0 or seg == ".":
+  Cons(seg, rest) -> match strLength(seg) == 0 or seg == ".":
     true -> _normalizeSegsAcc(rest, abs, stackRev)
     false -> match seg == "..":
       true -> match stackRev:
@@ -35,10 +35,10 @@ fn _normalizeSegsAcc(segs: List[Str], abs: Bool, stackRev: List[Str]) -> List[St
 fn _composeNormalized(abs: Bool, segs: List[Str]) -> Str = do:
   let body = join(segs, "/")
   return match abs:
-    true -> match strLen(body) == 0:
+    true -> match strLength(body) == 0:
       true -> "/"
       false -> "/" + body
-    false -> match strLen(body) == 0:
+    false -> match strLength(body) == 0:
       true -> "."
       false -> body
 
@@ -55,7 +55,7 @@ fn pathJoin(a: Str, b: Str) -> Str = do:
     true -> pathNormalize(bc)
     false -> do:
       let ac = _canonSep(a)
-      let sep = match strLen(ac) == 0 or endsWith(ac, "/"):
+      let sep = match strLength(ac) == 0 or endsWith(ac, "/"):
         true -> ""
         false -> "/"
       return pathNormalize(ac + sep + bc)
@@ -74,7 +74,7 @@ fn _dropLast(xs: List[Str]) -> List[Str] = match xs:
 
 fn _nonEmptySegs(parts: List[Str], acc: List[Str]) -> List[Str] = match parts:
   Nil -> reverse(acc)
-  Cons(p, rest) -> match strLen(p) == 0:
+  Cons(p, rest) -> match strLength(p) == 0:
     true -> _nonEmptySegs(rest, acc)
     false -> _nonEmptySegs(rest, Cons(p, acc))
 
@@ -110,14 +110,14 @@ fn pathExt(p: Str) -> Str = do:
     true -> ""
     false -> do:
       let dot = _lastDotAcc(b, 0, 0 - 1)
-      let n = strLen(b)
+      let n = strLength(b)
       return match dot <= 0 or dot >= n - 1:
         true -> ""
-        false -> strSlice(b, dot, n)
+        false -> strSliceRange(b, dot, n)
 
 fn pathStem(p: Str) -> Str = do:
   let b = pathBase(p)
   let ext = pathExt(p)
-  return match strLen(ext) == 0:
+  return match strLength(ext) == 0:
     true -> b
-    false -> strSlice(b, 0, strLen(b) - strLen(ext))
+    false -> strSliceRange(b, 0, strLength(b) - strLength(ext))
