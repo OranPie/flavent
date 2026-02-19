@@ -34,7 +34,21 @@ class _Cursor:
     def expect(self, kind: TokenKind, msg: str | None = None) -> Token:
         t = self.peek()
         if t.kind != kind:
-            raise ParseError(msg or f"Expected {kind.name}, got {t.kind.name}", t.span)
+            got = f"{t.kind.name}({t.text!r})" if t.text else t.kind.name
+            base = msg or f"Expected {kind.name}"
+            hint: str | None = None
+            if kind == TokenKind.COLON:
+                hint = "missing ':' before an indented block"
+            elif kind == TokenKind.RPAREN:
+                hint = "missing ')' to close grouped expression or call"
+            elif kind == TokenKind.RBRACKET:
+                hint = "missing ']' to close index or type arguments"
+            elif kind == TokenKind.ARROW:
+                hint = "expected '->' before handler or match arm body"
+            full = f"{base}, got {got}"
+            if hint is not None:
+                full = f"{full}; hint: {hint}"
+            raise ParseError(full, t.span)
         return self.advance()
 
     def match(self, kind: TokenKind) -> Optional[Token]:
@@ -105,6 +119,11 @@ def _parse_top_item(cur: _Cursor) -> ast.TopItem:
         return _parse_on_handler(cur)
 
     t = cur.peek()
+    if t.kind == TokenKind.IDENT and t.text == "test":
+        raise ParseError(
+            "Unexpected top-level token: IDENT; hint: `test \"name\" -> do:` is flvtest syntax and must run via flvtest/pytest",
+            t.span,
+        )
     raise ParseError(f"Unexpected top-level token: {t.kind.name}", t.span)
 
 
@@ -379,6 +398,8 @@ def _parse_event_pattern(cur: _Cursor) -> ast.EventPattern:
         if not cur.at(TokenKind.RPAREN):
             args.append(_parse_expr(cur))
             while cur.match(TokenKind.COMMA):
+                if cur.at(TokenKind.RPAREN):
+                    break
                 args.append(_parse_expr(cur))
         rp = cur.expect(TokenKind.RPAREN)
         span = name.span.merge(rp.span)
@@ -639,6 +660,8 @@ def _parse_postfix(cur: _Cursor) -> ast.Expr:
             if not cur.at(TokenKind.RPAREN):
                 args.append(parse_call_arg())
                 while cur.match(TokenKind.COMMA):
+                    if cur.at(TokenKind.RPAREN):
+                        break
                     args.append(parse_call_arg())
             rp = cur.expect(TokenKind.RPAREN)
             expr = ast.CallExpr(callee=expr, args=args, span=expr.span.merge(rp.span))
@@ -699,9 +722,12 @@ def _parse_primary(cur: _Cursor) -> ast.Expr:
         first = _parse_expr(cur)
         if cur.match(TokenKind.COMMA):
             items = [first]
-            items.append(_parse_expr(cur))
-            while cur.match(TokenKind.COMMA):
+            if not cur.at(TokenKind.RPAREN):
                 items.append(_parse_expr(cur))
+                while cur.match(TokenKind.COMMA):
+                    if cur.at(TokenKind.RPAREN):
+                        break
+                    items.append(_parse_expr(cur))
             rp = cur.expect(TokenKind.RPAREN)
             return ast.TupleLitExpr(items=items, span=first.span.merge(rp.span))
         rp = cur.expect(TokenKind.RPAREN)
@@ -725,6 +751,8 @@ def _parse_primary(cur: _Cursor) -> ast.Expr:
         if not cur.at(TokenKind.RPAREN):
             args.append(_parse_expr(cur))
             while cur.match(TokenKind.COMMA):
+                if cur.at(TokenKind.RPAREN):
+                    break
                 args.append(_parse_expr(cur))
         rp = cur.expect(TokenKind.RPAREN)
         return ast.RpcExpr(sector=sector, fnName=fn, args=args, span=kw.span.merge(rp.span))
@@ -739,6 +767,8 @@ def _parse_primary(cur: _Cursor) -> ast.Expr:
         if not cur.at(TokenKind.RPAREN):
             args.append(_parse_expr(cur))
             while cur.match(TokenKind.COMMA):
+                if cur.at(TokenKind.RPAREN):
+                    break
                 args.append(_parse_expr(cur))
         rp = cur.expect(TokenKind.RPAREN)
         return ast.CallSectorExpr(sector=sector, fnName=fn, args=args, span=kw.span.merge(rp.span))
@@ -750,6 +780,8 @@ def _parse_primary(cur: _Cursor) -> ast.Expr:
         if not cur.at(TokenKind.RPAREN):
             args.append(_parse_expr(cur))
             while cur.match(TokenKind.COMMA):
+                if cur.at(TokenKind.RPAREN):
+                    break
                 args.append(_parse_expr(cur))
         rp = cur.expect(TokenKind.RPAREN)
         return ast.ProceedExpr(args=args, span=kw.span.merge(rp.span))

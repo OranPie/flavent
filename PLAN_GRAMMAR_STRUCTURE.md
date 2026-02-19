@@ -29,9 +29,15 @@ Improve language grammar clarity and compiler structure while reducing runtime d
   - [x] Improved literal diagnostics in lexer:
     - invalid `\x` now reports explicit expectation of two hex digits
     - unterminated literals now distinguish `string` vs `bytes`
-  - [ ] Parser-side recovery diagnostics follow-up remains.
-- [ ] Add parser/lexer regression tests for ambiguous and edge-case constructs.
-- [ ] Improve user-facing error messages with expected-token hints.
+  - [~] Parser-side recovery diagnostics follow-up:
+    - [x] `expect(...)` paths now include token-specific hints (`:`, `)`, `]`, `->`)
+    - [ ] expand recoverable multi-error parsing in future pass
+- [~] Add parser/lexer regression tests for ambiguous and edge-case constructs.
+  - [x] Added parser regression coverage for precedence and trailing-comma forms.
+  - [ ] Expand to additional ambiguity classes (match arms, mixin forms, nested blocks).
+- [~] Improve user-facing error messages with expected-token hints.
+  - [x] Added expected-token hints in core parser `expect` paths.
+  - [ ] Add more context-sensitive hints for declaration-level parse failures.
 
 ## Phase 3: Compiler Structure Improvements
 - [ ] Split parser/lexer helper logic into clearer internal units (without public API breakage).

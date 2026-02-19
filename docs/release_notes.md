@@ -57,3 +57,7 @@ Compatibility note:
 - Improved lexer literal diagnostics:
   - malformed `\x` escapes now report explicit `two hex digits after \x` guidance,
   - unterminated literal errors now distinguish string vs bytes literals.
+- Parser grammar and diagnostics refinements:
+  - expression/event/rpc/call/proceed argument lists now accept trailing commas,
+  - tuple literals now accept trailing commas (including single-element tuple form),
+  - expected-token parse errors now include targeted hints for common delimiters.

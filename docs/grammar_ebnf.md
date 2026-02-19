@@ -68,7 +68,7 @@ sector_item     ::= let_decl | need_decl | fn_decl | on_handler
 
 ```ebnf
 on_handler      ::= "on" event_pattern [ "as" ident ] [ "when" expr ] "->" ( expr | "do" ":" block )
-event_pattern   ::= qualified_name [ "(" [ expr { "," expr } ] ")" ]
+event_pattern   ::= qualified_name [ "(" [ expr { "," expr } [ "," ] ] ")" ]
 
 block           ::= NL INDENT { stmt [ NL ] } DEDENT
 
@@ -95,7 +95,7 @@ pipe_expr       ::= binary_expr { "|>" binary_expr }
 binary_expr     ::= unary_expr { binop unary_expr }   (* precedence table below *)
 unary_expr      ::= ( "-" | "not" ) unary_expr | postfix_expr
 postfix_expr    ::= primary { call_suffix | member_suffix | index_suffix | try_suffix }
-call_suffix     ::= "(" [ call_arg { "," call_arg } ] ")"
+call_suffix     ::= "(" [ call_arg { "," call_arg } [ "," ] ] ")"
 call_arg        ::= expr | "*" expr | "**" expr | ident "=" expr
 member_suffix   ::= "." ident
 index_suffix    ::= "[" expr "]"
@@ -103,12 +103,12 @@ try_suffix      ::= "?"
 
 primary         ::= INT | FLOAT | STR | BYTES | BOOL | ident
                  | "{" [ record_item { "," record_item } [ "," ] ] "}"
-                 | "(" ")" | "(" expr ")" | "(" expr "," expr { "," expr } ")"
+                 | "(" ")" | "(" expr ")" | "(" expr "," [ expr { "," expr } ] [ "," ] ")"
                  | "match" expr ":" NL INDENT { pattern "->" ( expr | "do" ":" block ) [ NL ] } DEDENT
                  | "await" qualified_name
-                 | "rpc" ident "." ident "(" [ expr { "," expr } ] ")"
-                 | "call" ident "." ident "(" [ expr { "," expr } ] ")"
-                 | "proceed" "(" [ expr { "," expr } ] ")"
+                 | "rpc" ident "." ident "(" [ expr { "," expr } [ "," ] ] ")"
+                 | "call" ident "." ident "(" [ expr { "," expr } [ "," ] ] ")"
+                 | "proceed" "(" [ expr { "," expr } [ "," ] ] ")"
 record_item     ::= ident "=" expr
 ```
 
