@@ -71,6 +71,10 @@
 
 ## 标准库扩展（Phase 2 启动）
 
+- 新增 `env` 标准库模块（`Result` 风格环境变量接口）：
+  - `envGet` / `envGetOr` / `envSet` / `envUnset`
+  - `envHas` / `envList` / `envClear`
+  - 提供显式且确定性的 `Env` 状态值（通过 `envEmpty` 初始化）
 - 新增 `collections.deque` 标准库模块（并提供 `deque` 兼容 wrapper）：
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -91,6 +95,8 @@
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - 已补充 EN/ZH 文档与索引入口：
+  - `docs/en/stdlib/env.md`
+  - `docs/zh/stdlib/env.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`

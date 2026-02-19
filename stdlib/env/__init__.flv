@@ -1,0 +1,27 @@
+use collections.map
+use collections.list
+use std.result
+
+type Env = Map[Str, Str]
+
+type EnvVar = { key: Str, value: Str }
+
+fn _envVarsFromMapEntries(xs: List[MapEntry[Str, Str]]) -> List[EnvVar] = match xs:
+  Nil -> Nil
+  Cons(e, rest) -> Cons({ key = e.key, value = e.value }, _envVarsFromMapEntries(rest))
+
+fn envEmpty() -> Env = mapEmpty()
+
+fn envGet(state: Env, key: Str) -> Result[Option[Str], Str] = Ok(mapGet(state, key))
+
+fn envGetOr(state: Env, key: Str, default: Str) -> Result[Str, Str] = Ok(mapGetOr(state, key, default))
+
+fn envSet(state: Env, key: Str, value: Str) -> Result[Env, Str] = Ok(mapPut(state, key, value))
+
+fn envUnset(state: Env, key: Str) -> Result[Env, Str] = Ok(mapRemove(state, key))
+
+fn envHas(state: Env, key: Str) -> Result[Bool, Str] = Ok(mapHasKey(state, key))
+
+fn envList(state: Env) -> Result[List[EnvVar], Str] = Ok(_envVarsFromMapEntries(mapToList(state)))
+
+fn envClear(state: Env) -> Result[Env, Str] = Ok(mapEmpty())

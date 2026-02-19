@@ -29,7 +29,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Add `collections.deque` module for explicit queue/deque operations
 
 ## Phase 3: System & Runtime Expansion
-- [ ] Add `env` module (get/set/list env vars with `Result`)
+- [x] Add `env` module (get/set/list env vars with `Result`)
 - [ ] Add `process` module (spawn/run/wait wrappers, structured errors)
 - [ ] Add `cliargs` module (argument parsing helpers for apps/tools)
 - [ ] Add `log` module (leveled logging helpers over `consoleIO`)

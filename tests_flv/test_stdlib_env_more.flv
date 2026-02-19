@@ -1,0 +1,27 @@
+use flvtest
+use env
+use collections.list
+
+fn _unwrapEnv(r: Result[Env, Str], fallback: Env) -> Env = match r:
+  Err(_) -> fallback
+  Ok(e) -> e
+
+test "env-set-get-has-unset" -> do:
+  let e0 = envEmpty()
+  let e1 = _unwrapEnv(envSet(e0, "A", "1"), e0)
+  assertEq(envGet(e1, "A"), Ok(Some("1")))?
+  assertEq(envHas(e1, "A"), Ok(true))?
+  let e2 = _unwrapEnv(envUnset(e1, "A"), e1)
+  assertEq(envGet(e2, "A"), Ok(None))?
+  assertEq(envHas(e2, "A"), Ok(false))?
+
+test "env-getor-and-list" -> do:
+  let e0 = envEmpty()
+  assertEq(envGetOr(e0, "X", "fallback"), Ok("fallback"))?
+  let e1 = _unwrapEnv(envSet(e0, "X", "42"), e0)
+  assertEq(envGetOr(e1, "X", "fallback"), Ok("42"))?
+  let listed = envList(e1)
+  let want = Ok(Cons({ key = "X", value = "42" }, Nil))
+  assertEq(listed, want)?
+  let e2 = _unwrapEnv(envClear(e1), e1)
+  assertEq(envList(e2), Ok(Nil))?

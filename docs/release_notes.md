@@ -71,6 +71,10 @@ Compatibility note:
 
 ## Stdlib Expansion (Phase 2 Kickoff)
 
+- Added new `env` stdlib module with `Result`-based env-style operations:
+  - `envGet` / `envGetOr` / `envSet` / `envUnset`
+  - `envHas` / `envList` / `envClear`
+  - deterministic explicit `Env` state value (`envEmpty` bootstrap)
 - Added new `collections.deque` stdlib module (plus `deque` compatibility wrapper):
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -91,6 +95,8 @@ Compatibility note:
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - Added EN/ZH docs pages and index links:
+  - `docs/en/stdlib/env.md`
+  - `docs/zh/stdlib/env.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`
