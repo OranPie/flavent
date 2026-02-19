@@ -82,6 +82,10 @@ Compatibility note:
 - Added new `cliargs` stdlib module for deterministic argv parsing:
   - `cliParse`, `cliHasFlag`, `cliGetOption`, `cliPositionals`
   - supports long options, short flag bundles, and `--` terminator
+- Added new `log` stdlib module for leveled console logging:
+  - `logLevel*` helpers and configurable `Logger` (`logDefault`, `logNamed`)
+  - pure helpers: `logShouldEmit`, `logRecord`, `logFormat`, `logPrepare`
+  - effectful emitters in `sector log`: `logInfo`, `logWarn`, `logError`, etc.
 - Added new `collections.deque` stdlib module (plus `deque` compatibility wrapper):
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -108,6 +112,8 @@ Compatibility note:
   - `docs/zh/stdlib/process.md`
   - `docs/en/stdlib/cliargs.md`
   - `docs/zh/stdlib/cliargs.md`
+  - `docs/en/stdlib/log.md`
+  - `docs/zh/stdlib/log.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`

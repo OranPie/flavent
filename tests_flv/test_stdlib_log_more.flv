@@ -1,0 +1,19 @@
+use flvtest
+use log
+
+test "log-format-and-filter" -> do:
+  let d0 = logDefault()
+  assertEq(logPrepare(d0, logLevelInfo(), "ready"), Some("[INFO] ready"))?
+  assertEq(logPrepare(d0, logLevelDebug(), "dbg"), None)?
+
+  let app = logWithMinLevel(logNamed("core"), logLevelDebug())
+  assertEq(logPrepare(app, logLevelDebug(), "dbg"), Some("[DEBUG] [core] dbg"))?
+
+  let rec = logRecord(logLevelError(), app, "boom")
+  assertEq(logFormat(rec), "[ERROR] [core] boom")?
+
+test "log-level-priority" -> do:
+  let l0 = logWithMinLevel(logDefault(), logLevelWarn())
+  assertTrue(not logShouldEmit(l0, logLevelInfo()))?
+  assertTrue(logShouldEmit(l0, logLevelWarn()))?
+  assertTrue(logShouldEmit(l0, logLevelError()))?

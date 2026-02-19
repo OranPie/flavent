@@ -82,6 +82,10 @@
 - 新增 `cliargs` 标准库模块（确定性 argv 解析）：
   - `cliParse`、`cliHasFlag`、`cliGetOption`、`cliPositionals`
   - 支持长参数、短参数组合与 `--` 终止符
+- 新增 `log` 标准库模块（分级控制台日志）：
+  - 提供 `logLevel*` 等级与可配置 `Logger`（`logDefault`、`logNamed`）
+  - 纯函数辅助：`logShouldEmit`、`logRecord`、`logFormat`、`logPrepare`
+  - `sector log` 输出函数：`logInfo`、`logWarn`、`logError` 等
 - 新增 `collections.deque` 标准库模块（并提供 `deque` 兼容 wrapper）：
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -108,6 +112,8 @@
   - `docs/zh/stdlib/process.md`
   - `docs/en/stdlib/cliargs.md`
   - `docs/zh/stdlib/cliargs.md`
+  - `docs/en/stdlib/log.md`
+  - `docs/zh/stdlib/log.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`

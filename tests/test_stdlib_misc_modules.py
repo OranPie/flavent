@@ -29,6 +29,7 @@ use collections.set
 use bytelib
 use u32
 use cliargs
+use log
 use env
 use process
 use fslib
@@ -143,6 +144,7 @@ sector s:
     let _sf1 = startsWith("hello", "he")
     let _sf2 = trimSpaces("  x  ")
     let _ca0 = cliParse(Cons("--x", Cons("file", Nil)))
+    let _lg0 = logPrepare(logDefault(), logLevelInfo(), "ok")
 
     let a = wrap(0 - 1)
     let b = wrap(1)

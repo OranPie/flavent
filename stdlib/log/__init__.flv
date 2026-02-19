@@ -1,0 +1,70 @@
+use consoleIO
+
+type LogLevel = { name: Str, priority: Int }
+
+type Logger = { name: Str, minPriority: Int }
+
+type LogRecord = { level: LogLevel, logger: Str, message: Str }
+
+fn logLevelTrace() -> LogLevel = { name = "TRACE", priority = 10 }
+
+fn logLevelDebug() -> LogLevel = { name = "DEBUG", priority = 20 }
+
+fn logLevelInfo() -> LogLevel = { name = "INFO", priority = 30 }
+
+fn logLevelWarn() -> LogLevel = { name = "WARN", priority = 40 }
+
+fn logLevelError() -> LogLevel = { name = "ERROR", priority = 50 }
+
+fn logDefault() -> Logger = { name = "", minPriority = logLevelInfo().priority }
+
+fn logNamed(name: Str) -> Logger = { name = name, minPriority = logLevelInfo().priority }
+
+fn logWithName(logger: Logger, name: Str) -> Logger = { name = name, minPriority = logger.minPriority }
+
+fn logWithMinLevel(logger: Logger, level: LogLevel) -> Logger = { name = logger.name, minPriority = level.priority }
+
+fn logShouldEmit(logger: Logger, level: LogLevel) -> Bool = level.priority >= logger.minPriority
+
+fn logRecord(level: LogLevel, logger: Logger, message: Str) -> LogRecord = {
+  level = level,
+  logger = logger.name,
+  message = message
+}
+
+fn logFormat(rec: LogRecord) -> Str = do:
+  let levelPrefix = "[" + rec.level.name + "] "
+  return match rec.logger == "":
+    true -> levelPrefix + rec.message
+    false -> levelPrefix + "[" + rec.logger + "] " + rec.message
+
+fn logPrepare(logger: Logger, level: LogLevel, message: Str) -> Option[Str] = match logShouldEmit(logger, level):
+  true -> Some(logFormat(logRecord(level, logger, message)))
+  false -> None
+
+sector log:
+  fn logWrite(logger: Logger, level: LogLevel, message: Str) -> Unit = match logPrepare(logger, level, message):
+    None -> ()
+    Some(line) -> match level.priority >= logLevelWarn().priority:
+      true -> call consoleIO.printlnErr(line)
+      false -> call consoleIO.println(line)
+
+  fn logTraceWith(logger: Logger, message: Str) -> Unit = logWrite(logger, logLevelTrace(), message)
+
+  fn logDebugWith(logger: Logger, message: Str) -> Unit = logWrite(logger, logLevelDebug(), message)
+
+  fn logInfoWith(logger: Logger, message: Str) -> Unit = logWrite(logger, logLevelInfo(), message)
+
+  fn logWarnWith(logger: Logger, message: Str) -> Unit = logWrite(logger, logLevelWarn(), message)
+
+  fn logErrorWith(logger: Logger, message: Str) -> Unit = logWrite(logger, logLevelError(), message)
+
+  fn logTrace(message: Str) -> Unit = logTraceWith(logDefault(), message)
+
+  fn logDebug(message: Str) -> Unit = logDebugWith(logDefault(), message)
+
+  fn logInfo(message: Str) -> Unit = logInfoWith(logDefault(), message)
+
+  fn logWarn(message: Str) -> Unit = logWarnWith(logDefault(), message)
+
+  fn logError(message: Str) -> Unit = logErrorWith(logDefault(), message)

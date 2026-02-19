@@ -32,7 +32,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Add `env` module (get/set/list env vars with `Result`)
 - [x] Add `process` module (spawn/run/wait wrappers, structured errors)
 - [x] Add `cliargs` module (argument parsing helpers for apps/tools)
-- [ ] Add `log` module (leveled logging helpers over `consoleIO`)
+- [x] Add `log` module (leveled logging helpers over `consoleIO`)
 
 ## Phase 4: Quality Gates Per Module
 - [ ] EN docs page in `docs/en/stdlib/*.md`
