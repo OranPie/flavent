@@ -1,0 +1,34 @@
+use flvtest
+use collections.deque
+use collections.list
+
+test "deque-push-peek-pop" -> do:
+  let d0 = dequeEmpty()
+  let d1 = dequePushFront(d0, 2)
+  let d2 = dequePushBack(d1, 3)
+  let d3 = dequePushFront(d2, 1)
+  assertEq(dequePeekFront(d3), Some(1))?
+  assertEq(dequePeekBack(d3), Some(3))?
+  let p1 = dequePopFrontOr(d3, 0)
+  assertEq(p1.value, 1)?
+  let p2 = dequePopBackOr(p1.rest, 0)
+  assertEq(p2.value, 3)?
+  assertEq(dequePeekFront(p2.rest), Some(2))?
+
+test "deque-list-ops" -> do:
+  let d0 = dequeFromList(Cons(1, Cons(2, Cons(3, Nil))))
+  assertEq(dequeSize(d0), 3)?
+  assertEq(dequeToList(d0), Cons(1, Cons(2, Cons(3, Nil))))?
+  let d1 = dequePushAllBack(d0, Cons(4, Cons(5, Nil)))
+  assertEq(dequeToList(d1), Cons(1, Cons(2, Cons(3, Cons(4, Cons(5, Nil))))))?
+  let d2 = dequePushAllFront(d0, Cons(9, Cons(8, Nil)))
+  assertEq(dequeToList(d2), Cons(8, Cons(9, Cons(1, Cons(2, Cons(3, Nil))))))?
+  let d3 = dequeConcat(dequeFromList(Cons(1, Nil)), dequeFromList(Cons(2, Cons(3, Nil))))
+  assertEq(dequeToList(d3), Cons(1, Cons(2, Cons(3, Nil))))?
+
+test "deque-defaults-and-wrapper" -> do:
+  let d0 = dequeEmpty()
+  assertEq(dequePeekFrontOr(d0, 7), 7)?
+  assertEq(dequePeekBackOr(d0, 8), 8)?
+  let p0 = dequePopBackOr(d0, 9)
+  assertEq(p0.value, 9)?

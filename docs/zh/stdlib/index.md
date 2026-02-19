@@ -5,7 +5,9 @@
 ## 核心
 - [std.option](./std.option.md)
 - [std.result](./std.result.md)
-- [collections（list/map/set/queue/heap）](./collections.md)
+- [collections（list/map/set/queue/deque/heap）](./collections.md)
+- [collections.deque](./collections.deque.md)
+- [deque（兼容 wrapper）](./deque.md)
 
 ## 字节 / 字符串
 - [bytelib](./bytelib.md)

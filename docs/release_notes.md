@@ -71,6 +71,10 @@ Compatibility note:
 
 ## Stdlib Expansion (Phase 2 Kickoff)
 
+- Added new `collections.deque` stdlib module (plus `deque` compatibility wrapper):
+  - `dequePushFront` / `dequePushBack`
+  - `dequePopFront` / `dequePopBack`
+  - `dequePeekFront` / `dequePeekBack` and list conversion helpers
 - Added new `datetime` stdlib module with pure-Flavent helpers:
   - `parseDate` / `parseTime` / `parseDateTime`
   - `formatDate` / `formatTime` / `formatDateTime`
@@ -87,6 +91,10 @@ Compatibility note:
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - Added EN/ZH docs pages and index links:
+  - `docs/en/stdlib/collections.deque.md`
+  - `docs/zh/stdlib/collections.deque.md`
+  - `docs/en/stdlib/deque.md`
+  - `docs/zh/stdlib/deque.md`
   - `docs/en/stdlib/datetime.md`
   - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`

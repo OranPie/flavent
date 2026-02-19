@@ -3,3 +3,4 @@ use collections.list
 use collections.queue
 use collections.map
 use collections.set
+use collections.deque

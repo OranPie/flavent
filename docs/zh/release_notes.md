@@ -71,6 +71,10 @@
 
 ## 标准库扩展（Phase 2 启动）
 
+- 新增 `collections.deque` 标准库模块（并提供 `deque` 兼容 wrapper）：
+  - `dequePushFront` / `dequePushBack`
+  - `dequePopFront` / `dequePopBack`
+  - `dequePeekFront` / `dequePeekBack` 与列表互转辅助
 - 新增 `datetime` 标准库模块（纯 Flavent 实现）：
   - `parseDate` / `parseTime` / `parseDateTime`
   - `formatDate` / `formatTime` / `formatDateTime`
@@ -87,6 +91,10 @@
   - `queryEncode` / `queryDecode`
   - `queryParse` / `queryBuild`
 - 已补充 EN/ZH 文档与索引入口：
+  - `docs/en/stdlib/collections.deque.md`
+  - `docs/zh/stdlib/collections.deque.md`
+  - `docs/en/stdlib/deque.md`
+  - `docs/zh/stdlib/deque.md`
   - `docs/en/stdlib/datetime.md`
   - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`

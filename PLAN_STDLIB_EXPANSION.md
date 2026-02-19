@@ -26,7 +26,7 @@ Expand Flavent stdlib with consistent APIs, fewer duplicated helpers, and strong
 - [x] Add `csv` module (read/write rows, delimiter/quote support)
 - [x] Add `path` module (join/base/ext/normalize helpers)
 - [x] Add `datetime` module (parse/format ISO-like helpers)
-- [ ] Add `collections.deque` module for explicit queue/deque operations
+- [x] Add `collections.deque` module for explicit queue/deque operations
 
 ## Phase 3: System & Runtime Expansion
 - [ ] Add `env` module (get/set/list env vars with `Result`)

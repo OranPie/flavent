@@ -1,0 +1,81 @@
+use collections.list
+
+type Deque[T] = { front: List[T], back: List[T] }
+
+type DequePop[T] = { value: T, rest: Deque[T] }
+
+fn dequeEmpty[T]() -> Deque[T] = { front = Nil, back = Nil }
+
+fn _dequeNormalizeFront[T](d: Deque[T]) -> Deque[T] = do:
+  if isEmpty(d.front):
+    return { front = reverse(d.back), back = Nil }
+  else:
+    return d
+
+fn _dequeNormalizeBack[T](d: Deque[T]) -> Deque[T] = do:
+  if isEmpty(d.back):
+    return { front = Nil, back = reverse(d.front) }
+  else:
+    return d
+
+fn dequeIsEmpty[T](d: Deque[T]) -> Bool = isEmpty(d.front) and isEmpty(d.back)
+
+fn dequePushFront[T](d: Deque[T], x: T) -> Deque[T] = { front = Cons(x, d.front), back = d.back }
+
+fn dequePushBack[T](d: Deque[T], x: T) -> Deque[T] = { front = d.front, back = Cons(x, d.back) }
+
+fn dequePeekFront[T](d: Deque[T]) -> Option[T] = do:
+  let d2 = _dequeNormalizeFront(d)
+  return match d2.front:
+    Nil -> None
+    Cons(x, _) -> Some(x)
+
+fn dequePeekBack[T](d: Deque[T]) -> Option[T] = do:
+  let d2 = _dequeNormalizeBack(d)
+  return match d2.back:
+    Nil -> None
+    Cons(x, _) -> Some(x)
+
+fn dequePopFront[T](d: Deque[T]) -> Option[DequePop[T]] = do:
+  let d2 = _dequeNormalizeFront(d)
+  return match d2.front:
+    Nil -> None
+    Cons(x, rest) -> Some({ value = x, rest = { front = rest, back = d2.back } })
+
+fn dequePopBack[T](d: Deque[T]) -> Option[DequePop[T]] = do:
+  let d2 = _dequeNormalizeBack(d)
+  return match d2.back:
+    Nil -> None
+    Cons(x, rest) -> Some({ value = x, rest = { front = d2.front, back = rest } })
+
+fn dequePeekFrontOr[T](d: Deque[T], default: T) -> T = match dequePeekFront(d):
+  None -> default
+  Some(x) -> x
+
+fn dequePeekBackOr[T](d: Deque[T], default: T) -> T = match dequePeekBack(d):
+  None -> default
+  Some(x) -> x
+
+fn dequePopFrontOr[T](d: Deque[T], default: T) -> DequePop[T] = match dequePopFront(d):
+  None -> { value = default, rest = d }
+  Some(p) -> p
+
+fn dequePopBackOr[T](d: Deque[T], default: T) -> DequePop[T] = match dequePopBack(d):
+  None -> { value = default, rest = d }
+  Some(p) -> p
+
+fn dequeSize[T](d: Deque[T]) -> Int = length(d.front) + length(d.back)
+
+fn dequeToList[T](d: Deque[T]) -> List[T] = append(d.front, reverse(d.back))
+
+fn dequeFromList[T](xs: List[T]) -> Deque[T] = { front = xs, back = Nil }
+
+fn dequePushAllBack[T](d: Deque[T], xs: List[T]) -> Deque[T] = match xs:
+  Nil -> d
+  Cons(x, rest) -> dequePushAllBack(dequePushBack(d, x), rest)
+
+fn dequePushAllFront[T](d: Deque[T], xs: List[T]) -> Deque[T] = match xs:
+  Nil -> d
+  Cons(x, rest) -> dequePushAllFront(dequePushFront(d, x), rest)
+
+fn dequeConcat[T](a: Deque[T], b: Deque[T]) -> Deque[T] = dequePushAllBack(a, dequeToList(b))

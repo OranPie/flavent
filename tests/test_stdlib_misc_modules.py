@@ -23,6 +23,7 @@ use hashlib
 use collections.map
 use collections.list
 use collections.queue
+use collections.deque
 use collections.heap
 use collections.set
 use bytelib
@@ -218,6 +219,12 @@ sector s:
     let _qpo = queuePopOr(q0, 9)
     let _qko = queuePeekOr(q0, 9)
     let _qc = queueConcat(q1, q2)
+
+    let d0 = dequeEmpty()
+    let d1 = dequePushFront(d0, 1)
+    let d2 = dequePushBack(d1, 2)
+    let _df = dequePeekFront(d2)
+    let _db = dequePeekBack(d2)
 
     let h0 = heapEmpty()
     let h1 = heapInsert(2, heapInsert(1, heapInsert(3, h0)))

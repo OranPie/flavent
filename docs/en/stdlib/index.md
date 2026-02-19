@@ -5,7 +5,9 @@ This directory contains **one page per stdlib module**.
 ## Core
 - [std.option](./std.option.md)
 - [std.result](./std.result.md)
-- [collections (list/map/set/queue/heap)](./collections.md)
+- [collections (list/map/set/queue/deque/heap)](./collections.md)
+- [collections.deque](./collections.deque.md)
+- [deque (compat wrapper)](./deque.md)
 
 ## Bytes / Strings
 - [bytelib](./bytelib.md)
