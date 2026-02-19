@@ -1,4 +1,3 @@
-use _bridge_python
 use collections.list
 use bytelib
 use stringlib
@@ -38,9 +37,9 @@ fn _asciiLower(c: Int) -> Int = match c >= 65 and c <= 90:
 
 fn _lowerAsciiAcc(s: Str, i: Int, n: Int, acc: Str) -> Str = match i >= n:
   true -> acc
-  false -> _lowerAsciiAcc(s, i + 1, n, acc + strFromCode(_asciiLower(strCodeAt(s, i))))
+  false -> _lowerAsciiAcc(s, i + 1, n, acc + strFromCodePoint(_asciiLower(strCode(s, i))))
 
-fn lowerAscii(s: Str) -> Str = _lowerAsciiAcc(s, 0, strLen(s), "")
+fn lowerAscii(s: Str) -> Str = _lowerAsciiAcc(s, 0, strLength(s), "")
 
 fn _headersGetCI(xs: List[Header], keyLower: Str) -> Option[Str] = match xs:
   Nil -> None
@@ -65,7 +64,7 @@ fn _intToStrAcc(n: Int, acc: Str) -> Str = match n == 0:
   false -> do:
     let q = n / 10
     let d = n - q * 10
-    let ch = strFromCode(48 + d)
+    let ch = strFromCodePoint(48 + d)
     return _intToStrAcc(q, ch + acc)
 
 fn intToStr(n: Int) -> Str = match n == 0:
@@ -100,29 +99,29 @@ fn buildRequest(method: Str, host: Str, path: Str, headers: List[Header], body: 
 fn _isUnreserved(c: Int) -> Bool = (c >= 48 and c <= 57) or (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c == 45 or c == 46 or c == 95 or c == 126
 
 fn _hexDigit(n: Int) -> Str = match n < 10:
-  true -> strFromCode(48 + n)
-  false -> strFromCode(65 + (n - 10))
+  true -> strFromCodePoint(48 + n)
+  false -> strFromCodePoint(65 + (n - 10))
 
 fn _urlEncodeAcc(s: Str, i: Int, n: Int, acc: Str) -> Str = match i >= n:
   true -> acc
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     return match c >= 0 and c < 128 and _isUnreserved(c):
-      true -> _urlEncodeAcc(s, i + 1, n, acc + strFromCode(c))
+      true -> _urlEncodeAcc(s, i + 1, n, acc + strFromCodePoint(c))
       false -> match c >= 0 and c < 128:
         true -> do:
           let hi = c / 16
           let lo = c - hi * 16
           return _urlEncodeAcc(s, i + 1, n, acc + "%" + _hexDigit(hi) + _hexDigit(lo))
-        false -> _urlEncodeAcc(s, i + 1, n, acc + strFromCode(c))
+        false -> _urlEncodeAcc(s, i + 1, n, acc + strFromCodePoint(c))
 
-fn urlEncode(s: Str) -> Str = _urlEncodeAcc(s, 0, strLen(s), "")
+fn urlEncode(s: Str) -> Str = _urlEncodeAcc(s, 0, strLength(s), "")
 
 fn _buildQueryAcc(xs: List[QueryParam], acc: Str) -> Str = match xs:
   Nil -> acc
   Cons(p, rest) -> do:
     let part = urlEncode(p.key) + "=" + urlEncode(p.value)
-    let acc2 = match strLen(acc) == 0:
+    let acc2 = match strLength(acc) == 0:
       true -> part
       false -> acc + "&" + part
     return _buildQueryAcc(rest, acc2)
@@ -140,12 +139,12 @@ fn buildPathWithQuery(path: Str, xs: List[QueryParam]) -> Str = match xs:
 fn _parseIntDigitsAcc(s: Str, i: Int, n: Int, acc: Int) -> Int = match i >= n:
   true -> acc
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     return match c >= 48 and c <= 57:
       true -> _parseIntDigitsAcc(s, i + 1, n, acc * 10 + (c - 48))
       false -> acc
 
-fn parseIntDigits(s: Str) -> Int = _parseIntDigitsAcc(s, 0, strLen(s), 0)
+fn parseIntDigits(s: Str) -> Int = _parseIntDigitsAcc(s, 0, strLength(s), 0)
 
 fn _splitLineBytes(b: Bytes) -> _BytesPair = do:
   let crlf = bytesFromList(Cons(13, Cons(10, Nil)))
@@ -159,8 +158,8 @@ fn _parseHeaderLine(line: Str) -> Option[Header] = do:
   return match i < 0:
     true -> None
     false -> do:
-      let k = strSlice(line, 0, i)
-      let v0 = strSlice(line, i + 1, strLen(line))
+      let k = strSliceRange(line, 0, i)
+      let v0 = strSliceRange(line, i + 1, strLength(line))
       let v = stringlib.trimLeftSpaces(v0)
       return Some({ key = k, value = v })
 
@@ -188,10 +187,10 @@ fn _parseStatusLine(line: Str) -> _StatusInfo = do:
     false -> do:
       let i2 = stringlib.strFind(line, " ", i1 + 1)
       return match i2 < 0:
-        true -> { status = parseIntDigits(strSlice(line, i1 + 1, strLen(line))), reason = "" }
+        true -> { status = parseIntDigits(strSliceRange(line, i1 + 1, strLength(line))), reason = "" }
         false -> do:
-          let codeStr = strSlice(line, i1 + 1, i2)
-          let reason = strSlice(line, i2 + 1, strLen(line))
+          let codeStr = strSliceRange(line, i1 + 1, i2)
+          let reason = strSliceRange(line, i2 + 1, strLength(line))
           return { status = parseIntDigits(codeStr), reason = reason }
 
 fn buildGetRequest(host: Str, path: Str) -> Bytes = do:
@@ -230,7 +229,7 @@ fn _parseHexAcc(s: Str, i: Int, n: Int, acc: Int, seen: Bool) -> Result[Int, Str
     true -> Ok(acc)
     false -> Err("bad chunk size")
   false -> do:
-    let c = strCodeAt(s, i)
+    let c = strCode(s, i)
     return match c == 59:
       true -> match seen:
         true -> Ok(acc)
@@ -243,7 +242,7 @@ fn _parseHexAcc(s: Str, i: Int, n: Int, acc: Int, seen: Bool) -> Result[Int, Str
             false -> Err("bad chunk size")
           false -> _parseHexAcc(s, i + 1, n, acc * 16 + v, true)
 
-fn parseHexDigits(s: Str) -> Result[Int, Str] = _parseHexAcc(s, 0, strLen(s), 0, false)
+fn parseHexDigits(s: Str) -> Result[Int, Str] = _parseHexAcc(s, 0, strLength(s), 0, false)
 
 fn _decodeChunkedAcc(b: Bytes, chunks: List[Bytes]) -> Result[List[Bytes], Str] = match bytesLen(b) == 0:
   true -> Err("bad chunked encoding")

@@ -1,7 +1,7 @@
-use _bridge_python
 use collections.list
 use bytelib
 use u32
+use stringlib
 
 // Minimal struct-like packing/unpacking for Flavent.
 // Supported formats: 
@@ -64,7 +64,7 @@ fn _stIsDigit(c: Int) -> Bool = c >= 48 and c <= 57
 fn _stParseUIntAcc(fmt: Str, i: Int, n: Int, acc: Int) -> _StParseRes = match i >= n:
   true -> { value = acc, next = i }
   false -> do:
-    let c = strCodeAt(fmt, i)
+    let c = strCode(fmt, i)
     return match _stIsDigit(c):
       false -> { value = acc, next = i }
       true -> _stParseUIntAcc(fmt, i + 1, n, acc * 10 + (c - 48))
@@ -85,7 +85,7 @@ fn _stOneSize(code: Int) -> Result[Int, Str] = do:
 fn _stCalcAcc(fmt: Str, i: Int, n: Int, acc: Int) -> Result[Int, Str] = match i >= n:
   true -> Ok(acc)
   false -> do:
-    let c = strCodeAt(fmt, i)
+    let c = strCode(fmt, i)
     return match c == 60 or c == 62:
       true -> _stCalcAcc(fmt, i + 1, n, acc)
       false -> do:
@@ -96,18 +96,18 @@ fn _stCalcAcc(fmt: Str, i: Int, n: Int, acc: Int) -> Result[Int, Str] = match i 
         return match p.next >= n:
           true -> Err("dangling count")
           false -> do:
-            let code = strCodeAt(fmt, p.next)
+            let code = strCode(fmt, p.next)
             let sz = _stOneSize(code)
             return match sz:
               Err(e) -> Err(e)
               Ok(one) -> _stCalcAcc(fmt, p.next + 1, n, acc + rep * one)
 
-fn calcsize(fmt: Str) -> Result[Int, Str] = _stCalcAcc(fmt, 0, strLen(fmt), 0)
+fn calcsize(fmt: Str) -> Result[Int, Str] = _stCalcAcc(fmt, 0, strLength(fmt), 0)
 
 fn _stEndian(fmt: Str) -> _StEndianInfo = do:
-  let n = strLen(fmt)
+  let n = strLength(fmt)
   if n > 0:
-    let c0 = strCodeAt(fmt, 0)
+    let c0 = strCode(fmt, 0)
     if c0 == 62:
       return { endian = Big, start = 1 }
     if c0 == 60:
@@ -166,7 +166,7 @@ fn _stPackFmtAcc(fmt: Str, i: Int, n: Int, endian: Endian, vs: List[Int], out: L
     Nil -> Ok(reverse(out))
     Cons(_, _) -> Err("too many values")
   false -> do:
-    let c = strCodeAt(fmt, i)
+    let c = strCode(fmt, i)
     return match c == 60 or c == 62:
       true -> do:
         let endian2 = match c == 62:
@@ -181,7 +181,7 @@ fn _stPackFmtAcc(fmt: Str, i: Int, n: Int, endian: Endian, vs: List[Int], out: L
         return match p.next >= n:
           true -> Err("dangling count")
           false -> do:
-            let code = strCodeAt(fmt, p.next)
+            let code = strCode(fmt, p.next)
             return _stPackFmtRep(fmt, p.next + 1, n, endian, code, rep, vs, out)
 
 fn _stPackFmtRep(fmt: Str, i: Int, n: Int, endian: Endian, code: Int, rep: Int, vs: List[Int], out: List[Bytes]) -> Result[List[Bytes], Str] = match rep <= 0:
@@ -202,7 +202,7 @@ fn _stPackFmtRep(fmt: Str, i: Int, n: Int, endian: Endian, code: Int, rep: Int, 
 
 fn pack(fmt: Str, values: List[Int]) -> Result[Bytes, Str] = do:
   let e = _stEndian(fmt)
-  let parts = _stPackFmtAcc(fmt, e.start, strLen(fmt), e.endian, values, Nil)
+  let parts = _stPackFmtAcc(fmt, e.start, strLength(fmt), e.endian, values, Nil)
   return match parts:
     Err(msg) -> Err(msg)
     Ok(xs) -> Ok(bytesConcatAll(xs))
@@ -210,7 +210,7 @@ fn pack(fmt: Str, values: List[Int]) -> Result[Bytes, Str] = do:
 fn _stUnpackAcc(fmt: Str, i: Int, n: Int, endian: Endian, b: Bytes, off: Int, acc: List[Int]) -> Result[List[Int], Str] = match i >= n:
   true -> Ok(reverse(acc))
   false -> do:
-    let c = strCodeAt(fmt, i)
+    let c = strCode(fmt, i)
     return match c == 60 or c == 62:
       true -> do:
         let endian2 = match c == 62:
@@ -225,7 +225,7 @@ fn _stUnpackAcc(fmt: Str, i: Int, n: Int, endian: Endian, b: Bytes, off: Int, ac
         return match p.next >= n:
           true -> Err("dangling count")
           false -> do:
-            let code = strCodeAt(fmt, p.next)
+            let code = strCode(fmt, p.next)
             return _stUnpackRep(fmt, p.next + 1, n, endian, code, rep, b, off, acc)
 
 fn _stUnpackOne(endian: Endian, code: Int, b: Bytes, off: Int) -> Result[_StUnpackRes, Str] = do:
@@ -264,6 +264,6 @@ fn _stUnpackRep(fmt: Str, i: Int, n: Int, endian: Endian, code: Int, rep: Int, b
 
 fn unpackFrom(fmt: Str, b: Bytes, offset: Int) -> Result[List[Int], Str] = do:
   let e = _stEndian(fmt)
-  return _stUnpackAcc(fmt, e.start, strLen(fmt), e.endian, b, offset, Nil)
+  return _stUnpackAcc(fmt, e.start, strLength(fmt), e.endian, b, offset, Nil)
 
 fn unpack(fmt: Str, b: Bytes) -> Result[List[Int], Str] = unpackFrom(fmt, b, 0)

@@ -1,7 +1,7 @@
 use std.option
 use std.result
-use _bridge_python
 use collections.list
+use stringlib
 
 // Minimal regex surface for now.
 //
@@ -59,11 +59,13 @@ type RxCapture = { idx: Int, start: Int, end: Int }
 
 type _RxCapRes = { end: Int, caps: List[RxCapture] }
 
-fn _rxCodeAt(s: Str, i: Int) -> Int = strCodeAt(s, i)
+fn _rxCodeAt(s: Str, i: Int) -> Int = strCode(s, i)
 
-fn _rxLen(s: Str) -> Int = strLen(s)
+fn _rxLen(s: Str) -> Int = strLength(s)
 
-fn _rxChar(code: Int) -> Str = strFromCode(code)
+fn _rxChar(code: Int) -> Str = strFromCodePoint(code)
+
+fn _rxSlice(s: Str, a: Int, b: Int) -> Str = strSliceRange(s, a, b)
 
 fn _rxIsDigit(c: Int) -> Bool = c >= 48 and c <= 57
 
@@ -541,7 +543,7 @@ fn findFirst(r: Regex, s: Str) -> Option[Str] = do:
   let sp = findFirstSpan(r, s)
   return match sp:
     None -> None
-    Some(v) -> Some(strSlice(s, v.start, v.end))
+    Some(v) -> Some(_rxSlice(s, v.start, v.end))
 
 fn _rxCapPut(caps: List[RxCapture], idx: Int, start: Int, end: Int) -> List[RxCapture] = match caps:
   Nil -> Cons({ idx = idx, start = start, end = end }, Nil)
@@ -753,10 +755,10 @@ fn _rxCapSpanAt(caps: List[RxCapture], idx: Int) -> Option[RxSpan] = match caps:
 fn _rxCapStrsAcc(s: Str, i: Int, n: Int, start: Int, end: Int, caps: List[RxCapture], acc: List[Str]) -> List[Str] = match i > n:
   true -> reverse(acc)
   false -> match i == 0:
-    true -> _rxCapStrsAcc(s, i + 1, n, start, end, caps, Cons(strSlice(s, start, end), acc))
+    true -> _rxCapStrsAcc(s, i + 1, n, start, end, caps, Cons(_rxSlice(s, start, end), acc))
     false -> match _rxCapSpanAt(caps, i):
       None -> _rxCapStrsAcc(s, i + 1, n, start, end, caps, Cons("", acc))
-      Some(sp) -> _rxCapStrsAcc(s, i + 1, n, start, end, caps, Cons(strSlice(s, sp.start, sp.end), acc))
+      Some(sp) -> _rxCapStrsAcc(s, i + 1, n, start, end, caps, Cons(_rxSlice(s, sp.start, sp.end), acc))
 
 fn _rxFirstCapRes(rs: List[_RxCapRes]) -> Option[_RxCapRes] = match rs:
   Nil -> None
@@ -851,7 +853,7 @@ fn replace(r: Regex, s: Str, repl: Str) -> Str = do:
       let count = _rxGroupCount(pat)
       let groups = _rxCapStrsAcc(s, 0, count, v.start, v.end, v.caps, Nil)
       let rep = _rxReplaceScan(repl, 0, groups, Nil)
-      return strSlice(s, 0, v.start) + rep + strSlice(s, v.end, _rxLen(s))
+      return _rxSlice(s, 0, v.start) + rep + _rxSlice(s, v.end, _rxLen(s))
 
 fn replaceAll(r: Regex, s: Str, repl: Str) -> Str = do:
   let pat = r.pat
@@ -865,13 +867,13 @@ fn _rxReplaceAllFrom(pat: Str, plen: Int, s: Str, si: Int, repl: Str, pieces: Li
   let m = _rxFindFirstCapMatchFrom(pat, 0, plen, s, si)
   return match m:
     None -> do:
-      let tail = strSlice(s, si, _rxLen(s))
+      let tail = _rxSlice(s, si, _rxLen(s))
       return _rxConcatPieces(reverse(Cons(tail, pieces)))
     Some(v) -> do:
       let count = _rxGroupCount(pat)
       let groups = _rxCapStrsAcc(s, 0, count, v.start, v.end, v.caps, Nil)
       let rep = _rxReplaceScan(repl, 0, groups, Nil)
-      let prefix = strSlice(s, si, v.start)
+      let prefix = _rxSlice(s, si, v.start)
       let pieces2 = Cons(rep, Cons(prefix, pieces))
       let next = match v.end > v.start:
         true -> v.end
