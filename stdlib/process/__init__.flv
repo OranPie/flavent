@@ -1,0 +1,147 @@
+use collections.list
+use collections.map
+use stringlib
+
+type ProcessError = { code: Str, message: Str }
+
+type ProcessSpec = {
+  program: Str,
+  args: List[Str],
+  cwd: Option[Str],
+  env: Map[Str, Str],
+  simulateExitCode: Int,
+  simulatedStdout: Str,
+  simulatedStderr: Str
+}
+
+type ProcessHandle = { id: Int, spec: ProcessSpec, started: Bool }
+
+type ProcessStatus = { exitCode: Int, success: Bool }
+
+type ProcessOutput = { stdout: Str, stderr: Str }
+
+type ProcessResult = { status: ProcessStatus, output: ProcessOutput }
+
+type ProcessWait = { handle: ProcessHandle, result: ProcessResult }
+
+fn _processErr(code: Str, message: Str) -> ProcessError = { code = code, message = message }
+
+fn processSpec(program: Str, args: List[Str]) -> ProcessSpec = {
+  program = program,
+  args = args,
+  cwd = None,
+  env = mapEmpty(),
+  simulateExitCode = 0,
+  simulatedStdout = "",
+  simulatedStderr = ""
+}
+
+fn processWithCwd(spec: ProcessSpec, cwd: Str) -> ProcessSpec = {
+  program = spec.program,
+  args = spec.args,
+  cwd = Some(cwd),
+  env = spec.env,
+  simulateExitCode = spec.simulateExitCode,
+  simulatedStdout = spec.simulatedStdout,
+  simulatedStderr = spec.simulatedStderr
+}
+
+fn processWithEnv(spec: ProcessSpec, key: Str, value: Str) -> ProcessSpec = {
+  program = spec.program,
+  args = spec.args,
+  cwd = spec.cwd,
+  env = mapPut(spec.env, key, value),
+  simulateExitCode = spec.simulateExitCode,
+  simulatedStdout = spec.simulatedStdout,
+  simulatedStderr = spec.simulatedStderr
+}
+
+fn processWithExitCode(spec: ProcessSpec, code: Int) -> ProcessSpec = {
+  program = spec.program,
+  args = spec.args,
+  cwd = spec.cwd,
+  env = spec.env,
+  simulateExitCode = code,
+  simulatedStdout = spec.simulatedStdout,
+  simulatedStderr = spec.simulatedStderr
+}
+
+fn processWithStdout(spec: ProcessSpec, out: Str) -> ProcessSpec = {
+  program = spec.program,
+  args = spec.args,
+  cwd = spec.cwd,
+  env = spec.env,
+  simulateExitCode = spec.simulateExitCode,
+  simulatedStdout = out,
+  simulatedStderr = spec.simulatedStderr
+}
+
+fn processWithStderr(spec: ProcessSpec, err: Str) -> ProcessSpec = {
+  program = spec.program,
+  args = spec.args,
+  cwd = spec.cwd,
+  env = spec.env,
+  simulateExitCode = spec.simulateExitCode,
+  simulatedStdout = spec.simulatedStdout,
+  simulatedStderr = err
+}
+
+fn _argsCharLen(xs: List[Str]) -> Int = match xs:
+  Nil -> 0
+  Cons(x, rest) -> strLen(x) + _argsCharLen(rest)
+
+fn _computeProcessId(spec: ProcessSpec) -> Int = strLen(spec.program) * 1000 + length(spec.args) + _argsCharLen(spec.args)
+
+fn processValidate(spec: ProcessSpec) -> Result[Unit, ProcessError] = do:
+  if strLen(spec.program) == 0:
+    return Err(_processErr("empty_program", "process: empty program"))
+  if spec.simulateExitCode < 0:
+    return Err(_processErr("invalid_exit_code", "process: exit code must be >= 0"))
+  return Ok(())
+
+fn processSpawn(spec: ProcessSpec) -> Result[ProcessHandle, ProcessError] = do:
+  let vr = processValidate(spec)
+  return match vr:
+    Err(e) -> Err(e)
+    Ok(_) -> Ok({ id = _computeProcessId(spec), spec = spec, started = false })
+
+fn processStart(handle: ProcessHandle) -> Result[ProcessHandle, ProcessError] = do:
+  if handle.started:
+    return Err(_processErr("already_started", "process: already started"))
+  return Ok({ id = handle.id, spec = handle.spec, started = true })
+
+fn _processStatus(code: Int) -> ProcessStatus = { exitCode = code, success = code == 0 }
+
+fn _processResultFromSpec(spec: ProcessSpec) -> ProcessResult = {
+  status = _processStatus(spec.simulateExitCode),
+  output = { stdout = spec.simulatedStdout, stderr = spec.simulatedStderr }
+}
+
+fn processWait(handle: ProcessHandle) -> Result[ProcessWait, ProcessError] = do:
+  if not handle.started:
+    return Err(_processErr("not_started", "process: must start before wait"))
+  return Ok({ handle = handle, result = _processResultFromSpec(handle.spec) })
+
+fn processRun(spec: ProcessSpec) -> Result[ProcessResult, ProcessError] = do:
+  let rs = processSpawn(spec)
+  return match rs:
+    Err(e) -> Err(e)
+    Ok(h) -> do:
+      let rt = processStart(h)
+      return match rt:
+        Err(e) -> Err(e)
+        Ok(h2) -> do:
+          let rw = processWait(h2)
+          return match rw:
+            Err(e) -> Err(e)
+            Ok(w) -> Ok(w.result)
+
+fn processExitCode(result: ProcessResult) -> Int = result.status.exitCode
+
+fn processSucceeded(result: ProcessResult) -> Bool = result.status.success
+
+fn processFailed(result: ProcessResult) -> Bool = not result.status.success
+
+fn processStdout(result: ProcessResult) -> Str = result.output.stdout
+
+fn processStderr(result: ProcessResult) -> Str = result.output.stderr

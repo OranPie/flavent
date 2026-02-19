@@ -20,6 +20,7 @@
 - [consoleIO](./consoleIO.md)
 - [time](./time.md)
 - [env](./env.md)
+- [process](./process.md)
 - [fslib](./fslib.md)
 - [file](./file.md)
 - [glob](./glob.md)

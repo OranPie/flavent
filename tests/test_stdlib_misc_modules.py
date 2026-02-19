@@ -29,6 +29,7 @@ use collections.set
 use bytelib
 use u32
 use env
+use process
 use fslib
 use statistics
 use uuid
@@ -155,6 +156,8 @@ sector s:
     let e0 = envEmpty()
     let _ev0 = envSet(e0, "K", "V")
     let _ev1 = envGet(e0, "K")
+    let ps0 = processSpec("echo", Cons("x", Nil))
+    let _pr0 = processRun(processWithStdout(ps0, "x\\n"))
 
     let xs = Cons(1.0, Cons(2.0, Cons(3.0, Nil)))
     let _m = mean(xs)

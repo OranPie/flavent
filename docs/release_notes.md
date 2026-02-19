@@ -75,6 +75,10 @@ Compatibility note:
   - `envGet` / `envGetOr` / `envSet` / `envUnset`
   - `envHas` / `envList` / `envClear`
   - deterministic explicit `Env` state value (`envEmpty` bootstrap)
+- Added new `process` stdlib module with structured process simulation API:
+  - spec builders: `processSpec`, `processWith*`
+  - lifecycle: `processSpawn`, `processStart`, `processWait`, `processRun`
+  - structured errors via `ProcessError { code, message }`
 - Added new `collections.deque` stdlib module (plus `deque` compatibility wrapper):
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -97,6 +101,8 @@ Compatibility note:
 - Added EN/ZH docs pages and index links:
   - `docs/en/stdlib/env.md`
   - `docs/zh/stdlib/env.md`
+  - `docs/en/stdlib/process.md`
+  - `docs/zh/stdlib/process.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`

@@ -1,0 +1,46 @@
+use flvtest
+use process
+use collections.list
+
+fn _unwrapSpec(r: Result[ProcessHandle, ProcessError], fallback: ProcessHandle) -> ProcessHandle = match r:
+  Err(_) -> fallback
+  Ok(v) -> v
+
+test "process-run-success-and-fail" -> do:
+  let s0 = processSpec("echo", Cons("x", Nil))
+  let s1 = processWithStdout(s0, "x\n")
+  let r1 = processRun(s1)
+  let want1 = Ok({ status = { exitCode = 0, success = true }, output = { stdout = "x\n", stderr = "" } })
+  assertEq(r1, want1)?
+
+  let s2 = processWithExitCode(processWithStderr(s0, "boom"), 3)
+  let r2 = processRun(s2)
+  let want2 = Ok({ status = { exitCode = 3, success = false }, output = { stdout = "", stderr = "boom" } })
+  assertEq(r2, want2)?
+
+test "process-validation-errors" -> do:
+  let bad0 = processSpec("", Nil)
+  let e0 = processRun(bad0)
+  let want0 = Err({ code = "empty_program", message = "process: empty program" })
+  assertEq(e0, want0)?
+
+  let bad1 = processWithExitCode(processSpec("x", Nil), 0 - 1)
+  let e1 = processRun(bad1)
+  let want1 = Err({ code = "invalid_exit_code", message = "process: exit code must be >= 0" })
+  assertEq(e1, want1)?
+
+test "process-spawn-start-wait" -> do:
+  let s0 = processWithStdout(processSpec("echo", Nil), "ok")
+  let h0 = { id = 0, spec = s0, started = false }
+  let sp = processSpawn(s0)
+  let h1 = _unwrapSpec(sp, h0)
+  let st = processStart(h1)
+  let h2 = _unwrapSpec(st, h1)
+  let wt = processWait(h2)
+  let want = Ok({
+    handle = h2,
+    result = { status = { exitCode = 0, success = true }, output = { stdout = "ok", stderr = "" } }
+  })
+  assertEq(wt, want)?
+  assertEq(processStart(h2), Err({ code = "already_started", message = "process: already started" }))?
+  assertEq(processWait(h0), Err({ code = "not_started", message = "process: must start before wait" }))?

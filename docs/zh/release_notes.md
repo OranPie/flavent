@@ -75,6 +75,10 @@
   - `envGet` / `envGetOr` / `envSet` / `envUnset`
   - `envHas` / `envList` / `envClear`
   - 提供显式且确定性的 `Env` 状态值（通过 `envEmpty` 初始化）
+- 新增 `process` 标准库模块（结构化 process 模拟 API）：
+  - 规格构建：`processSpec`、`processWith*`
+  - 生命周期：`processSpawn`、`processStart`、`processWait`、`processRun`
+  - 通过 `ProcessError { code, message }` 返回结构化错误
 - 新增 `collections.deque` 标准库模块（并提供 `deque` 兼容 wrapper）：
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
@@ -97,6 +101,8 @@
 - 已补充 EN/ZH 文档与索引入口：
   - `docs/en/stdlib/env.md`
   - `docs/zh/stdlib/env.md`
+  - `docs/en/stdlib/process.md`
+  - `docs/zh/stdlib/process.md`
   - `docs/en/stdlib/collections.deque.md`
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`
