@@ -556,6 +556,47 @@ def _parse_mixin_field_add(cur: _Cursor) -> ast.MixinFieldAdd:
     return ast.MixinFieldAdd(name=name, ty=ty, span=span)
 
 
+def _parse_hook_with_options(cur: _Cursor) -> dict[str, str]:
+    opts: dict[str, str] = {}
+    if not (cur.at(TokenKind.IDENT) and cur.peek().text == "with"):
+        return opts
+
+    cur.advance()
+    cur.expect(TokenKind.LPAREN, "Expected '(' after hook with")
+    while not cur.at(TokenKind.RPAREN):
+        if cur.at(TokenKind.KW_CONST):
+            tkey = cur.advance()
+            k = ast.Ident(name=tkey.text, span=tkey.span)
+        else:
+            k = _parse_ident(cur)
+        cur.expect(TokenKind.EQ, "Expected '=' in hook with(...) option")
+        t = cur.peek()
+        if t.kind in (TokenKind.STR, TokenKind.BOOL, TokenKind.IDENT):
+            vtok = cur.advance()
+            opts[k.name] = vtok.text
+        elif t.kind == TokenKind.INT:
+            if cur.peek().text == "0" and cur.peek(1).kind == TokenKind.MINUS and cur.peek(2).kind == TokenKind.INT:
+                # Backward compat for odd forms; keep parser robust.
+                # Prefer plain negative ints in source.
+                v0 = cur.advance().text
+                cur.advance()
+                v2 = cur.advance().text
+                opts[k.name] = f"{v0}-{v2}"
+            else:
+                vtok = cur.advance()
+                opts[k.name] = vtok.text
+        elif t.kind == TokenKind.MINUS and cur.peek(1).kind == TokenKind.INT:
+            cur.advance()
+            vtok = cur.advance()
+            opts[k.name] = f"-{vtok.text}"
+        else:
+            raise ParseError("Expected hook option value (str/bool/int/ident)", t.span)
+        if not cur.match(TokenKind.COMMA):
+            break
+    cur.expect(TokenKind.RPAREN, "Expected ')' to close hook with(...)")
+    return opts
+
+
 def _parse_mixin_hook(cur: _Cursor) -> ast.MixinHook:
     hook_kw = cur.expect(TokenKind.IDENT, "Expected 'hook' item in mixin body")
     if hook_kw.text != "hook":
@@ -580,41 +621,7 @@ def _parse_mixin_hook(cur: _Cursor) -> ast.MixinHook:
         ret_ty = _parse_type_ref(cur)
     sig = ast.FnSignature(name=name, params=params, retType=ret_ty, span=hook_kw.span.merge(rp.span))
 
-    opts: dict[str, str] = {}
-    if cur.at(TokenKind.IDENT) and cur.peek().text == "with":
-        cur.advance()
-        cur.expect(TokenKind.LPAREN, "Expected '(' after hook with")
-        while not cur.at(TokenKind.RPAREN):
-            if cur.at(TokenKind.KW_CONST):
-                tkey = cur.advance()
-                k = ast.Ident(name=tkey.text, span=tkey.span)
-            else:
-                k = _parse_ident(cur)
-            cur.expect(TokenKind.EQ, "Expected '=' in hook with(...) option")
-            t = cur.peek()
-            if t.kind in (TokenKind.STR, TokenKind.BOOL, TokenKind.IDENT):
-                vtok = cur.advance()
-                opts[k.name] = vtok.text
-            elif t.kind == TokenKind.INT:
-                if cur.peek().text == "0" and cur.peek(1).kind == TokenKind.MINUS and cur.peek(2).kind == TokenKind.INT:
-                    # Backward compat for odd forms; keep parser robust.
-                    # Prefer plain negative ints in source.
-                    v0 = cur.advance().text
-                    cur.advance()
-                    v2 = cur.advance().text
-                    opts[k.name] = f"{v0}-{v2}"
-                else:
-                    vtok = cur.advance()
-                    opts[k.name] = vtok.text
-            elif t.kind == TokenKind.MINUS and cur.peek(1).kind == TokenKind.INT:
-                cur.advance()
-                vtok = cur.advance()
-                opts[k.name] = f"-{vtok.text}"
-            else:
-                raise ParseError("Expected hook option value (str/bool/int/ident)", t.span)
-            if not cur.match(TokenKind.COMMA):
-                break
-        cur.expect(TokenKind.RPAREN, "Expected ')' to close hook with(...)")
+    opts = _parse_hook_with_options(cur)
 
     cur.expect(TokenKind.EQ, "Expected '=' after hook signature (use '= expr' or '= do:')")
     body = _parse_fn_body(cur)

@@ -60,7 +60,9 @@ Improve language grammar clarity and compiler structure while reducing runtime d
     - include `flvrepr` in stdlib index pages
 
 ## Phase 3: Compiler Structure Improvements
-- [ ] Split parser/lexer helper logic into clearer internal units (without public API breakage).
+- [~] Split parser/lexer helper logic into clearer internal units (without public API breakage).
+  - [x] Extracted hook `with(...)` option parsing into `_parse_hook_with_options` helper.
+  - [ ] Continue splitting large parser sections and shared parse utilities.
 - [ ] Reduce duplicated control-flow in runtime interpreter hot paths.
 - [ ] Add internal invariants/assertions for resolved AST/HIR assumptions.
 
