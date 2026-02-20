@@ -5,7 +5,7 @@ from flavent.parser import parse_program
 from flavent.resolve import resolve_program_with_stdlib
 from flavent.lower import lower_resolved
 from flavent.typecheck import check_program
-from flavent.bridge_audit import audit_bridge_usage
+from flavent.bridge_audit import audit_bridge_usage, bridge_warning_issues
 
 
 def test_bridge_audit_detects_bridge_calls():
@@ -52,3 +52,17 @@ fn f() -> Int = _pyBytesLen(b"hi")
     hir = lower_resolved(res)
     with pytest.raises(EffectError):
         check_program(hir, res)
+
+
+def test_bridge_warning_issues_include_code_and_metadata():
+    report = {
+        "deprecated": {"_pyBase64Encode": 2},
+        "uses": [{"kind": "pure_call", "symbol": "_pyBase64Encode", "file": "x.flv", "line": 3, "col": 9}],
+    }
+    issues = bridge_warning_issues(report)
+    assert len(issues) == 1
+    w = issues[0]
+    assert w["code"] == "WBR001"
+    assert "deprecated bridge shim used" in w["message"]
+    assert w["location"]["file"] == "x.flv"
+    assert w["metadata"]["count"] == 2

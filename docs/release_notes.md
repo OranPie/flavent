@@ -74,6 +74,10 @@ Compatibility note:
   - `scripts/stdlib_bridge_boundary.py`
   - `docs/stdlib_bridge_boundary_allowlist.json`
   - CI now enforces both unapproved bridge-import modules and stale allowlist entries.
+- Improved check reporting and warning controls:
+  - new structured report output: `flavent check ... --report-json <path>`
+  - warning controls: `--warn-as-error`, `--warn-code-as-error`, `--suppress-warning`, `--max-warnings`
+  - warning issues now include stable code metadata (`WBR001`) for policy and CI automation.
 - Duplicate CI policy now fails only on **unapproved** public duplicates:
   - internal modules (`_bridge_python`, `testns.*`) are excluded by default,
   - approved `file`/`fslib` overlap is tracked explicitly by allowlist entries.

@@ -247,7 +247,36 @@ def audit_bridge_usage(hir: Program, res: Resolution) -> dict[str, Any]:
 
 def format_bridge_warnings(report: dict[str, Any]) -> list[str]:
     out: list[str] = []
+    for issue in bridge_warning_issues(report):
+        code = issue["code"]
+        message = issue["message"]
+        out.append(f"BridgeWarning: [{code}] {message}")
+    return out
+
+
+def bridge_warning_issues(report: dict[str, Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
     deprecated: dict[str, int] = report.get("deprecated", {})
+    uses = report.get("uses", [])
     for name, n in sorted(deprecated.items()):
-        out.append(f"BridgeWarning: deprecated bridge shim used: {name} (count={n})")
+        loc = None
+        for u in uses:
+            if u.get("kind") == "pure_call" and u.get("symbol") == name:
+                loc = {
+                    "file": u.get("file", ""),
+                    "line": int(u.get("line", 0) or 0),
+                    "col": int(u.get("col", 0) or 0),
+                }
+                break
+        out.append(
+            {
+                "severity": "warning",
+                "code": "WBR001",
+                "message": f"deprecated bridge shim used: {name} (count={n})",
+                "stage": "bridge_audit",
+                "location": loc,
+                "hint": "Replace direct/deprecated bridge shim usage with stdlib wrappers.",
+                "metadata": {"symbol": name, "count": n},
+            }
+        )
     return out

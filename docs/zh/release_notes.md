@@ -74,6 +74,10 @@
   - `scripts/stdlib_bridge_boundary.py`
   - `docs/stdlib_bridge_boundary_allowlist.json`
   - CI 现同时校验未批准 bridge 导入模块与白名单陈旧项。
+- 改进 check 报告与 warning 策略能力：
+  - 新增结构化报告输出：`flavent check ... --report-json <path>`
+  - 新增 warning 控制参数：`--warn-as-error`、`--warn-code-as-error`、`--suppress-warning`、`--max-warnings`
+  - warning 现提供稳定编码元数据（`WBR001`），便于 CI 与策略自动化。
 - CI 重复策略改为仅对“未批准”的公开重复失败：
   - 默认排除内部模块（`_bridge_python`、`testns.*`），
   - `file`/`fslib` 的兼容性重名通过白名单显式追踪。

@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from .diagnostics import Diagnostic, EffectError, LowerError, ParseError, ResolveError, TypeError, format_diagnostic
-from .bridge_audit import audit_bridge_usage, format_bridge_warnings
+from .bridge_audit import audit_bridge_usage, bridge_warning_issues
 from .flm import FlmError, add_dependency, export_manifest, find_project_root, init_project, install, list_dependencies
 from .lexer import lex
 from .parser import parse_program
@@ -14,6 +14,7 @@ from .ast import node_to_dict
 from .resolve import resolve_program_with_stdlib
 from .lower import lower_resolved
 from .hir import node_to_dict as hir_to_dict
+from .reporting import ReportIssue, build_report
 from .typecheck import check_program
 
 
@@ -95,6 +96,21 @@ def main(argv: list[str] | None = None) -> int:
     p_check.add_argument("--bridge-warn", action="store_true", help="Print warnings for deprecated bridge shims")
     p_check.add_argument("--strict", action="store_true", help="Treat warnings as errors")
     p_check.add_argument("--report-junit", default="", help="Write JUnit XML report for check command")
+    p_check.add_argument("--report-json", default="", help="Write structured JSON report for check command")
+    p_check.add_argument("--warn-as-error", action="store_true", help="Treat all warnings as errors")
+    p_check.add_argument(
+        "--warn-code-as-error",
+        action="append",
+        default=[],
+        help="Treat warnings with matching code as errors (repeatable)",
+    )
+    p_check.add_argument(
+        "--suppress-warning",
+        action="append",
+        default=[],
+        help="Suppress warnings by code (repeatable)",
+    )
+    p_check.add_argument("--max-warnings", type=int, default=-1, help="Fail when active warning count exceeds this limit")
 
     args = p.parse_args(argv)
 
@@ -146,6 +162,9 @@ def main(argv: list[str] | None = None) -> int:
 
     path = Path(args.file)
     src = path.read_text(encoding="utf-8")
+    check_issues: list[ReportIssue] = []
+    check_metrics: dict[str, object] = {}
+    check_artifacts: dict[str, object] = {}
 
     def _write_check_report(*, failure_message: str = "", details: str = "", system_out: str = "") -> None:
         if args.cmd != "check":
@@ -163,6 +182,38 @@ def main(argv: list[str] | None = None) -> int:
             )
         except Exception as e:
             print(f"ReportError: failed to write JUnit report: {e}")
+
+    def _write_check_json_report(*, status: str, exit_code: int) -> None:
+        if args.cmd != "check":
+            return
+        out = getattr(args, "report_json", "")
+        if not out:
+            return
+        try:
+            report = build_report(
+                tool="flavent.check",
+                source=str(path),
+                status=status,
+                exit_code=exit_code,
+                issues=check_issues,
+                metrics=check_metrics,
+                artifacts=check_artifacts,
+            )
+            out_path = Path(out)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception as e:
+            print(f"ReportError: failed to write JSON report: {e}")
+
+    def _warning_line(issue: ReportIssue) -> str:
+        base = f"BridgeWarning: [{issue.code}] {issue.message}"
+        loc = issue.location or {}
+        file = loc.get("file")
+        line = int(loc.get("line") or 0)
+        col = int(loc.get("col") or 0)
+        if file and line > 0 and col > 0:
+            return f"{base} @ {file}:{line}:{col}"
+        return base
 
     def _fmt_err(kind: str, e) -> str:
         try:
@@ -223,17 +274,81 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "check":
             report = audit_bridge_usage(hir_prog, res)
             if getattr(args, "bridge_report", ""):
-                Path(args.bridge_report).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-            warnings = format_bridge_warnings(report)
-            if getattr(args, "bridge_warn", False) or getattr(args, "strict", False):
-                for line in warnings:
+                bp = Path(args.bridge_report)
+                bp.parent.mkdir(parents=True, exist_ok=True)
+                bp.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+                check_artifacts["bridge_report"] = str(bp)
+
+            suppress_codes = {c.upper() for c in getattr(args, "suppress_warning", [])}
+            bridge_warns = bridge_warning_issues(report)
+            for w in bridge_warns:
+                code = str(w.get("code", "WARN")).upper()
+                check_issues.append(
+                    ReportIssue(
+                        severity="warning",
+                        code=code,
+                        message=str(w.get("message", "")),
+                        stage=str(w.get("stage", "bridge_audit")),
+                        location=w.get("location"),
+                        hint=str(w.get("hint", "")),
+                        suppressed=code in suppress_codes,
+                        metadata=dict(w.get("metadata", {})),
+                    )
+                )
+
+            active_warning_issues = [i for i in check_issues if i.severity == "warning" and not i.suppressed]
+            warning_lines = [_warning_line(i) for i in active_warning_issues]
+            suppressed_count = sum(1 for i in check_issues if i.severity == "warning" and i.suppressed)
+            check_metrics["bridge"] = {
+                "count_keys": len(report.get("counts", {})),
+                "active_warnings": len(active_warning_issues),
+                "suppressed_warnings": suppressed_count,
+            }
+
+            warn_as_error = bool(getattr(args, "warn_as_error", False) or getattr(args, "strict", False))
+            warn_code_set = {c.upper() for c in getattr(args, "warn_code_as_error", [])}
+            max_warnings = int(getattr(args, "max_warnings", -1))
+
+            should_print_warnings = (
+                bool(getattr(args, "bridge_warn", False))
+                or bool(getattr(args, "strict", False))
+                or bool(getattr(args, "warn_as_error", False))
+                or bool(warn_code_set)
+                or max_warnings >= 0
+            )
+            if should_print_warnings:
+                for line in warning_lines:
                     print(line)
-            if getattr(args, "strict", False) and warnings:
-                msg = f"StrictCheckError: {len(warnings)} warning(s) found"
-                print(msg)
-                _write_check_report(failure_message=msg, details="\n".join(warnings))
+
+            fail_msg = ""
+            if warn_as_error and active_warning_issues:
+                if getattr(args, "strict", False):
+                    fail_msg = f"StrictCheckError: {len(active_warning_issues)} warning(s) found"
+                else:
+                    fail_msg = f"WarningAsError: {len(active_warning_issues)} warning(s) found"
+            elif warn_code_set:
+                matched = sorted({i.code for i in active_warning_issues if i.code.upper() in warn_code_set})
+                if matched:
+                    fail_msg = f"WarningCodeError: escalated warning code(s): {', '.join(matched)}"
+            elif max_warnings >= 0 and len(active_warning_issues) > max_warnings:
+                fail_msg = f"WarningLimitError: {len(active_warning_issues)} warning(s) exceeds max {max_warnings}"
+
+            if fail_msg:
+                print(fail_msg)
+                check_issues.append(
+                    ReportIssue(
+                        severity="error",
+                        code="ECHECKWARN",
+                        message=fail_msg,
+                        stage="check",
+                    )
+                )
+                _write_check_report(failure_message=fail_msg, details="\n".join(warning_lines))
+                _write_check_json_report(status="failed", exit_code=2)
                 return 2
-            _write_check_report(system_out="\n".join(warnings))
+
+            _write_check_report(system_out="\n".join(warning_lines))
+            _write_check_json_report(status="ok", exit_code=0)
 
         print("OK")
         return 0
@@ -241,32 +356,44 @@ def main(argv: list[str] | None = None) -> int:
     except ParseError as e:
         msg = _fmt_err("ParseError", e)
         print(msg)
+        check_issues.append(ReportIssue(severity="error", code="EPARSE", message=msg, stage="parse"))
         _write_check_report(failure_message="ParseError", details=msg)
+        _write_check_json_report(status="failed", exit_code=2)
         return 2
     except ResolveError as e:
         msg = _fmt_err("ResolveError", e)
         print(msg)
+        check_issues.append(ReportIssue(severity="error", code="ERESOLVE", message=msg, stage="resolve"))
         _write_check_report(failure_message="ResolveError", details=msg)
+        _write_check_json_report(status="failed", exit_code=2)
         return 2
     except LowerError as e:
         msg = _fmt_err("LowerError", e)
         print(msg)
+        check_issues.append(ReportIssue(severity="error", code="ELOWER", message=msg, stage="lower"))
         _write_check_report(failure_message="LowerError", details=msg)
+        _write_check_json_report(status="failed", exit_code=2)
         return 2
     except TypeError as e:
         msg = _fmt_err("TypeError", e)
         print(msg)
+        check_issues.append(ReportIssue(severity="error", code="ETYPE", message=msg, stage="typecheck"))
         _write_check_report(failure_message="TypeError", details=msg)
+        _write_check_json_report(status="failed", exit_code=2)
         return 2
     except EffectError as e:
         msg = _fmt_err("EffectError", e)
         print(msg)
+        check_issues.append(ReportIssue(severity="error", code="EEFFECT", message=msg, stage="effect"))
         _write_check_report(failure_message="EffectError", details=msg)
+        _write_check_json_report(status="failed", exit_code=2)
         return 2
     except FlmError as e:
         msg = f"PkgError: {e}"
         print(msg)
+        check_issues.append(ReportIssue(severity="error", code="EPKG", message=msg, stage="pkg"))
         _write_check_report(failure_message="PkgError", details=msg)
+        _write_check_json_report(status="failed", exit_code=2)
         return 2
     except Exception as e:
         raise
