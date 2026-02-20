@@ -31,7 +31,7 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 ## Phase B: Hook Context and Control
 
 - [ ] Add structured hook context metadata (hook id, target, point, call depth).
-- [ ] Add deterministic hook conflict policy options (`error`, `prefer`, `drop`).
+- [x] Add deterministic hook conflict policy options (`error`, `prefer`, `drop`).
 - [ ] Add optional strict mode: unresolved `depends` or locator mismatch => hard error.
 - [~] Add “dry-run resolve” output for hook stack planning (for CI/debug). (JSON report artifact added)
 - [ ] Tests:

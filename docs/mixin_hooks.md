@@ -33,7 +33,12 @@ For type-target mixins, `hook`/`around` targets are method names declared by typ
   - `use_return`: hook receives prior return as extra arg but final return stays original.
   - `replace_return`: hook receives prior return as extra arg and its result becomes final return.
 - `const` / `constParams` / `constArgs`: comma-separated constant strings appended to hook call arguments.
+- `conflict`: duplicate hook-id policy (`error` default, `prefer`, `drop`).
 - Unknown option keys are rejected during resolve.
+- `conflict` validation rules:
+  - `error`: duplicate hook id in same target fails resolve.
+  - `prefer`: keeps the highest-priority duplicate (stable declaration-order tie break).
+  - `drop`: drops duplicate candidates for that hook id.
 - Validation rules:
   - `head + cancelable=true` requires return type `Option[targetReturnType]`.
   - `tail + returnDep in {use_return, replace_return}` requires an extra `ret`-style parameter typed as target return type.
@@ -58,7 +63,7 @@ Execution stack shape:
 Each entry includes:
 - `owner_kind` (`sector` or `type`)
 - `target` (`Owner.fn` / `Type.method`)
-- `hook_id`, `point`, `origin`, `mixin_key`
+- `hook_id`, `point`, `origin`, `conflict_policy`, `mixin_key`
 - `priority`, `depends`, `at`, `depth` (`0` is outermost)
 
 ## `flvrepr` Package

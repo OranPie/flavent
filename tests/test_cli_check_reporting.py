@@ -211,3 +211,4 @@ run()
     assert isinstance(mixin_plan, list) and mixin_plan
     assert mixin_plan[0]["target"] == "S.foo"
     assert mixin_plan[0]["hook_id"] == "H"
+    assert mixin_plan[0]["conflict_policy"] == "error"

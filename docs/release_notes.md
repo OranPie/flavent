@@ -223,6 +223,8 @@ Compatibility note:
   - resolver now supports hook call-stack ordering with priority/dependency resolution and locator checks (`at`).
   - type-target mixins now support hook weaving over injected methods (including `head` cancelation and `tail returnDep` rules).
   - `flavent check --report-json` now emits `artifacts.mixin_hook_plan` for resolved hook stacks (owner/target/hook id/point/depth).
+  - hook duplicate-id conflict policy added via `with(conflict=...)`:
+    - `error` (default), `prefer` (priority/declaration-order winner), `drop` (remove duplicates).
   - hook semantic checks were tightened:
     - unknown `with(...)` option keys are now rejected,
     - `head + cancelable=true` now requires return type `Option[targetReturnType]`,

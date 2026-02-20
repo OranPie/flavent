@@ -257,3 +257,62 @@ run()
     assert [p["hook_id"] for p in plan] == ["B", "C"]
     assert [p["depth"] for p in plan] == [0, 1]
     assert all(p["owner_kind"] == "sector" for p in plan)
+
+
+def test_mixin_hook_duplicate_id_conflict_prefer_keeps_preferred():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="X", conflict="prefer", priority=1) = do:
+    return proceed(x + 1)
+
+mixin B v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="X", conflict="prefer", priority=10) = do:
+    return proceed(x + 2)
+
+use mixin A v1
+use mixin B v1
+run()
+"""
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo" and p["hook_id"] == "X"]
+    assert len(plan) == 1
+    assert plan[0]["mixin_key"] == "B@v1"
+    assert plan[0]["conflict_policy"] == "prefer"
+
+
+def test_mixin_hook_duplicate_id_conflict_drop_removes_hooks():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="X", conflict="drop") = do:
+    return proceed(x + 1)
+
+mixin B v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="X", conflict="drop") = do:
+    return proceed(x + 2)
+
+use mixin A v1
+use mixin B v1
+run()
+"""
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo"]
+    assert not plan
+
+
+def test_mixin_hook_conflict_option_rejects_invalid_value():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(conflict="merge") = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    with pytest.raises(ResolveError, match="hook conflict must be one of"):
+        _resolve(src)

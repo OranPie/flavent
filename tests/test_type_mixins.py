@@ -140,6 +140,31 @@ run()
     assert any(p["target"] == "User.getId" and p["hook_id"] == "ID" for p in plan)
 
 
+def test_type_mixin_hook_duplicate_id_conflict_prefer_keeps_preferred():
+    src = """type User = { id: Int }
+
+mixin M v1 into type User:
+  fn getId(self: User) -> Int = self.id
+
+mixin A v1 into type User:
+  hook invoke fn getId(self: User) -> Int with(id="X", conflict="prefer", priority=1) = do:
+    return proceed(self)
+
+mixin B v1 into type User:
+  hook invoke fn getId(self: User) -> Int with(id="X", conflict="prefer", priority=5) = do:
+    return proceed(self)
+
+use mixin M v1
+use mixin A v1
+use mixin B v1
+run()
+"""
+    res = _resolve(src, use_stdlib=False)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "User.getId" and p["hook_id"] == "X"]
+    assert len(plan) == 1
+    assert plan[0]["mixin_key"] == "B@v1"
+
+
 def test_pattern_alias_in_match():
     src = """pattern IsOk = Ok(_)
 
