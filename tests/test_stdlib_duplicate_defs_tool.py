@@ -17,7 +17,9 @@ def test_stdlib_duplicate_defs_report_detects_cross_module_symbol(tmp_path: Path
         check=True,
     )
     data = json.loads(out.read_text(encoding="utf-8"))
-    dups = data.get("duplicates", [])
+    assert data["schema_version"] == "1.0"
+    payload = data["artifacts"]["stdlib_duplicate_defs"]
+    dups = payload.get("duplicates", [])
     target = next((d for d in dups if d.get("kind") == "fn" and d.get("name") == "exists"), None)
     assert target is not None
     mods = set(target.get("modules", []))
@@ -70,10 +72,13 @@ def test_stdlib_duplicate_defs_allowlist_marks_approved_and_fails_on_unapproved(
     assert cp.returncode == 1
 
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["duplicate_count"] == 2
-    assert data["approved_count"] == 1
-    assert data["unapproved_count"] == 1
-    dups = {(d["name"], tuple(d["modules"])): d for d in data["duplicates"]}
+    assert data["schema_version"] == "1.0"
+    assert data["status"] == "failed"
+    payload = data["artifacts"]["stdlib_duplicate_defs"]
+    assert payload["duplicate_count"] == 2
+    assert payload["approved_count"] == 1
+    assert payload["unapproved_count"] == 1
+    dups = {(d["name"], tuple(d["modules"])): d for d in payload["duplicates"]}
     assert dups[("foo", ("a", "b"))]["approved"] is True
     assert dups[("bar", ("b", "c"))]["approved"] is False
 
@@ -103,7 +108,8 @@ def test_stdlib_duplicate_defs_ignores_internal_modules_by_default(tmp_path: Pat
         check=True,
     )
     public_report = json.loads(out_public.read_text(encoding="utf-8"))
-    assert public_report["duplicate_count"] == 0
+    public_payload = public_report["artifacts"]["stdlib_duplicate_defs"]
+    assert public_payload["duplicate_count"] == 0
 
     out_all = tmp_path / "all.json"
     subprocess.run(
@@ -119,4 +125,5 @@ def test_stdlib_duplicate_defs_ignores_internal_modules_by_default(tmp_path: Pat
         check=True,
     )
     all_report = json.loads(out_all.read_text(encoding="utf-8"))
-    assert all_report["duplicate_count"] == 1
+    all_payload = all_report["artifacts"]["stdlib_duplicate_defs"]
+    assert all_payload["duplicate_count"] == 1

@@ -21,8 +21,10 @@ def test_stdlib_bridge_boundary_repo_allowlist_clean(tmp_path: Path):
         check=True,
     )
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert report["violation_count"] == 0
-    assert report["stale_count"] == 0
+    assert report["schema_version"] == "1.0"
+    payload = report["artifacts"]["stdlib_bridge_boundary"]
+    assert payload["violation_count"] == 0
+    assert payload["stale_count"] == 0
 
 
 def test_stdlib_bridge_boundary_detects_unapproved_module(tmp_path: Path):
@@ -57,8 +59,10 @@ def test_stdlib_bridge_boundary_detects_unapproved_module(tmp_path: Path):
     )
     assert cp.returncode == 1
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert report["violation_count"] == 1
-    assert report["violations"][0]["module"] == "bad/__init__"
+    assert report["status"] == "failed"
+    payload = report["artifacts"]["stdlib_bridge_boundary"]
+    assert payload["violation_count"] == 1
+    assert payload["violations"][0]["module"] == "bad/__init__"
 
 
 def test_stdlib_bridge_boundary_detects_stale_allowlist(tmp_path: Path):
@@ -104,5 +108,7 @@ def test_stdlib_bridge_boundary_detects_stale_allowlist(tmp_path: Path):
     )
     assert cp.returncode == 1
     report = json.loads(out.read_text(encoding="utf-8"))
-    assert report["stale_count"] == 1
-    assert report["stale_allowlist"][0]["module"] == "old/__init__"
+    assert report["status"] == "failed"
+    payload = report["artifacts"]["stdlib_bridge_boundary"]
+    assert payload["stale_count"] == 1
+    assert payload["stale_allowlist"][0]["module"] == "old/__init__"

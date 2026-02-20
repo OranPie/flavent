@@ -78,6 +78,14 @@
   - 新增结构化报告输出：`flavent check ... --report-json <path>`
   - 新增 warning 控制参数：`--warn-as-error`、`--warn-code-as-error`、`--suppress-warning`、`--max-warnings`
   - warning 现提供稳定编码元数据（`WBR001`），便于 CI 与策略自动化。
+- 将 stdlib 策略工具 JSON 输出统一到结构化报告 schema（`schema_version: 1.0`）：
+  - `scripts/bridge_usage_snapshot.py`
+  - `scripts/stdlib_duplicate_defs.py`
+  - `scripts/stdlib_bridge_boundary.py`
+  - 原始业务载荷现在统一放在 `artifacts.<tool_name>` 下，便于稳定机读。
+- 新增 warning 编码目录文档：
+  - `docs/warning_catalog.md`
+  - `docs/zh/warning_catalog.md`
 - CI 重复策略改为仅对“未批准”的公开重复失败：
   - 默认排除内部模块（`_bridge_python`、`testns.*`），
   - `file`/`fslib` 的兼容性重名通过白名单显式追踪。

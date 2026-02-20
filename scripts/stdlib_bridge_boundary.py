@@ -2,11 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from flavent.reporting import ReportIssue, build_report as build_structured_report
+
+_VIOLATION_ERROR_CODE = "ESTDLIBBRIDGE001"
+_STALE_ALLOWLIST_WARNING_CODE = "WSTDLIBBRIDGE001"
 
 
 def _module_name(path: Path, stdlib_root: Path) -> str:
@@ -108,6 +116,59 @@ def format_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _issues_for_report(report: dict[str, Any]) -> list[ReportIssue]:
+    issues: list[ReportIssue] = []
+    for row in report.get("violations", []):
+        module = str(row.get("module", ""))
+        note = str(row.get("note", ""))
+        msg = f"unapproved _bridge_python import in stdlib module `{module}`"
+        issues.append(
+            ReportIssue(
+                severity="error",
+                code=_VIOLATION_ERROR_CODE,
+                message=msg,
+                stage="stdlib_bridge_boundary",
+                metadata={"module": module, "note": note},
+            )
+        )
+    for row in report.get("stale_allowlist", []):
+        module = str(row.get("module", ""))
+        note = str(row.get("note", ""))
+        msg = f"stale bridge-boundary allowlist entry for module `{module}`"
+        issues.append(
+            ReportIssue(
+                severity="warning",
+                code=_STALE_ALLOWLIST_WARNING_CODE,
+                message=msg,
+                stage="stdlib_bridge_boundary",
+                metadata={"module": module, "note": note},
+            )
+        )
+    return issues
+
+
+def _structured_report(payload: dict[str, Any], *, stdlib_root: Path, exit_code: int) -> dict[str, Any]:
+    status = "ok" if exit_code == 0 else "failed"
+    metrics = {
+        "bridge_boundary": {
+            "importing_count": payload.get("importing_count", 0),
+            "allowlist_count": payload.get("allowlist_count", 0),
+            "approved_count": payload.get("approved_count", 0),
+            "violation_count": payload.get("violation_count", 0),
+            "stale_count": payload.get("stale_count", 0),
+        }
+    }
+    return build_structured_report(
+        tool="stdlib_bridge_boundary",
+        source=stdlib_root.as_posix(),
+        status=status,
+        exit_code=exit_code,
+        issues=_issues_for_report(payload),
+        metrics=metrics,
+        artifacts={"stdlib_bridge_boundary": payload},
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Check stdlib direct _bridge_python import boundaries")
     ap.add_argument("--stdlib-root", default="stdlib", help="Path to stdlib root")
@@ -132,8 +193,14 @@ def main() -> int:
 
     stdlib_root = Path(args.stdlib_root).resolve()
     allowlist = Path(args.allowlist).resolve()
-    report = build_report(stdlib_root, allowlist)
-    markdown = format_markdown(report)
+    payload = build_report(stdlib_root, allowlist)
+    markdown = format_markdown(payload)
+    exit_code = 0
+    if args.fail_on_violations and payload["violation_count"] > 0:
+        exit_code = 1
+    if args.fail_on_stale and payload["stale_count"] > 0:
+        exit_code = 1
+    report = _structured_report(payload, stdlib_root=stdlib_root, exit_code=exit_code)
 
     if args.json_out:
         Path(args.json_out).write_text(
@@ -144,11 +211,7 @@ def main() -> int:
 
     print(markdown, end="")
 
-    if args.fail_on_violations and report["violation_count"] > 0:
-        return 1
-    if args.fail_on_stale and report["stale_count"] > 0:
-        return 1
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

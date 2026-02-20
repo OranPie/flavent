@@ -3,9 +3,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from flavent.reporting import ReportIssue, build_report
 
 
 _RE_FN = re.compile(r"^fn\s+([^\s(]+)\s*\(")
@@ -32,6 +39,8 @@ class AllowEntry:
 
 
 AllowKey = tuple[str, str, tuple[str, ...]]
+_DUPLICATE_ERROR_CODE = "ESTDLIBDUP001"
+_STALE_ALLOWLIST_WARNING_CODE = "WSTDLIBDUP001"
 
 
 def _module_name_for_flv(stdlib_root: Path, flv_path: Path) -> str:
@@ -261,6 +270,80 @@ def _to_markdown(
     return "\n".join(rows)
 
 
+def _issues_for_report(report: dict[str, Any]) -> list[ReportIssue]:
+    issues: list[ReportIssue] = []
+
+    for item in report.get("duplicates", []):
+        if bool(item.get("approved")):
+            continue
+        locations = item.get("locations") if isinstance(item.get("locations"), list) else []
+        first_location = locations[0] if locations else {}
+        location: dict[str, Any] | None = None
+        file = str(first_location.get("file", ""))
+        line = int(first_location.get("line", 0) or 0)
+        if file and line > 0:
+            location = {"file": file, "line": line, "col": 1}
+
+        modules = item.get("modules", [])
+        msg = f"unapproved duplicate {item.get('kind')} `{item.get('name')}` across modules: {', '.join(modules)}"
+        issues.append(
+            ReportIssue(
+                severity="error",
+                code=_DUPLICATE_ERROR_CODE,
+                message=msg,
+                stage="stdlib_duplicate_defs",
+                location=location,
+                metadata={
+                    "kind": item.get("kind"),
+                    "name": item.get("name"),
+                    "modules": modules,
+                    "module_count": item.get("module_count"),
+                },
+            )
+        )
+
+    for item in report.get("stale_allowlist_entries", []):
+        modules = item.get("modules", [])
+        msg = f"stale duplicate allowlist entry for {item.get('kind')} `{item.get('name')}`"
+        issues.append(
+            ReportIssue(
+                severity="warning",
+                code=_STALE_ALLOWLIST_WARNING_CODE,
+                message=msg,
+                stage="stdlib_duplicate_defs",
+                metadata={
+                    "kind": item.get("kind"),
+                    "name": item.get("name"),
+                    "modules": modules,
+                },
+            )
+        )
+
+    return issues
+
+
+def _structured_report(payload: dict[str, Any], *, stdlib_root: Path, exit_code: int) -> dict[str, Any]:
+    issues = _issues_for_report(payload)
+    status = "ok" if exit_code == 0 else "failed"
+    metrics = {
+        "duplicates": {
+            "duplicate_count": payload.get("duplicate_count", 0),
+            "approved_count": payload.get("approved_count", 0),
+            "unapproved_count": payload.get("unapproved_count", 0),
+            "stale_allowlist_count": payload.get("stale_allowlist_count", 0),
+        }
+    }
+    return build_report(
+        tool="stdlib_duplicate_defs",
+        source=stdlib_root.as_posix(),
+        status=status,
+        exit_code=exit_code,
+        issues=issues,
+        metrics=metrics,
+        artifacts={"stdlib_duplicate_defs": payload},
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Detect duplicate stdlib definitions across modules")
     ap.add_argument("--stdlib-root", default="stdlib", help="Path to stdlib root")
@@ -290,13 +373,17 @@ def main() -> int:
         include_private=bool(args.include_private),
         include_internal_modules=bool(args.include_internal_modules),
     )
-    report = _duplicate_report(decls, allowlist=allowlist)
+    payload = _duplicate_report(decls, allowlist=allowlist)
     markdown = _to_markdown(
-        report,
+        payload,
         include_private=bool(args.include_private),
         include_internal_modules=bool(args.include_internal_modules),
         allowlist_path=args.allowlist,
     )
+    exit_code = 0
+    if args.fail_on_duplicates and int(payload["unapproved_count"]) > 0:
+        exit_code = 1
+    report = _structured_report(payload, stdlib_root=stdlib_root, exit_code=exit_code)
 
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -304,9 +391,7 @@ def main() -> int:
         Path(args.md_out).write_text(markdown, encoding="utf-8")
 
     print(markdown)
-    if args.fail_on_duplicates and int(report["unapproved_count"]) > 0:
-        return 1
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

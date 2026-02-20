@@ -17,6 +17,7 @@ from flavent.lexer import lex
 from flavent.lower import lower_resolved
 from flavent.parser import parse_program
 from flavent.resolve import resolve_program_with_stdlib
+from flavent.reporting import build_report as build_structured_report
 from flavent.token import TokenKind
 from flavent.typecheck import check_program
 from flvtest.runner import _rewrite_case, discover_cases
@@ -228,8 +229,31 @@ def main() -> int:
     ap.add_argument("--md-out", default="", help="Write markdown report to this path")
     args = ap.parse_args()
 
-    report = build_report()
-    markdown = format_markdown(report)
+    payload = build_report()
+    markdown = format_markdown(payload)
+    report = build_structured_report(
+        tool="bridge_usage_snapshot",
+        source=(REPO_ROOT / "stdlib").as_posix(),
+        status="ok",
+        exit_code=0,
+        issues=[],
+        metrics={
+            "bridge_surface": {
+                "pure_count": payload["bridge_surface"]["pure_count"],
+                "effectful_count": payload["bridge_surface"]["effectful_count"],
+                "total_count": payload["bridge_surface"]["total_count"],
+            },
+            "stdlib_references": {
+                "total_references": payload["stdlib_references"]["total_references"],
+                "distinct_modules_referencing": payload["stdlib_references"]["distinct_modules_referencing"],
+            },
+            "tests_flv_runtime_baseline": {
+                "programs_analyzed": payload["tests_flv_runtime_baseline"]["programs_analyzed"],
+                "total_bridge_calls": payload["tests_flv_runtime_baseline"]["total_bridge_calls"],
+            },
+        },
+        artifacts={"bridge_usage_snapshot": payload},
+    )
 
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

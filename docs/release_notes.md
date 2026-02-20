@@ -78,6 +78,14 @@ Compatibility note:
   - new structured report output: `flavent check ... --report-json <path>`
   - warning controls: `--warn-as-error`, `--warn-code-as-error`, `--suppress-warning`, `--max-warnings`
   - warning issues now include stable code metadata (`WBR001`) for policy and CI automation.
+- Unified reporting schema (`schema_version: 1.0`) for stdlib policy tooling JSON outputs:
+  - `scripts/bridge_usage_snapshot.py`
+  - `scripts/stdlib_duplicate_defs.py`
+  - `scripts/stdlib_bridge_boundary.py`
+  - raw payloads now live under `artifacts.<tool_name>` for stable machine consumption.
+- Added warning code catalog docs:
+  - `docs/warning_catalog.md`
+  - `docs/zh/warning_catalog.md`
 - Duplicate CI policy now fails only on **unapproved** public duplicates:
   - internal modules (`_bridge_python`, `testns.*`) are excluded by default,
   - approved `file`/`fslib` overlap is tracked explicitly by allowlist entries.
