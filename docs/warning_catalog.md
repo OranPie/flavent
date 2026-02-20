@@ -26,3 +26,7 @@ This document defines stable warning/error codes for reporting and CI policy.
 - Use `--warn-code-as-error` for staged rollout of specific warnings.
 - Use `--suppress-warning` only with documented migration notes in CI/PR context.
 - Prefer reducing warnings to zero; treat suppressions as temporary debt.
+- CI no-new-warning gate for policy reports:
+  - baseline file: `docs/warning_baseline.json`
+  - command:
+    - `python3 scripts/warning_policy_gate.py --baseline docs/warning_baseline.json --reports <report1.json> <report2.json> --fail-on-new`

@@ -37,6 +37,15 @@ jobs:
             --fail-on-stale \
             --json-out reports/stdlib-bridge-boundary.json \
             --md-out reports/stdlib-bridge-boundary.md
+      - name: Enforce warning baseline policy
+        run: |
+          mkdir -p reports
+          python scripts/warning_policy_gate.py \
+            --baseline docs/warning_baseline.json \
+            --reports reports/stdlib-duplicate-defs.json reports/stdlib-bridge-boundary.json \
+            --fail-on-new \
+            --json-out reports/warning-policy-gate.json \
+            --md-out reports/warning-policy-gate.md
       - name: Run tests with coverage gate
         run: |
           mkdir -p reports

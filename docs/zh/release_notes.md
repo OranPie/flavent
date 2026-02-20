@@ -86,6 +86,10 @@
 - 新增 warning 编码目录文档：
   - `docs/warning_catalog.md`
   - `docs/zh/warning_catalog.md`
+- 新增 warning baseline gate 工具并接入 CI：
+  - `scripts/warning_policy_gate.py`
+  - baseline 文件：`docs/warning_baseline.json`
+  - CI 现对 stdlib 策略报告执行 `--fail-on-new` warning 策略校验。
 - CI 重复策略改为仅对“未批准”的公开重复失败：
   - 默认排除内部模块（`_bridge_python`、`testns.*`），
   - `file`/`fslib` 的兼容性重名通过白名单显式追踪。

@@ -86,6 +86,10 @@ Compatibility note:
 - Added warning code catalog docs:
   - `docs/warning_catalog.md`
   - `docs/zh/warning_catalog.md`
+- Added warning baseline gate tooling and CI integration:
+  - `scripts/warning_policy_gate.py`
+  - baseline file: `docs/warning_baseline.json`
+  - CI now enforces `--fail-on-new` warning policy for stdlib policy reports.
 - Duplicate CI policy now fails only on **unapproved** public duplicates:
   - internal modules (`_bridge_python`, `testns.*`) are excluded by default,
   - approved `file`/`fslib` overlap is tracked explicitly by allowlist entries.

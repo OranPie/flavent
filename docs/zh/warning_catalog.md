@@ -26,3 +26,7 @@
 - 通过 `--warn-code-as-error` 逐步收紧指定 warning。
 - `--suppress-warning` 仅在有迁移说明的前提下临时使用。
 - 目标是将 warning 降到零，抑制项应视为待清理技术债。
+- CI 无新增 warning gate（策略报告）：
+  - baseline 文件：`docs/warning_baseline.json`
+  - 命令：
+    - `python3 scripts/warning_policy_gate.py --baseline docs/warning_baseline.json --reports <report1.json> <report2.json> --fail-on-new`
