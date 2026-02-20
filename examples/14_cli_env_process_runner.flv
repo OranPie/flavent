@@ -1,0 +1,43 @@
+use cliargs
+use collections.list
+use env
+use log
+use process
+
+type Event.Start = {}
+
+fn parseArgs(argv: List[Str]) -> Result[CliArgs, Str] = cliParse(argv)
+
+sector Tool:
+  on Event.Start -> do:
+    let argv = Cons("--mode", Cons("sync", Cons("--verbose", Cons("targetA", Nil))))
+    let parsed = parseArgs(argv)
+    let status = match parsed:
+      Err(e) -> do:
+        let _line = logPrepare(logNamed("tool"), logLevelError(), e)
+        "args_error"
+      Ok(args) -> do:
+        let mode = cliGetOptionOr(args, "mode", "dry-run")
+        let _verbose = cliHasFlag(args, "verbose")
+        let e0 = envEmpty()
+        let e1 = envSet(e0, "MODE", mode)
+        let envStatus = match e1:
+          Err(_) -> "env_error"
+          Ok(env1) -> do:
+            let _modeEnv = envGetOr(env1, "MODE", "unknown")
+
+            let spec0 = processSpec("sync-worker", cliPositionals(args))
+            let spec1 = processWithEnv(processWithCwd(spec0, "/workspace"), "MODE", mode)
+            let spec2 = processWithStdout(processWithExitCode(spec1, 0), "ok")
+            let res = processRun(spec2)
+            let procStatus = match res:
+              Err(_) -> "process_error"
+              Ok(done) -> do:
+                processStdout(done)
+                "ok"
+            procStatus
+        envStatus
+    status
+    stop()
+
+run()

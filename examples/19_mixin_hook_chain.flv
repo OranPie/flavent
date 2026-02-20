@@ -1,0 +1,23 @@
+type Event.Start = {}
+
+sector Score:
+  fn calc(x: Int) -> Int = x + 1
+
+mixin Boost v1 into sector Score:
+  hook invoke fn calc(x: Int) -> Int with(id="boost", priority=10) = do:
+    return proceed(x * 2)
+
+mixin Offset v1 into sector Score:
+  hook invoke fn calc(x: Int) -> Int with(id="offset", depends="boost") = do:
+    return proceed(x + 3)
+
+use mixin Offset v1
+use mixin Boost v1
+
+sector main:
+  on Event.Start -> do:
+    let result = rpc Score.calc(4)
+    result
+    stop()
+
+run()

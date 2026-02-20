@@ -1,0 +1,36 @@
+use std.option
+use std.result
+
+type Event.Start = {}
+
+fn maybeToken(ok: Bool) -> Option[Str] = match ok:
+  true -> Some("token-123")
+  false -> None
+
+fn authenticate(ok: Bool) -> Result[Str, Str] = okOr(maybeToken(ok), "missing_token")
+
+fn callApi(token: Str) -> Result[Int, Str] = match token == "token-123":
+  true -> Ok(200)
+  false -> Err("unauthorized")
+
+sector Client:
+  on Event.Start -> do:
+    let r1 = authenticate(true)
+    let code1 = match r1:
+      Err(e) -> do:
+        e
+        0
+      Ok(token) -> std.result.unwrapOr(callApi(token), 0)
+
+    let r2 = authenticate(false)
+    let code2 = match r2:
+      Err(e) -> do:
+        e
+        0
+      Ok(token) -> std.result.unwrapOr(callApi(token), 0)
+
+    code1
+    code2
+    stop()
+
+run()

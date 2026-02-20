@@ -1,0 +1,16 @@
+use flvrepr
+
+type Event.Start = {}
+
+sector Meta:
+  on Event.Start -> do:
+    let m0 = encodeFunctionTarget("Billing.charge", "invoke", "20", "anchor:charge")
+    let m1 = metaSet(m0, "priority", "30")
+    let m2 = metaSet(m1, "owner", "payments")
+    let p = metaGet(m2, "priority")
+    let owner = metaGet(m2, "owner")
+    p
+    owner
+    stop()
+
+run()

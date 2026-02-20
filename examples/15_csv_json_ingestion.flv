@@ -1,0 +1,33 @@
+use collections.list
+use collections.map
+use csv
+use json
+
+type Event.Start = {}
+
+fn firstOrEmpty(row: List[Str]) -> Str = match row:
+  Nil -> ""
+  Cons(v, _) -> v
+
+fn rowToJson(row: List[Str]) -> JsonValue = JObj(mapPut(mapPut(mapEmpty(), "name", JStr(firstOrEmpty(row))), "ok", JBool(true)))
+
+sector Ingest:
+  on Event.Start -> do:
+    let line = "alice,42,active"
+    let row = csvParseLine(line)
+    let status = match row:
+      Err(_) -> "csv_error"
+      Ok(cols) -> do:
+        let doc = rowToJson(cols)
+        let encoded = dumps(doc)
+        let decoded = loads(encoded)
+        let decodedStatus = match decoded:
+          Err(_) -> "json_error"
+          Ok(v) -> do:
+            v
+            "ok"
+        decodedStatus
+    status
+    stop()
+
+run()

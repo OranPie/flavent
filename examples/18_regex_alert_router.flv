@@ -1,0 +1,28 @@
+use collections.list
+use regex
+use stringfmt
+
+type Event.Start = {}
+type Alert = { level: Str, message: Str }
+
+fn classify(line: Str) -> Alert = do:
+  let isErr = isMatch(compile("error|panic|fatal"), line)
+  return match isErr:
+    true -> { level = "ERROR", message = line }
+    false -> { level = "INFO", message = line }
+
+fn firstLine(xs: List[Str]) -> Str = match xs:
+  Nil -> ""
+  Cons(x, _) -> x
+
+sector Router:
+  on Event.Start -> do:
+    let lines = Cons("db error timeout", Cons("worker heartbeat", Cons("panic in parser", Nil)))
+    let first = classify(firstLine(lines))
+    let spans = findAllSpans(compile("a+"), "baaad")
+    let info = stringfmt.concat(first.level, ":" + first.message)
+    length(spans)
+    info
+    stop()
+
+run()

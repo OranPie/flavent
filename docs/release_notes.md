@@ -168,6 +168,23 @@ Compatibility note:
   - `docs/en/stdlib/url.md`
   - `docs/zh/stdlib/url.md`
 
+## Examples Expansion
+
+- Added 12 advanced language/stdlib examples under `examples/`:
+  - `12_priority_scheduler.flv`
+  - `13_stack_undo_log.flv`
+  - `14_cli_env_process_runner.flv`
+  - `15_csv_json_ingestion.flv`
+  - `16_url_http_request_builder.flv`
+  - `17_datetime_path_pipeline.flv`
+  - `18_regex_alert_router.flv`
+  - `19_mixin_hook_chain.flv`
+  - `20_mixin_cancelable_override.flv`
+  - `21_flvrepr_metadata_workflow.flv`
+  - `22_multi_collection_orchestrator.flv`
+  - `23_resilient_result_option_flow.flv`
+- These samples cover mixed usage of hooks/mixins, collection modules, CLI/env/process flows, data parsing, and metadata encoding.
+
 ## Grammar Planning Notes
 
 - Added `docs/grammar_pain_points.md` as a Phase 1 baseline for grammar refinement work.

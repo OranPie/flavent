@@ -1,0 +1,25 @@
+type Event.Start = {}
+
+sector Gate:
+  fn execute(x: Int) -> Int = x + 10
+
+mixin Guard v1 into sector Gate:
+  hook head fn execute(x: Int) -> Option[Int] with(id="guard", cancelable=true) = match x < 0:
+    true -> Some(0)
+    false -> None
+
+mixin Audit v1 into sector Gate:
+  hook tail fn execute(x: Int, ret: Int) -> Int with(id="audit", returnDep="replace_return") = ret + 1
+
+use mixin Guard v1
+use mixin Audit v1
+
+sector main:
+  on Event.Start -> do:
+    let ok = rpc Gate.execute(5)
+    let blocked = rpc Gate.execute(0 - 1)
+    ok
+    blocked
+    stop()
+
+run()

@@ -1,0 +1,34 @@
+use bytelib
+use collections.list
+use httplib
+use url
+
+type Event.Start = {}
+
+fn makeQuery() -> Str = queryBuild(
+  Cons(
+    { key = "q", value = "flavent examples" },
+    Cons({ key = "page", value = "1" }, Nil),
+  ),
+)
+
+sector Gateway:
+  on Event.Start -> do:
+    let query = makeQuery()
+    let path = "/search?" + query
+    let req = buildRequest("GET", "example.com", path, Nil, b"")
+    let parsed = parseResponse(req)
+    let remote = rpc httplib.getWith("example.com", 80, path, Cons(header("X-Trace", "demo"), Nil))
+    let status = match parsed:
+      Err(_) -> 0
+      Ok(resp0) -> do:
+        let status2 = match remote:
+          Err(_) -> resp0.status
+          Ok(resp1) -> do:
+            bytesLen(resp1.body)
+            resp1.status
+        status2
+    status
+    stop()
+
+run()

@@ -1,0 +1,21 @@
+use datetime
+use path
+use stringfmt
+
+type Event.Start = {}
+
+sector Pipeline:
+  on Event.Start -> do:
+    let dt = parseDateTime("2026-02-20T09:30:00")
+    let rel = pathJoin("reports", "daily.csv")
+    let abs = pathNormalize("./work/../" + rel)
+    let base = pathBase(abs)
+    let stem = pathStem(base)
+    let line = match dt:
+      Err(_) -> "invalid"
+      Ok(ts) -> do:
+        stringfmt.concat(formatDateTime(ts), ":" + stem)
+    line
+    stop()
+
+run()

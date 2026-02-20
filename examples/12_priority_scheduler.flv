@@ -1,0 +1,29 @@
+use collections.list
+use collections.priority_queue
+
+type Event.Start = {}
+type Job = { id: Str, priority: Int, owner: Str }
+
+fn buildQueue(jobs: List[Job]) -> PriorityQueue[Job] = match jobs:
+  Nil -> priorityQueueEmpty()
+  Cons(j, rest) -> priorityQueuePush(buildQueue(rest), j.priority, j)
+
+fn fallbackJob() -> Job = { id = "noop", priority = 999, owner = "system" }
+
+sector Scheduler:
+  on Event.Start -> do:
+    let jobs = Cons(
+      { id = "sync", priority = 1, owner = "ops" },
+      Cons(
+        { id = "backup", priority = 4, owner = "ops" },
+        Cons({ id = "report", priority = 2, owner = "analytics" }, Nil),
+      ),
+    )
+    let q = buildQueue(jobs)
+    let first = priorityQueuePopOr(q, 999, fallbackJob())
+    let second = priorityQueuePeekOr(first.rest, fallbackJob())
+    first.value.id
+    second.owner
+    stop()
+
+run()

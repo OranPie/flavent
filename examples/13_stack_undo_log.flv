@@ -1,0 +1,28 @@
+use collections.list
+use collections.stack
+
+type Event.Start = {}
+type Edit = { op: Str, value: Str }
+
+fn seedEdits() -> Stack[Edit] = stackPushAll(
+  stackEmpty(),
+  Cons(
+    { op = "insert", value = "hello" },
+    Cons(
+      { op = "replace", value = "hello world" },
+      Cons({ op = "delete", value = "world" }, Nil),
+    ),
+  ),
+)
+
+sector Editor:
+  on Event.Start -> do:
+    let s0 = seedEdits()
+    let top0 = stackPeekOr(s0, { op = "noop", value = "" })
+    let p1 = stackPopOr(s0, { op = "noop", value = "" })
+    let top1 = stackPeekOr(p1.rest, { op = "noop", value = "" })
+    top0.op
+    top1.value
+    stop()
+
+run()

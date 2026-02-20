@@ -1,0 +1,39 @@
+use collections.deque
+use collections.heap
+use collections.list
+use collections.map
+use collections.priority_queue
+use collections.queue
+use collections.set
+use collections.stack
+
+type Event.Start = {}
+
+sector Dataflow:
+  on Event.Start -> do:
+    let xs = Cons(1, Cons(2, Cons(3, Nil)))
+
+    let m = mapPut(mapPut(mapEmpty(), "a", 1), "b", 2)
+    let _mk = mapKeys(m)
+
+    let q = queuePushAll(queueEmpty(), xs)
+    let _qTop = queuePeekOr(q, 0)
+
+    let d = dequePushBack(dequePushFront(dequeEmpty(), 7), 8)
+    let _dTop = dequePeekFrontOr(d, 0)
+
+    let h = heapInsertAll(xs, heapEmpty())
+    let _hMin = heapPeekOr(h, 0)
+
+    let s = stackPushAll(stackEmpty(), xs)
+    let _sTop = stackPeekOr(s, 0)
+
+    let pq = priorityQueuePush(priorityQueuePush(priorityQueueEmpty(), 2, "b"), 1, "a")
+    let _pqTop = priorityQueuePeekOr(pq, "")
+
+    let ss = setAddAll(setEmpty(), xs)
+    let _ok = setHas(ss, 2)
+
+    stop()
+
+run()

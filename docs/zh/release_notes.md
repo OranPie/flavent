@@ -168,6 +168,23 @@
   - `docs/en/stdlib/url.md`
   - `docs/zh/stdlib/url.md`
 
+## 示例扩展
+
+- 在 `examples/` 下新增 12 个进阶语言/stdlib 示例：
+  - `12_priority_scheduler.flv`
+  - `13_stack_undo_log.flv`
+  - `14_cli_env_process_runner.flv`
+  - `15_csv_json_ingestion.flv`
+  - `16_url_http_request_builder.flv`
+  - `17_datetime_path_pipeline.flv`
+  - `18_regex_alert_router.flv`
+  - `19_mixin_hook_chain.flv`
+  - `20_mixin_cancelable_override.flv`
+  - `21_flvrepr_metadata_workflow.flv`
+  - `22_multi_collection_orchestrator.flv`
+  - `23_resilient_result_option_flow.flv`
+- 覆盖 hook/mixin、集合模块、CLI/env/process 流程、数据解析与 metadata 编解码等复合用法。
+
 ## 语法规划说明
 
 - 新增 `docs/grammar_pain_points.md`，作为语法优化 Phase 1 的基线说明。
