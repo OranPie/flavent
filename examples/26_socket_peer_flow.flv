@@ -1,0 +1,21 @@
+use socket
+
+type Event.Start = {}
+
+sector Net:
+  on Event.Start -> do:
+    let peer = tcpPeer("127.0.0.1", 80)
+    let conn = rpc socket.tcpConnectPeer(peer)
+    let listen = rpc socket.tcpListenPeer(tcpPeer("127.0.0.1", 0), 8)
+    let status = match conn:
+      Err(_) -> "connect_error"
+      Ok(sock) -> do:
+        let _timeout = rpc socket.setTimeoutMillis(sock, 1000)
+        let _closed = rpc socket.close(sock)
+        match listen:
+          Err(_) -> "listen_error"
+          Ok(_) -> "ok"
+    status
+    stop()
+
+run()

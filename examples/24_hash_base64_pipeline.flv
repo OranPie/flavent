@@ -1,0 +1,19 @@
+use base64
+use bytelib
+use hashlib
+
+type Event.Start = {}
+
+sector Security:
+  on Event.Start -> do:
+    let payload = b"flavent-demo"
+    let h1 = md5Hex(payload)
+    let h2 = sha256Hex(payload)
+    let b64 = encode(payload)
+    let raw = decode(b64)
+    h1
+    h2
+    bytesLen(raw)
+    stop()
+
+run()

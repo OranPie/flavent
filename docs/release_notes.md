@@ -184,6 +184,19 @@ Compatibility note:
   - `22_multi_collection_orchestrator.flv`
   - `23_resilient_result_option_flow.flv`
 - These samples cover mixed usage of hooks/mixins, collection modules, CLI/env/process flows, data parsing, and metadata encoding.
+- Added another 12 advanced examples for deeper integration workflows:
+  - `24_hash_base64_pipeline.flv`
+  - `25_struct_packet_roundtrip.flv`
+  - `26_socket_peer_flow.flv`
+  - `27_http_query_matrix.flv`
+  - `28_datetime_csv_report.flv`
+  - `29_log_policy_router.flv`
+  - `30_env_profile_merge.flv`
+  - `31_process_supervisor.flv`
+  - `32_url_decode_guard.flv`
+  - `33_uuid_glob_tempfile_ops.flv`
+  - `34_py_json_bridge.flv`
+  - `35_file_lines_pipeline.flv`
 
 ## Grammar Planning Notes
 

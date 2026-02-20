@@ -1,0 +1,23 @@
+use collections.list
+use csv
+use datetime
+use stringfmt
+
+type Event.Start = {}
+
+fn buildRow(ts: DateTime, value: Str) -> List[Str] = Cons(formatDateTime(ts), Cons(value, Nil))
+
+sector Report:
+  on Event.Start -> do:
+    let parsed = parseDateTime("2026-02-20T10:11:12")
+    let line = match parsed:
+      Err(_) -> "invalid"
+      Ok(ts) -> csvStringifyLine(buildRow(ts, "ok"))
+    let check = csvParseLine(line)
+    let out = match check:
+      Err(_) -> "csv_error"
+      Ok(cols) -> stringfmt.concat("cols=", "2")
+    out
+    stop()
+
+run()

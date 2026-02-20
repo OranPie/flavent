@@ -1,0 +1,28 @@
+use bytelib
+use collections.list
+use std.result
+use struct
+
+type Event.Start = {}
+
+sector Codec:
+  on Event.Start -> do:
+    let packed = pack("BHI", Cons(7, Cons(258, Cons(65539, Nil))))
+    let status = match packed:
+      Err(_) -> "pack_error"
+      Ok(bin) -> do:
+        let unpacked = unpack("BHI", bin)
+        let firstByte = bytesGet(bin, 0)
+        let readH = unpackH(bin, 1)
+        firstByte
+        match readH:
+          Err(_) -> "unpackH_error"
+          Ok(_) -> match unpacked:
+            Err(_) -> "unpack_error"
+            Ok(vals) -> do:
+              vals
+              "ok"
+    status
+    stop()
+
+run()

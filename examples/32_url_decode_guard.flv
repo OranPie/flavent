@@ -1,0 +1,21 @@
+use collections.list
+use url
+
+type Event.Start = {}
+
+sector UrlTool:
+  on Event.Start -> do:
+    let q = queryBuild(Cons({ key = "name", value = "A B" }, Cons({ key = "ok", value = "1" }, Nil)))
+    let parsed = queryParse(q)
+    let bad = queryDecode("%GG")
+    let state = match parsed:
+      Err(_) -> "parse_error"
+      Ok(parts) -> do:
+        parts
+        match bad:
+          Err(_) -> "bad_escape"
+          Ok(v) -> v
+    state
+    stop()
+
+run()

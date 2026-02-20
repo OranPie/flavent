@@ -1,0 +1,15 @@
+use log
+
+type Event.Start = {}
+
+fn route(level: LogLevel, msg: Str) -> Option[Str] = logPrepare(logWithName(logDefault(), "router"), level, msg)
+
+sector Logger:
+  on Event.Start -> do:
+    let a = route(logLevelInfo(), "service started")
+    let b = route(logLevelError(), "fatal: timeout")
+    a
+    b
+    stop()
+
+run()

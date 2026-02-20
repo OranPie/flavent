@@ -1,0 +1,22 @@
+use collections.list
+use process
+
+type Event.Start = {}
+
+fn buildSpec(name: Str, code: Int) -> ProcessSpec = processWithExitCode(processSpec(name, Cons("--dry", Nil)), code)
+
+sector Supervisor:
+  on Event.Start -> do:
+    let a = processRun(processWithStdout(buildSpec("worker-a", 0), "a-ok"))
+    let b = processRun(processWithStderr(buildSpec("worker-b", 2), "b-fail"))
+    let statusA = match a:
+      Err(_) -> false
+      Ok(r) -> processSucceeded(r)
+    let statusB = match b:
+      Err(_) -> false
+      Ok(r) -> processFailed(r)
+    statusA
+    statusB
+    stop()
+
+run()

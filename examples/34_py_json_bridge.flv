@@ -1,0 +1,25 @@
+use collections.list
+use collections.map
+use json
+use py
+
+type Event.Start = {}
+
+fn buildPayload() -> JsonValue = JObj(
+  mapPut(
+    mapPut(mapEmpty(), "kind", JStr("demo")),
+    "items",
+    JArr(Cons(JInt(1), Cons(JInt(2), Nil))),
+  ),
+)
+
+sector Adapter:
+  on Event.Start -> do:
+    let payload = buildPayload()
+    let raw = rpc py.invoke("demo", "echo", b"{}")
+    let j = rpc py.invokeJson("demo", "process", payload)
+    raw
+    j
+    stop()
+
+run()

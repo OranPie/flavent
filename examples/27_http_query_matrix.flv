@@ -1,0 +1,24 @@
+use collections.list
+use httplib
+
+type Event.Start = {}
+
+fn queryArgs() -> List[QueryParam] = Cons(queryParam("q", "flavent"), Cons(queryParam("page", "1"), Nil))
+
+sector Http:
+  on Event.Start -> do:
+    let path = buildPathWithQuery("/search", queryArgs())
+    let req = buildGetRequestWith("example.com", path, Cons(header("X-Demo", "1"), Nil))
+    let parsed = parseResponse(req)
+    let remote = rpc httplib.getWithQuery("example.com", 80, "/search", queryArgs(), Nil)
+    let status = match parsed:
+      Err(_) -> 0
+      Ok(resp0) -> do:
+        let status2 = match remote:
+          Err(_) -> resp0.status
+          Ok(resp1) -> resp1.status
+        status2
+    status
+    stop()
+
+run()

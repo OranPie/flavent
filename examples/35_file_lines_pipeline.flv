@@ -1,0 +1,22 @@
+use collections.list
+use file
+use file.lines
+use path
+
+type Event.Start = {}
+
+sector Files:
+  on Event.Start -> do:
+    let p = pathNormalize("./tmp/demo.txt")
+    let lines = Cons("a", Cons("b", Cons("c", Nil)))
+    let body = joinLines(lines)
+    let wrote = rpc file.writeText(p, body)
+    let read = rpc file.readText(p)
+    let parsed = match read:
+      Err(_) -> Nil
+      Ok(s) -> splitLines(s)
+    wrote
+    parsed
+    stop()
+
+run()

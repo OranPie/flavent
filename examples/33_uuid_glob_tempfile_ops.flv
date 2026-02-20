@@ -1,0 +1,21 @@
+use glob
+use tempfile
+use uuid
+
+type Event.Start = {}
+
+sector FsOps:
+  on Event.Start -> do:
+    let id = rpc uuid.uuid4()
+    let txt = toString(id)
+    let parsed = parse(txt)
+    let files = rpc glob.glob("./examples/*.flv")
+    let tdir = rpc tempfile.mkdtemp("flv_")
+    let tfile = rpc tempfile.mkstemp("flv_", ".tmp")
+    parsed
+    files
+    tdir
+    tfile
+    stop()
+
+run()
