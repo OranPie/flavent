@@ -51,6 +51,16 @@ Execution stack shape:
 - middle: `invoke` hooks
 - inner: `tail` hooks (arranged so tail post-phase remains priority-aware)
 
+## Hook Plan Reporting
+
+`flavent check --report-json <path>` now includes `artifacts.mixin_hook_plan` when mixins are used.
+
+Each entry includes:
+- `owner_kind` (`sector` or `type`)
+- `target` (`Owner.fn` / `Type.method`)
+- `hook_id`, `point`, `origin`, `mixin_key`
+- `priority`, `depends`, `at`, `depth` (`0` is outermost)
+
 ## `flvrepr` Package
 
 `stdlib/flvrepr` provides lightweight string metadata encoding/decoding for hook/function target metadata.

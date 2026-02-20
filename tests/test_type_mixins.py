@@ -15,6 +15,11 @@ def _check(src: str, *, use_stdlib: bool = False):
     check_program(hir, res)
 
 
+def _resolve(src: str, *, use_stdlib: bool = False):
+    prog = parse_program(lex("test.flv", src))
+    return resolve_program_with_stdlib(prog, use_stdlib=use_stdlib)
+
+
 def test_type_mixin_field_injection_record():
     src = """type User = { id: Int }
 
@@ -114,6 +119,25 @@ fn f(u: User) -> Int = User.getId(u)
 run()
 """
     _check(src, use_stdlib=True)
+
+
+def test_type_mixin_hook_plan_uses_public_method_target_name():
+    src = """type User = { id: Int }
+
+mixin M v1 into type User:
+  fn getId(self: User) -> Int = self.id
+
+mixin H v1 into type User:
+  hook invoke fn getId(self: User) -> Int with(id="ID") = do:
+    return proceed(self)
+
+use mixin M v1
+use mixin H v1
+run()
+"""
+    res = _resolve(src, use_stdlib=False)
+    plan = [p for p in res.mixin_hook_plan if p["owner_kind"] == "type"]
+    assert any(p["target"] == "User.getId" and p["hook_id"] == "ID" for p in plan)
 
 
 def test_pattern_alias_in_match():

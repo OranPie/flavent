@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import re
 from typing import Any, Optional
@@ -21,6 +21,7 @@ class Resolution:
     typename_to_symbol: dict[int, SymbolId]
     handler_to_symbol: dict[int, SymbolId]
     pattern_aliases: dict[str, ast.Pattern]
+    mixin_hook_plan: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -97,7 +98,7 @@ def _mixin_key(name: ast.QualifiedName, version: int) -> str:
     return f"{_qname_str(name)}@v{version}"
 
 
-def _apply_mixins(prog: ast.Program) -> ast.Program:
+def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]:
     mixins: dict[str, ast.MixinDecl] = {}
     uses: list[ast.UseMixinStmt] = []
     resolves: list[ast.ResolveMixinStmt] = []
@@ -118,7 +119,9 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             types[_qname_str(it.name)] = it
 
     if not uses:
-        return prog
+        return prog, []
+
+    hook_plan_entries: list[dict[str, Any]] = []
 
     # Build preference graph from resolve mixin-conflict rules.
     prefer_over: dict[str, set[str]] = {}
@@ -375,6 +378,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
         mixin_key: str
         around: ast.MixinAround
         point: str
+        origin: str
         hook_id: str
         priority: int
         depends: list[str]
@@ -535,7 +539,10 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
         *,
         around_by_fn: dict[str, list[_AroundSpec]],
         owner_name: str,
+        owner_kind: str,
         anchor_alias_by_fn: dict[str, set[str]] | None = None,
+        display_target_by_fn: dict[str, str] | None = None,
+        hook_plan: list[dict[str, Any]] | None = None,
     ) -> list[Any]:
         owner_safe = _safe_name(owner_name)
         around_ordered: list[_AroundSpec] = []
@@ -548,6 +555,24 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             ordered_tail = _resolve_specs(tail_specs, span=specs[0].span)
             # Outer stack order: heads then invokes then tails; tail executes after proceed so reverse it.
             outer_stack = [*ordered_head, *ordered_invoke, *reversed(ordered_tail)]
+            if hook_plan is not None:
+                display_target = (display_target_by_fn or {}).get(fname, fname)
+                for depth, sp in enumerate(outer_stack):
+                    hook_plan.append(
+                        {
+                            "owner_kind": owner_kind,
+                            "owner": owner_name,
+                            "target": f"{owner_name}.{display_target}",
+                            "hook_id": sp.hook_id,
+                            "point": sp.point,
+                            "origin": sp.origin,
+                            "mixin_key": sp.mixin_key,
+                            "priority": sp.priority,
+                            "depends": list(sp.depends),
+                            "at": sp.at,
+                            "depth": depth,
+                        }
+                    )
             around_ordered.extend(reversed(outer_stack))
 
         for weave_idx, spec in enumerate(around_ordered, start=1):
@@ -652,6 +677,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                     mixin_key=key,
                     around=ar,
                     point="invoke",
+                    origin="around",
                     hook_id=hook_id,
                     priority=0,
                     depends=[],
@@ -708,6 +734,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                         mixin_key=key,
                         around=around,
                         point="invoke",
+                        origin="hook",
                         hook_id=hook_id,
                         priority=priority,
                         depends=depends,
@@ -830,6 +857,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                     mixin_key=key,
                     around=ast.MixinAround(sig=around_sig, block=wrapper_block, span=hk.span),
                     point=hk.point,
+                    origin="hook",
                     hook_id=hook_id,
                     priority=priority,
                     depends=depends,
@@ -842,6 +870,8 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             items,
             around_by_fn=around_by_fn,
             owner_name=sd.name.name,
+            owner_kind="sector",
+            hook_plan=hook_plan_entries,
         )
 
         return ast.SectorDecl(name=sd.name, supervisor=sd.supervisor, items=items, span=sd.span)
@@ -984,6 +1014,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
 
         # Methods: require first param to be `self: <Type>`.
         method_name_to_synth: dict[str, str] = {}
+        method_name_by_synth: dict[str, str] = {}
         method_by_public_name: dict[str, ast.FnDecl] = {}
         method_anchor_alias_by_synth: dict[str, set[str]] = {}
         method_items: list[ast.FnDecl] = []
@@ -1002,6 +1033,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             synth = _synth_method_name(type_name, mname)
             method_fns[(type_method_key, mname)] = synth
             method_name_to_synth[mname] = synth
+            method_name_by_synth[synth] = mname
             method_anchor_alias_by_synth[synth] = {mname}
             method_item = ast.FnDecl(
                 name=ast.Ident(name=synth, span=add.sig.name.span),
@@ -1036,6 +1068,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                     mixin_key=key,
                     around=ast.MixinAround(sig=around_sig, block=ar.block, span=ar.span),
                     point="invoke",
+                    origin="around",
                     hook_id=hook_id,
                     priority=0,
                     depends=[],
@@ -1101,6 +1134,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                             span=hk.span,
                         ),
                         point="invoke",
+                        origin="hook",
                         hook_id=hook_id,
                         priority=priority,
                         depends=depends,
@@ -1225,6 +1259,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
                         span=hk.span,
                     ),
                     point=hk.point,
+                    origin="hook",
                     hook_id=hook_id,
                     priority=priority,
                     depends=depends,
@@ -1237,7 +1272,10 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
             method_items,
             around_by_fn=around_by_fn,
             owner_name=type_name,
+            owner_kind="type",
             anchor_alias_by_fn=method_anchor_alias_by_synth,
+            display_target_by_fn=method_name_by_synth,
+            hook_plan=hook_plan_entries,
         )
         new_top_fns.extend([it for it in method_items if isinstance(it, ast.FnDecl)])
 
@@ -1285,7 +1323,7 @@ def _apply_mixins(prog: ast.Program) -> ast.Program:
         else:
             rewritten.append(it)
 
-    return ast.Program(items=rewritten, run=prog.run, span=prog.span)
+    return ast.Program(items=rewritten, run=prog.run, span=prog.span), hook_plan_entries
 
 
 def _load_stdlib_prelude(*, fallback_span: Span) -> ast.Program:
@@ -1427,7 +1465,7 @@ def resolve_program_with_stdlib(
     # Expand module uses (stdlib only for now).
     prog = _expand_uses(prog, module_roots=module_roots)
     # Apply mixins by rewriting the AST into plain sector/type items.
-    prog = _apply_mixins(prog)
+    prog, mixin_hook_plan = _apply_mixins(prog)
 
     file = prog.span.file
     ctx = _Ctx(
@@ -1454,6 +1492,7 @@ def resolve_program_with_stdlib(
         typename_to_symbol=ctx.typename_to_symbol,
         handler_to_symbol=ctx.handler_to_symbol,
         pattern_aliases=ctx.pattern_aliases,
+        mixin_hook_plan=mixin_hook_plan,
     )
 
 

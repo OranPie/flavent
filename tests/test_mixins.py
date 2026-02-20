@@ -234,3 +234,26 @@ run()
 """
     with pytest.raises(ResolveError, match="returnDep must be one of"):
         _resolve(src)
+
+
+def test_mixin_hook_plan_records_resolved_depth_order():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin B v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="B", priority=10) = do:
+    return proceed(x * 2)
+
+mixin C v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="C", depends="B") = do:
+    return proceed(x + 10)
+
+use mixin C v1
+use mixin B v1
+run()
+"""
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo"]
+    assert [p["hook_id"] for p in plan] == ["B", "C"]
+    assert [p["depth"] for p in plan] == [0, 1]
+    assert all(p["owner_kind"] == "sector" for p in plan)

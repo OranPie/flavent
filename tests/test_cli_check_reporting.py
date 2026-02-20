@@ -177,3 +177,37 @@ def test_check_warning_controls_escalate_and_suppress(tmp_path: Path, monkeypatc
     ok_report = json.loads(ok_json.read_text(encoding="utf-8"))
     assert ok_report["status"] == "ok"
     assert ok_report["summary"]["suppressed"] == 1
+
+
+@pytest.mark.integration
+def test_check_report_json_includes_mixin_hook_plan(tmp_path: Path):
+    src = tmp_path / "mixin-plan.flv"
+    out = tmp_path / "reports" / "mixin-plan.json"
+    src.write_text(
+        """type Event.Start = {}
+
+sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin M v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="H", priority=3) = do:
+    return proceed(x)
+
+use mixin M v1
+
+sector main:
+  on Event.Start -> do:
+    rpc S.foo(1)
+    stop()
+
+run()
+""",
+        encoding="utf-8",
+    )
+    rc = main(["check", str(src), "--report-json", str(out)])
+    assert rc == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    mixin_plan = report["artifacts"].get("mixin_hook_plan")
+    assert isinstance(mixin_plan, list) and mixin_plan
+    assert mixin_plan[0]["target"] == "S.foo"
+    assert mixin_plan[0]["hook_id"] == "H"

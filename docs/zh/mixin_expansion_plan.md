@@ -33,7 +33,7 @@
 - [ ] 增加结构化 hook 上下文字段（hook id、target、point、调用深度）。
 - [ ] 增加冲突策略（`error` / `prefer` / `drop`）。
 - [ ] 增加 strict 模式：未解析 `depends` 或 locator 失配直接失败。
-- [ ] 增加 hook 栈“dry-run resolve”输出（CI/排障）。
+- [~] 增加 hook 栈“dry-run resolve”输出（CI/排障）。（已增加 JSON 报告产物）
 - [ ] 测试：
   - [ ] 冲突策略行为矩阵
   - [ ] strict / non-strict 差异行为

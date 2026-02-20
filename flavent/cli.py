@@ -260,6 +260,7 @@ def main(argv: list[str] | None = None) -> int:
                 "ident_to_symbol": res.ident_to_symbol,
                 "typename_to_symbol": res.typename_to_symbol,
                 "handler_to_symbol": res.handler_to_symbol,
+                "mixin_hook_plan": res.mixin_hook_plan,
             }
             print(json.dumps(out, indent=2, ensure_ascii=False))
             return 0
@@ -272,6 +273,11 @@ def main(argv: list[str] | None = None) -> int:
         check_program(hir_prog, res)
 
         if args.cmd == "check":
+            if res.mixin_hook_plan:
+                check_artifacts["mixin_hook_plan"] = res.mixin_hook_plan
+            check_metrics["mixins"] = {
+                "hook_plan_entries": len(res.mixin_hook_plan),
+            }
             report = audit_bridge_usage(hir_prog, res)
             if getattr(args, "bridge_report", ""):
                 bp = Path(args.bridge_report)
