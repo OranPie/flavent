@@ -7,6 +7,12 @@
 - `WBR001`（`warning`，阶段 `bridge_audit`）
   - bridge 审计检测到已弃用 bridge shim。
   - 支持抑制（`--suppress-warning WBR001`）与升级为错误（`--warn-code-as-error WBR001`）。
+- `WMIX001`（`warning`，阶段 `mixin`）
+  - `conflict=drop` 情况下，因重复 hook id 被丢弃的 hook。
+- `WMIX002`（`warning`，阶段 `mixin`）
+  - 非 strict 模式下，因 `depends` 未解析而被丢弃的 hook。
+- `WMIX003`（`warning`，阶段 `mixin`）
+  - 非 strict 模式下，因 locator 失配而被丢弃的 hook。
 - `ECHECKWARN`（`error`，阶段 `check`）
   - warning 策略触发失败时产生（`--strict`、`--warn-as-error`、`--warn-code-as-error`、`--max-warnings`）。
 

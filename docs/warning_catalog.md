@@ -7,6 +7,12 @@ This document defines stable warning/error codes for reporting and CI policy.
 - `WBR001` (`warning`, stage `bridge_audit`)
   - Deprecated bridge shim usage detected by bridge audit.
   - Supports suppression (`--suppress-warning WBR001`) and escalation (`--warn-code-as-error WBR001`).
+- `WMIX001` (`warning`, stage `mixin`)
+  - Hook dropped due to duplicate hook id when `conflict=drop`.
+- `WMIX002` (`warning`, stage `mixin`)
+  - Hook dropped in non-strict mode due to unresolved `depends`.
+- `WMIX003` (`warning`, stage `mixin`)
+  - Hook dropped in non-strict mode due to locator mismatch.
 - `ECHECKWARN` (`error`, stage `check`)
   - Emitted when warning policy fails (`--strict`, `--warn-as-error`, `--warn-code-as-error`, `--max-warnings`).
 

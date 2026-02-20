@@ -40,12 +40,12 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 
 ## Phase C: Diagnostics and Reporting
 
-- [ ] Introduce stable mixin diagnostics/warning codes (e.g. `WMIX*`, `EMIX*`).
-- [ ] Surface hook stack trace in `flavent check --report-json`.
-- [ ] Add warning controls for mixin codes (suppress/escalate) aligned with check policy.
-- [ ] Tests:
-  - [ ] code presence + stage metadata
-  - [ ] escalation/suppression flow
+- [x] Introduce stable mixin diagnostics/warning codes (e.g. `WMIX*`, `EMIX*`).
+- [x] Surface hook stack trace in `flavent check --report-json`.
+- [x] Add warning controls for mixin codes (suppress/escalate) aligned with check policy.
+- [x] Tests:
+  - [x] code presence + stage metadata
+  - [x] escalation/suppression flow
 
 ## Phase D: Docs and Examples
 

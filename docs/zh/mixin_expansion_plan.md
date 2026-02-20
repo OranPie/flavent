@@ -40,12 +40,12 @@
 
 ## Phase C：诊断与报告
 
-- [ ] 引入稳定 mixin 诊断码（如 `WMIX*`、`EMIX*`）。
-- [ ] 在 `flavent check --report-json` 中输出 hook 栈与 mixin 诊断信息。
-- [ ] 与现有 warning 策略对齐（抑制/升级/门禁）。
-- [ ] 测试：
-  - [ ] 诊断码与 stage 元数据
-  - [ ] 升级/抑制流程
+- [x] 引入稳定 mixin 诊断码（如 `WMIX*`、`EMIX*`）。
+- [x] 在 `flavent check --report-json` 中输出 hook 栈与 mixin 诊断信息。
+- [x] 与现有 warning 策略对齐（抑制/升级/门禁）。
+- [x] 测试：
+  - [x] 诊断码与 stage 元数据
+  - [x] 升级/抑制流程
 
 ## Phase D：文档与示例补齐
 

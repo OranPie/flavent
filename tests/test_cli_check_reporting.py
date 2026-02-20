@@ -213,3 +213,97 @@ run()
     assert mixin_plan[0]["hook_id"] == "H"
     assert mixin_plan[0]["conflict_policy"] == "error"
     assert mixin_plan[0]["status"] == "active"
+
+
+@pytest.mark.integration
+def test_check_report_json_includes_mixin_drop_warning(tmp_path: Path):
+    src = tmp_path / "mixin-warn.flv"
+    out = tmp_path / "reports" / "mixin-warn.json"
+    src.write_text(
+        """type Event.Start = {}
+
+sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin M v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", depends="Missing", strict=false) = do:
+    return proceed(x)
+
+use mixin M v1
+
+sector main:
+  on Event.Start -> do:
+    rpc S.foo(1)
+    stop()
+
+run()
+""",
+        encoding="utf-8",
+    )
+    rc = main(["check", str(src), "--report-json", str(out)])
+    assert rc == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    mixin_issues = [i for i in report["issues"] if i["stage"] == "mixin"]
+    assert len(mixin_issues) == 1
+    assert mixin_issues[0]["code"] == "WMIX002"
+    assert report["summary"]["warnings"] >= 1
+    assert report["metrics"]["mixins"]["warnings"] == 1
+
+
+@pytest.mark.integration
+def test_check_warning_controls_for_mixin_warning(tmp_path: Path):
+    src = tmp_path / "mixin-warn-controls.flv"
+    fail_json = tmp_path / "reports" / "mixin-warn-fail.json"
+    ok_json = tmp_path / "reports" / "mixin-warn-ok.json"
+    src.write_text(
+        """type Event.Start = {}
+
+sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin M v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", depends="Missing", strict=false) = do:
+    return proceed(x)
+
+use mixin M v1
+
+sector main:
+  on Event.Start -> do:
+    rpc S.foo(1)
+    stop()
+
+run()
+""",
+        encoding="utf-8",
+    )
+    rc_fail = main(
+        [
+            "check",
+            str(src),
+            "--warn-code-as-error",
+            "WMIX002",
+            "--report-json",
+            str(fail_json),
+        ]
+    )
+    assert rc_fail == 2
+    fail_report = json.loads(fail_json.read_text(encoding="utf-8"))
+    assert fail_report["status"] == "failed"
+    assert any(i["code"] == "ECHECKWARN" for i in fail_report["issues"])
+
+    rc_ok = main(
+        [
+            "check",
+            str(src),
+            "--warn-code-as-error",
+            "WMIX002",
+            "--suppress-warning",
+            "WMIX002",
+            "--report-json",
+            str(ok_json),
+        ]
+    )
+    assert rc_ok == 0
+    ok_report = json.loads(ok_json.read_text(encoding="utf-8"))
+    assert ok_report["status"] == "ok"
+    assert ok_report["summary"]["suppressed"] >= 1

@@ -206,7 +206,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ReportError: failed to write JSON report: {e}")
 
     def _warning_line(issue: ReportIssue) -> str:
-        base = f"BridgeWarning: [{issue.code}] {issue.message}"
+        prefix = "BridgeWarning" if issue.stage == "bridge_audit" else "Warning"
+        base = f"{prefix}: [{issue.code}] {issue.message}"
         loc = issue.location or {}
         file = loc.get("file")
         line = int(loc.get("line") or 0)
@@ -214,6 +215,44 @@ def main(argv: list[str] | None = None) -> int:
         if file and line > 0 and col > 0:
             return f"{base} @ {file}:{line}:{col}"
         return base
+
+    def _mixin_warning_issues(hook_plan: list[dict[str, object]]) -> list[dict[str, object]]:
+        out: list[dict[str, object]] = []
+        for row in hook_plan:
+            if str(row.get("status", "")) != "dropped":
+                continue
+            reason = str(row.get("drop_reason", ""))
+            target = str(row.get("target", ""))
+            hook_id = str(row.get("hook_id", ""))
+            if reason == "duplicate_drop":
+                code = "WMIX001"
+                msg = f"dropped hook {hook_id} on {target}: duplicate hook id (conflict=drop)"
+            elif reason.startswith("unknown_dependency:"):
+                dep = reason.split(":", 1)[1]
+                code = "WMIX002"
+                msg = f"dropped hook {hook_id} on {target}: unknown dependency {dep!r} in non-strict mode"
+            elif reason == "locator_mismatch":
+                code = "WMIX003"
+                msg = f"dropped hook {hook_id} on {target}: locator mismatch in non-strict mode"
+            else:
+                code = "WMIX000"
+                msg = f"dropped hook {hook_id} on {target}: {reason or 'unknown reason'}"
+            out.append(
+                {
+                    "severity": "warning",
+                    "code": code,
+                    "message": msg,
+                    "stage": "mixin",
+                    "location": row.get("location"),
+                    "hint": "set strict=true to fail fast, or fix hook dependencies/locator",
+                    "metadata": {
+                        "target": target,
+                        "hook_id": hook_id,
+                        "drop_reason": reason,
+                    },
+                }
+            )
+        return out
 
     def _fmt_err(kind: str, e) -> str:
         try:
@@ -275,9 +314,6 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "check":
             if res.mixin_hook_plan:
                 check_artifacts["mixin_hook_plan"] = res.mixin_hook_plan
-            check_metrics["mixins"] = {
-                "hook_plan_entries": len(res.mixin_hook_plan),
-            }
             report = audit_bridge_usage(hir_prog, res)
             if getattr(args, "bridge_report", ""):
                 bp = Path(args.bridge_report)
@@ -301,12 +337,32 @@ def main(argv: list[str] | None = None) -> int:
                         metadata=dict(w.get("metadata", {})),
                     )
                 )
+            mixin_warns = _mixin_warning_issues(res.mixin_hook_plan)
+            for w in mixin_warns:
+                code = str(w.get("code", "WARN")).upper()
+                check_issues.append(
+                    ReportIssue(
+                        severity="warning",
+                        code=code,
+                        message=str(w.get("message", "")),
+                        stage=str(w.get("stage", "mixin")),
+                        location=w.get("location"),
+                        hint=str(w.get("hint", "")),
+                        suppressed=code in suppress_codes,
+                        metadata=dict(w.get("metadata", {})),
+                    )
+                )
 
             active_warning_issues = [i for i in check_issues if i.severity == "warning" and not i.suppressed]
             warning_lines = [_warning_line(i) for i in active_warning_issues]
             suppressed_count = sum(1 for i in check_issues if i.severity == "warning" and i.suppressed)
             check_metrics["bridge"] = {
                 "count_keys": len(report.get("counts", {})),
+                "warnings": sum(1 for i in check_issues if i.stage == "bridge_audit"),
+            }
+            check_metrics["mixins"] = {
+                "hook_plan_entries": len(res.mixin_hook_plan),
+                "warnings": sum(1 for i in check_issues if i.stage == "mixin"),
                 "active_warnings": len(active_warning_issues),
                 "suppressed_warnings": suppressed_count,
             }

@@ -606,6 +606,12 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                 "at": sp.at,
                 "depth": depth,
                 "status": status,
+                "strict_mode": sp.strict_mode,
+                "location": {
+                    "file": sp.span.file,
+                    "line": sp.span.line,
+                    "col": sp.span.col,
+                },
             }
             if drop_reason:
                 row["drop_reason"] = drop_reason

@@ -78,6 +78,11 @@ Compatibility note:
   - new structured report output: `flavent check ... --report-json <path>`
   - warning controls: `--warn-as-error`, `--warn-code-as-error`, `--suppress-warning`, `--max-warnings`
   - warning issues now include stable code metadata (`WBR001`) for policy and CI automation.
+  - mixin warning codes added for hook-drop diagnostics:
+    - `WMIX001`: duplicate id dropped by `conflict=drop`
+    - `WMIX002`: non-strict unresolved dependency drop
+    - `WMIX003`: non-strict locator mismatch drop
+  - mixin warnings participate in existing warning policy gates (`--warn-code-as-error`, `--suppress-warning`).
 - Unified reporting schema (`schema_version: 1.0`) for stdlib policy tooling JSON outputs:
   - `scripts/bridge_usage_snapshot.py`
   - `scripts/stdlib_duplicate_defs.py`

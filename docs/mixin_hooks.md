@@ -69,6 +69,7 @@ Each entry includes:
 - `target` (`Owner.fn` / `Type.method`)
 - `hook_id`, `point`, `origin`, `conflict_policy`, `mixin_key`
 - `priority`, `depends`, `at`, `depth` (`0` is outermost for active hooks)
+- `strict_mode`, `location`
 - `status`: `active` or `dropped`
 - `drop_reason` (when dropped): `duplicate_drop`, `unknown_dependency:<id>`, `locator_mismatch`
 
