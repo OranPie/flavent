@@ -300,7 +300,9 @@ run()
 """
     res = _resolve(src)
     plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo"]
-    assert not plan
+    assert len(plan) == 2
+    assert all(p["status"] == "dropped" for p in plan)
+    assert all(p["drop_reason"] == "duplicate_drop" for p in plan)
 
 
 def test_mixin_hook_conflict_option_rejects_invalid_value():
@@ -316,3 +318,39 @@ run()
 """
     with pytest.raises(ResolveError, match="hook conflict must be one of"):
         _resolve(src)
+
+
+def test_mixin_hook_non_strict_unknown_dependency_is_dropped():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", depends="Missing", strict=false) = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo" and p["hook_id"] == "A"]
+    assert len(plan) == 1
+    assert plan[0]["status"] == "dropped"
+    assert plan[0]["drop_reason"].startswith("unknown_dependency:")
+
+
+def test_mixin_hook_non_strict_locator_mismatch_is_dropped():
+    src = """sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", at="anchor:nope", strict=false) = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo" and p["hook_id"] == "A"]
+    assert len(plan) == 1
+    assert plan[0]["status"] == "dropped"
+    assert plan[0]["drop_reason"] == "locator_mismatch"

@@ -380,6 +380,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
         point: str
         origin: str
         conflict_policy: str
+        strict_mode: bool
         hook_id: str
         priority: int
         depends: list[str]
@@ -486,9 +487,9 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                 span,
             )
 
-    def _resolve_specs(specs: list[_AroundSpec], *, span: Span) -> list[_AroundSpec]:
+    def _resolve_specs(specs: list[_AroundSpec], *, span: Span) -> tuple[list[_AroundSpec], list[tuple[_AroundSpec, str]]]:
         if not specs:
-            return []
+            return [], []
         groups: dict[str, list[_AroundSpec]] = {}
         order_ids: list[str] = []
         spec_order_idx: dict[int, int] = {}
@@ -500,6 +501,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
             groups[sp.hook_id].append(sp)
 
         selected: list[_AroundSpec] = []
+        dropped: list[tuple[_AroundSpec, str]] = []
         for hook_id in order_ids:
             group = groups[hook_id]
             if len(group) == 1:
@@ -513,12 +515,33 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                 selected.append(chosen)
                 continue
             # All `drop`: remove all candidates for this hook id.
+            for sp in group:
+                dropped.append((sp, "duplicate_drop"))
             continue
 
         if not selected:
-            return []
+            return [], dropped
 
-        by_id: dict[str, _AroundSpec] = {sp.hook_id: sp for sp in selected}
+        while True:
+            by_id: dict[str, _AroundSpec] = {sp.hook_id: sp for sp in selected}
+            kept: list[_AroundSpec] = []
+            removed = False
+            for sp in selected:
+                missing = [dep for dep in sp.depends if dep not in by_id]
+                if not missing:
+                    kept.append(sp)
+                    continue
+                if sp.strict_mode:
+                    raise ResolveError(f"Unknown hook dependency: {missing[0]} (needed by {sp.hook_id})", sp.span)
+                dropped.append((sp, f"unknown_dependency:{missing[0]}"))
+                removed = True
+            if not removed:
+                break
+            selected = kept
+            if not selected:
+                return [], dropped
+
+        by_id = {sp.hook_id: sp for sp in selected}
 
         edges: dict[str, set[str]] = {sp.hook_id: set() for sp in selected}
         indeg: dict[str, int] = {sp.hook_id: 0 for sp in selected}
@@ -526,8 +549,6 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
 
         for sp in selected:
             for dep in sp.depends:
-                if dep not in by_id:
-                    raise ResolveError(f"Unknown hook dependency: {dep} (needed by {sp.hook_id})", sp.span)
                 if sp.hook_id not in edges[dep]:
                     edges[dep].add(sp.hook_id)
                     indeg[sp.hook_id] += 1
@@ -545,7 +566,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
 
         if len(out) != len(selected):
             raise ResolveError("Cyclic hook dependencies in mixin call stack resolver", span)
-        return out
+        return out, dropped
 
     def _clone_params(ps: list[ast.ParamDecl]) -> list[ast.ParamDecl]:
         out: list[ast.ParamDecl] = []
@@ -570,53 +591,84 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
         display_target_by_fn: dict[str, str] | None = None,
         hook_plan: list[dict[str, Any]] | None = None,
     ) -> list[Any]:
+        def _plan_row(sp: _AroundSpec, *, target_name: str, depth: int | None, status: str, drop_reason: str = "") -> dict[str, Any]:
+            row = {
+                "owner_kind": owner_kind,
+                "owner": owner_name,
+                "target": f"{owner_name}.{target_name}",
+                "hook_id": sp.hook_id,
+                "point": sp.point,
+                "origin": sp.origin,
+                "conflict_policy": sp.conflict_policy,
+                "mixin_key": sp.mixin_key,
+                "priority": sp.priority,
+                "depends": list(sp.depends),
+                "at": sp.at,
+                "depth": depth,
+                "status": status,
+            }
+            if drop_reason:
+                row["drop_reason"] = drop_reason
+            return row
+
+        def _append_plan(sp: _AroundSpec, *, target_name: str, depth: int | None, status: str, drop_reason: str = "") -> None:
+            if hook_plan is None:
+                return
+            hook_plan.append(_plan_row(sp, target_name=target_name, depth=depth, status=status, drop_reason=drop_reason))
+
         owner_safe = _safe_name(owner_name)
         around_ordered: list[_AroundSpec] = []
+        depth_by_spec: dict[int, int] = {}
+        target_by_spec: dict[int, str] = {}
+        active_row_by_spec: dict[int, dict[str, Any]] = {}
+        active_rows: list[dict[str, Any]] = []
         for fname, specs in around_by_fn.items():
             head_specs = [sp for sp in specs if sp.point == "head"]
             invoke_specs = [sp for sp in specs if sp.point == "invoke"]
             tail_specs = [sp for sp in specs if sp.point == "tail"]
-            ordered_head = _resolve_specs(head_specs, span=specs[0].span)
-            ordered_invoke = _resolve_specs(invoke_specs, span=specs[0].span)
-            ordered_tail = _resolve_specs(tail_specs, span=specs[0].span)
+            ordered_head, dropped_head = _resolve_specs(head_specs, span=specs[0].span)
+            ordered_invoke, dropped_invoke = _resolve_specs(invoke_specs, span=specs[0].span)
+            ordered_tail, dropped_tail = _resolve_specs(tail_specs, span=specs[0].span)
+            display_target = (display_target_by_fn or {}).get(fname, fname)
+            for sp, reason in [*dropped_head, *dropped_invoke, *dropped_tail]:
+                _append_plan(sp, target_name=display_target, depth=None, status="dropped", drop_reason=reason)
             # Outer stack order: heads then invokes then tails; tail executes after proceed so reverse it.
             outer_stack = [*ordered_head, *ordered_invoke, *reversed(ordered_tail)]
-            if hook_plan is not None:
-                display_target = (display_target_by_fn or {}).get(fname, fname)
-                for depth, sp in enumerate(outer_stack):
-                    hook_plan.append(
-                        {
-                            "owner_kind": owner_kind,
-                            "owner": owner_name,
-                            "target": f"{owner_name}.{display_target}",
-                            "hook_id": sp.hook_id,
-                            "point": sp.point,
-                            "origin": sp.origin,
-                            "conflict_policy": sp.conflict_policy,
-                            "mixin_key": sp.mixin_key,
-                            "priority": sp.priority,
-                            "depends": list(sp.depends),
-                            "at": sp.at,
-                            "depth": depth,
-                        }
-                    )
+            for depth, sp in enumerate(outer_stack):
+                depth_by_spec[id(sp)] = depth
+                target_by_spec[id(sp)] = display_target
+                row = _plan_row(sp, target_name=display_target, depth=depth, status="active")
+                active_row_by_spec[id(sp)] = row
+                active_rows.append(row)
             around_ordered.extend(reversed(outer_stack))
 
         for weave_idx, spec in enumerate(around_ordered, start=1):
             key = spec.mixin_key
             ar = spec.around
             fname = ar.sig.name.name
+            target_name = target_by_spec.get(id(spec), fname)
+            depth = depth_by_spec.get(id(spec))
             target = next((it for it in items if isinstance(it, ast.FnDecl) and it.name.name == fname), None)
             if target is None:
                 raise ResolveError(f"Mixin {key} around-target fn not found: {owner_name}.{fname}", ar.span)
-            _validate_locator(
-                spec.at,
-                target=target,
-                sec_name=owner_name,
-                hook_id=spec.hook_id,
-                span=spec.span,
-                anchor_aliases=(anchor_alias_by_fn or {}).get(fname),
-            )
+            try:
+                _validate_locator(
+                    spec.at,
+                    target=target,
+                    sec_name=owner_name,
+                    hook_id=spec.hook_id,
+                    span=spec.span,
+                    anchor_aliases=(anchor_alias_by_fn or {}).get(fname),
+                )
+            except ResolveError as exc:
+                if (not spec.strict_mode) and exc.message.startswith("Hook locator mismatch"):
+                    if hook_plan is not None:
+                        row = active_row_by_spec.pop(id(spec), None)
+                        if row in active_rows:
+                            active_rows.remove(row)
+                    _append_plan(spec, target_name=target_name, depth=depth, status="dropped", drop_reason="locator_mismatch")
+                    continue
+                raise
 
             if len(ar.sig.params) != len(target.params):
                 raise ResolveError(f"Mixin {key} around signature arity mismatch for {owner_name}.{fname}", ar.span)
@@ -650,6 +702,8 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                 span=target.span,
             )
             items = [new_target if (isinstance(it, ast.FnDecl) and it.name.name == fname) else it for it in items]
+        if hook_plan is not None:
+            hook_plan.extend(active_rows)
         return items
 
     def apply_to_sector(sd: ast.SectorDecl, mixin_keys: list[str]) -> ast.SectorDecl:
@@ -706,6 +760,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                     point="invoke",
                     origin="around",
                     conflict_policy="error",
+                    strict_mode=True,
                     hook_id=hook_id,
                     priority=0,
                     depends=[],
@@ -727,7 +782,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                     raise ResolveError(f"Mixin {key} hook signature param type mismatch for {sd.name.name}.{fname}", ap.span)
 
             opts = hk.opts
-            allowed_opts = {"id", "priority", "depends", "at", "cancelable", "returnDep", "const", "constParams", "constArgs", "conflict"}
+            allowed_opts = {"id", "priority", "depends", "at", "cancelable", "returnDep", "const", "constParams", "constArgs", "conflict", "strict"}
             unknown_opts = sorted(k for k in opts if k not in allowed_opts)
             if unknown_opts:
                 raise ResolveError(f"Unknown hook option: {unknown_opts[0]}", hk.span)
@@ -750,6 +805,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
             conflict_policy = opts.get("conflict", "error")
             if conflict_policy not in ("error", "prefer", "drop"):
                 raise ResolveError("hook conflict must be one of: error, prefer, drop", hk.span)
+            strict_mode = _parse_bool(opts.get("strict"), default=True, span=hk.span, key="strict")
             const_values = _split_csv(opts.get("const")) + _split_csv(opts.get("constParams")) + _split_csv(opts.get("constArgs"))
 
             if hk.point == "invoke":
@@ -767,6 +823,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                         point="invoke",
                         origin="hook",
                         conflict_policy=conflict_policy,
+                        strict_mode=strict_mode,
                         hook_id=hook_id,
                         priority=priority,
                         depends=depends,
@@ -891,6 +948,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                     point=hk.point,
                     origin="hook",
                     conflict_policy=conflict_policy,
+                    strict_mode=strict_mode,
                     hook_id=hook_id,
                     priority=priority,
                     depends=depends,
@@ -1103,6 +1161,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                     point="invoke",
                     origin="around",
                     conflict_policy="error",
+                    strict_mode=True,
                     hook_id=hook_id,
                     priority=0,
                     depends=[],
@@ -1125,7 +1184,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                     raise ResolveError(f"Mixin {key} hook signature param type mismatch for {type_name}.{method_name_for_target}", ap.span)
 
             opts = hk.opts
-            allowed_opts = {"id", "priority", "depends", "at", "cancelable", "returnDep", "const", "constParams", "constArgs", "conflict"}
+            allowed_opts = {"id", "priority", "depends", "at", "cancelable", "returnDep", "const", "constParams", "constArgs", "conflict", "strict"}
             unknown_opts = sorted(k for k in opts if k not in allowed_opts)
             if unknown_opts:
                 raise ResolveError(f"Unknown hook option: {unknown_opts[0]}", hk.span)
@@ -1148,6 +1207,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
             conflict_policy = opts.get("conflict", "error")
             if conflict_policy not in ("error", "prefer", "drop"):
                 raise ResolveError("hook conflict must be one of: error, prefer, drop", hk.span)
+            strict_mode = _parse_bool(opts.get("strict"), default=True, span=hk.span, key="strict")
             const_values = _split_csv(opts.get("const")) + _split_csv(opts.get("constParams")) + _split_csv(opts.get("constArgs"))
 
             if hk.point == "invoke":
@@ -1173,6 +1233,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                         point="invoke",
                         origin="hook",
                         conflict_policy=conflict_policy,
+                        strict_mode=strict_mode,
                         hook_id=hook_id,
                         priority=priority,
                         depends=depends,
@@ -1299,6 +1360,7 @@ def _apply_mixins(prog: ast.Program) -> tuple[ast.Program, list[dict[str, Any]]]
                     point=hk.point,
                     origin="hook",
                     conflict_policy=conflict_policy,
+                    strict_mode=strict_mode,
                     hook_id=hook_id,
                     priority=priority,
                     depends=depends,

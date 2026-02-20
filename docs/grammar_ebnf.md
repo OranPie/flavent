@@ -72,6 +72,7 @@ Current implementation note:
 - `hook` items are supported for both sector-target and type-target mixins.
 - Type-target hook/around targets resolve against mixin-injected methods (`fn name(self: Type, ...)`).
 - Hook options include duplicate-id conflict policy (`conflict=error|prefer|drop`).
+- Hook options include strict policy (`strict=true|false`) for dependency/locator handling.
 
 ## Handlers, Blocks, and Statements
 

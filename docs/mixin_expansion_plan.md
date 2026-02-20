@@ -32,7 +32,7 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 
 - [ ] Add structured hook context metadata (hook id, target, point, call depth).
 - [x] Add deterministic hook conflict policy options (`error`, `prefer`, `drop`).
-- [ ] Add optional strict mode: unresolved `depends` or locator mismatch => hard error.
+- [x] Add optional strict mode: unresolved `depends` or locator mismatch => hard error.
 - [~] Add “dry-run resolve” output for hook stack planning (for CI/debug). (JSON report artifact added)
 - [ ] Tests:
   - [ ] conflict resolution behavior matrix

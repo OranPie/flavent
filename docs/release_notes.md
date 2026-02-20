@@ -225,6 +225,9 @@ Compatibility note:
   - `flavent check --report-json` now emits `artifacts.mixin_hook_plan` for resolved hook stacks (owner/target/hook id/point/depth).
   - hook duplicate-id conflict policy added via `with(conflict=...)`:
     - `error` (default), `prefer` (priority/declaration-order winner), `drop` (remove duplicates).
+  - hook strict-mode policy added via `with(strict=...)`:
+    - `true` (default): unresolved `depends` / locator mismatch are resolve errors.
+    - `false`: unresolved `depends` / locator mismatch drop that hook from the stack.
   - hook semantic checks were tightened:
     - unknown `with(...)` option keys are now rejected,
     - `head + cancelable=true` now requires return type `Option[targetReturnType]`,

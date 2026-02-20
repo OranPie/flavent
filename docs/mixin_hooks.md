@@ -34,11 +34,15 @@ For type-target mixins, `hook`/`around` targets are method names declared by typ
   - `replace_return`: hook receives prior return as extra arg and its result becomes final return.
 - `const` / `constParams` / `constArgs`: comma-separated constant strings appended to hook call arguments.
 - `conflict`: duplicate hook-id policy (`error` default, `prefer`, `drop`).
+- `strict`: dependency/locator enforcement policy (`true` default).
 - Unknown option keys are rejected during resolve.
 - `conflict` validation rules:
   - `error`: duplicate hook id in same target fails resolve.
   - `prefer`: keeps the highest-priority duplicate (stable declaration-order tie break).
   - `drop`: drops duplicate candidates for that hook id.
+- `strict` behavior:
+  - `true`: unresolved `depends` or locator mismatch fails resolve.
+  - `false`: unresolved `depends` or locator mismatch drops that hook from the resolved stack.
 - Validation rules:
   - `head + cancelable=true` requires return type `Option[targetReturnType]`.
   - `tail + returnDep in {use_return, replace_return}` requires an extra `ret`-style parameter typed as target return type.
