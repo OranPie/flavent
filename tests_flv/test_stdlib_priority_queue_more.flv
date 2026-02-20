@@ -1,0 +1,26 @@
+use flvtest
+use collections.priority_queue
+use collections.list
+
+test "priority-queue-ordering" -> do:
+  let q0 = priorityQueueEmpty()
+  let q1 = priorityQueuePush(q0, 3, "c")
+  let q2 = priorityQueuePush(q1, 1, "a")
+  let q3 = priorityQueuePush(q2, 2, "b")
+  assertEq(priorityQueuePeek(q3), Some("a"))?
+  assertEq(priorityQueuePeekPriority(q3), Some(1))?
+  let p1 = priorityQueuePopOr(q3, 9, "z")
+  assertEq(p1.value, "a")?
+  let p2 = priorityQueuePopOr(p1.rest, 9, "z")
+  assertEq(p2.value, "b")?
+  let p3 = priorityQueuePopOr(p2.rest, 9, "z")
+  assertEq(p3.value, "c")?
+
+test "priority-queue-list-and-defaults" -> do:
+  let xs = Cons({ priority = 2, value = 20 }, Cons({ priority = 1, value = 10 }, Nil))
+  let q0 = priorityQueueFromList(xs)
+  assertEq(priorityQueueToList(q0), Cons({ priority = 1, value = 10 }, Cons({ priority = 2, value = 20 }, Nil)))?
+  assertEq(priorityQueuePeekOr(priorityQueueEmpty(), 7), 7)?
+  let p0 = priorityQueuePopOr(priorityQueueEmpty(), 9, 99)
+  assertEq(p0.priority, 9)?
+  assertEq(p0.value, 99)?

@@ -119,6 +119,10 @@ Compatibility note:
   - `stackPush` / `stackPop` / `stackPeek`
   - `stackPushAll`, `stackToList`, `stackFromList`
   - default helpers: `stackPeekOr` / `stackPopOr`
+- Added new `collections.priority_queue` stdlib module (plus `priority_queue` compatibility wrapper):
+  - `priorityQueuePush` / `priorityQueuePop` / `priorityQueuePeek`
+  - `priorityQueuePeekPriority`, `priorityQueuePushAll`, `priorityQueueFromList`
+  - default helpers: `priorityQueuePeekOr` / `priorityQueuePopOr`
 - Added new `datetime` stdlib module with pure-Flavent helpers:
   - `parseDate` / `parseTime` / `parseDateTime`
   - `formatDate` / `formatTime` / `formatDateTime`
@@ -151,6 +155,10 @@ Compatibility note:
   - `docs/zh/stdlib/collections.stack.md`
   - `docs/en/stdlib/stack.md`
   - `docs/zh/stdlib/stack.md`
+  - `docs/en/stdlib/collections.priority_queue.md`
+  - `docs/zh/stdlib/collections.priority_queue.md`
+  - `docs/en/stdlib/priority_queue.md`
+  - `docs/zh/stdlib/priority_queue.md`
   - `docs/en/stdlib/datetime.md`
   - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`

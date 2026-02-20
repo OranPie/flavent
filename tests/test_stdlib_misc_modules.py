@@ -26,8 +26,10 @@ use collections.queue
 use collections.deque
 use collections.heap
 use collections.stack
+use collections.priority_queue
 use collections.set
 use stack
+use priority_queue
 use bytelib
 use u32
 use cliargs
@@ -264,6 +266,21 @@ sector s:
     let _stkLs = stackToList(st1)
     let _stkFm = stackFromList(xs2)
     let _stkAll = stackPushAll(st0, xs2)
+
+    let pq0 = priorityQueueEmpty()
+    let pq1 = priorityQueuePush(pq0, 3, "c")
+    let pq2 = priorityQueuePush(pq1, 1, "a")
+    let _pqE = priorityQueueIsEmpty(pq0)
+    let _pqPk = priorityQueuePeek(pq2)
+    let _pqPr = priorityQueuePeekPriority(pq2)
+    let _pqPop = priorityQueuePop(pq2)
+    let _pqKo = priorityQueuePeekOr(pq0, "z")
+    let _pqPoOr = priorityQueuePopOr(pq0, 9, "z")
+    let _pqSz = priorityQueueSize(pq2)
+    let _pqLs = priorityQueueToList(pq2)
+    let _pqPushI = priorityQueuePushItem(pq0, { priority = 2, value = "b" })
+    let _pqAll = priorityQueuePushAll(pq0, Cons({ priority = 2, value = "b" }, Nil))
+    let _pqFm = priorityQueueFromList(Cons({ priority = 2, value = "b" }, Cons({ priority = 1, value = "a" }, Nil)))
 
     let ss0 = setEmpty()
     let s1 = setAdd(ss0, 1)

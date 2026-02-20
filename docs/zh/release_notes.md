@@ -119,6 +119,10 @@
   - `stackPush` / `stackPop` / `stackPeek`
   - `stackPushAll`、`stackToList`、`stackFromList`
   - 默认值辅助：`stackPeekOr` / `stackPopOr`
+- 新增 `collections.priority_queue` 标准库模块（并提供 `priority_queue` 兼容 wrapper）：
+  - `priorityQueuePush` / `priorityQueuePop` / `priorityQueuePeek`
+  - `priorityQueuePeekPriority`、`priorityQueuePushAll`、`priorityQueueFromList`
+  - 默认值辅助：`priorityQueuePeekOr` / `priorityQueuePopOr`
 - 新增 `datetime` 标准库模块（纯 Flavent 实现）：
   - `parseDate` / `parseTime` / `parseDateTime`
   - `formatDate` / `formatTime` / `formatDateTime`
@@ -151,6 +155,10 @@
   - `docs/zh/stdlib/collections.stack.md`
   - `docs/en/stdlib/stack.md`
   - `docs/zh/stdlib/stack.md`
+  - `docs/en/stdlib/collections.priority_queue.md`
+  - `docs/zh/stdlib/collections.priority_queue.md`
+  - `docs/en/stdlib/priority_queue.md`
+  - `docs/zh/stdlib/priority_queue.md`
   - `docs/en/stdlib/datetime.md`
   - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`
