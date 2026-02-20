@@ -115,6 +115,10 @@
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
   - `dequePeekFront` / `dequePeekBack` 与列表互转辅助
+- 新增 `collections.stack` 标准库模块（并提供 `stack` 兼容 wrapper）：
+  - `stackPush` / `stackPop` / `stackPeek`
+  - `stackPushAll`、`stackToList`、`stackFromList`
+  - 默认值辅助：`stackPeekOr` / `stackPopOr`
 - 新增 `datetime` 标准库模块（纯 Flavent 实现）：
   - `parseDate` / `parseTime` / `parseDateTime`
   - `formatDate` / `formatTime` / `formatDateTime`
@@ -143,6 +147,10 @@
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`
   - `docs/zh/stdlib/deque.md`
+  - `docs/en/stdlib/collections.stack.md`
+  - `docs/zh/stdlib/collections.stack.md`
+  - `docs/en/stdlib/stack.md`
+  - `docs/zh/stdlib/stack.md`
   - `docs/en/stdlib/datetime.md`
   - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`

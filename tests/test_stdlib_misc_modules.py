@@ -25,7 +25,9 @@ use collections.list
 use collections.queue
 use collections.deque
 use collections.heap
+use collections.stack
 use collections.set
+use stack
 use bytelib
 use u32
 use cliargs
@@ -250,6 +252,18 @@ sector s:
     let _hpo = heapPopOr(h0, 9)
     let _hko = heapPeekOr(h0, 9)
     let _hia = heapInsertAll(xs2, h0)
+
+    let st0 = stackEmpty()
+    let st1 = stackPush(st0, 1)
+    let _stkE = stackIsEmpty(st0)
+    let _stkPk = stackPeek(st1)
+    let _stkPo = stackPop(st1)
+    let _stkKo = stackPeekOr(st0, 9)
+    let _stkPoOr = stackPopOr(st0, 9)
+    let _stkSz = stackSize(st1)
+    let _stkLs = stackToList(st1)
+    let _stkFm = stackFromList(xs2)
+    let _stkAll = stackPushAll(st0, xs2)
 
     let ss0 = setEmpty()
     let s1 = setAdd(ss0, 1)

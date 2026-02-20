@@ -1,0 +1,21 @@
+use flvtest
+use collections.stack
+use collections.list
+
+test "stack-push-peek-pop" -> do:
+  let s0 = stackEmpty()
+  let s1 = stackPush(s0, 1)
+  let s2 = stackPush(s1, 2)
+  assertEq(stackPeek(s2), Some(2))?
+  let p1 = stackPopOr(s2, 0)
+  assertEq(p1.value, 2)?
+  assertEq(stackPeek(p1.rest), Some(1))?
+
+test "stack-list-ops-and-defaults" -> do:
+  let s0 = stackFromList(Cons(1, Cons(2, Nil)))
+  assertEq(stackSize(s0), 2)?
+  let s1 = stackPushAll(s0, Cons(3, Cons(4, Nil)))
+  assertEq(stackToList(s1), Cons(4, Cons(3, Cons(1, Cons(2, Nil)))))?
+  assertEq(stackPeekOr(stackEmpty(), 7), 7)?
+  let p0 = stackPopOr(stackEmpty(), 9)
+  assertEq(p0.value, 9)?

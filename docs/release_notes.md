@@ -115,6 +115,10 @@ Compatibility note:
   - `dequePushFront` / `dequePushBack`
   - `dequePopFront` / `dequePopBack`
   - `dequePeekFront` / `dequePeekBack` and list conversion helpers
+- Added new `collections.stack` stdlib module (plus `stack` compatibility wrapper):
+  - `stackPush` / `stackPop` / `stackPeek`
+  - `stackPushAll`, `stackToList`, `stackFromList`
+  - default helpers: `stackPeekOr` / `stackPopOr`
 - Added new `datetime` stdlib module with pure-Flavent helpers:
   - `parseDate` / `parseTime` / `parseDateTime`
   - `formatDate` / `formatTime` / `formatDateTime`
@@ -143,6 +147,10 @@ Compatibility note:
   - `docs/zh/stdlib/collections.deque.md`
   - `docs/en/stdlib/deque.md`
   - `docs/zh/stdlib/deque.md`
+  - `docs/en/stdlib/collections.stack.md`
+  - `docs/zh/stdlib/collections.stack.md`
+  - `docs/en/stdlib/stack.md`
+  - `docs/zh/stdlib/stack.md`
   - `docs/en/stdlib/datetime.md`
   - `docs/zh/stdlib/datetime.md`
   - `docs/en/stdlib/path.md`
