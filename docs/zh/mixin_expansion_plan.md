@@ -49,8 +49,8 @@
 
 ## Phase D：文档与示例补齐
 
-- [ ] 新增 EN 指南：`docs/en/mixin_guide.md`
-- [ ] 新增 ZH 指南：`docs/zh/mixin_guide.md`
+- [x] 新增 EN 指南：`docs/en/mixin_guide.md`
+- [x] 新增 ZH 指南：`docs/zh/mixin_guide.md`
 - [ ] 新增 mixin 诊断码目录页。
 - [ ] 新增 6+ 个专项示例：
   - [ ] type-target hook 链

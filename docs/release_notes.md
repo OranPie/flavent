@@ -241,3 +241,6 @@ Compatibility note:
     - `head + cancelable=true` now requires return type `Option[targetReturnType]`,
     - `tail + returnDep` now validates allowed values and previous-return parameter typing.
   - added `flvrepr` stdlib package for string-based metadata encoding/decoding (`encodeFunctionTarget`, `metaGet`, `metaSet`).
+  - added dedicated mixin guides:
+    - `docs/en/mixin_guide.md`
+    - `docs/zh/mixin_guide.md`

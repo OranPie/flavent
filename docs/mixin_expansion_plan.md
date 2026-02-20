@@ -49,8 +49,8 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 
 ## Phase D: Docs and Examples
 
-- [ ] Add EN guide: `docs/en/mixin_guide.md`
-- [ ] Add ZH guide: `docs/zh/mixin_guide.md`
+- [x] Add EN guide: `docs/en/mixin_guide.md`
+- [x] Add ZH guide: `docs/zh/mixin_guide.md`
 - [ ] Add diagnostics catalog page for mixin codes.
 - [ ] Add 6+ focused examples:
   - [ ] type-target hook chain

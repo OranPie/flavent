@@ -7,6 +7,7 @@
 - [语言规范与标准库文档](./DOCS.md)
 - [FLM（包管理与插件）规范](./FLM_SPEC.md)
 - [编译器与执行流程](./COMPILER.md)
+- [Mixin 使用指南](./mixin_guide.md)
 - [标准库（逐模块页面）](./stdlib/index.md)
 
 ## 快速开始
