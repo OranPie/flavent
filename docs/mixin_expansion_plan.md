@@ -21,12 +21,12 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 
 ## Phase A: Hook Target Coverage
 
-- [ ] Add `hook` support for type-target mixins (currently sector-only).
+- [x] Add `hook` support for type-target mixins (currently sector-only).
 - [ ] Define hook support boundaries per callable kind (sector fn, type method, handler).
 - [ ] Add compatibility rules for existing `around fn` behavior vs new hooks.
-- [ ] Tests:
-  - [ ] positive: type-target invoke/head/tail hooks
-  - [ ] negative: unsupported targets with precise diagnostics
+- [~] Tests:
+  - [x] positive: type-target invoke/head/tail hooks
+  - [x] negative: unsupported targets with precise diagnostics
 
 ## Phase B: Hook Context and Control
 

@@ -470,8 +470,6 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
             items.append(_parse_mixin_around(cur))
             continue
         if cur.at(TokenKind.IDENT) and cur.peek().text == "hook":
-            if isinstance(target, ast.MixinTargetType):
-                raise ParseError("hook currently supports sector mixins only", cur.peek().span)
             items.append(_parse_mixin_hook(cur))
             continue
         # For type-target mixins, allow adding record fields as `name: Type`.
@@ -495,7 +493,7 @@ def _parse_mixin_decl(cur: _Cursor) -> ast.MixinDecl:
                 bad.span,
             )
         raise ParseError(
-            "Expected mixin item; type mixins support: pattern, fn, around, field: Type",
+            "Expected mixin item; type mixins support: pattern, fn, around, hook, field: Type",
             bad.span,
         )
 

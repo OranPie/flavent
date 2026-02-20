@@ -217,10 +217,11 @@ Compatibility note:
   - additional parser guidance:
     - clearer match-arm errors for missing pattern/body around `->`,
     - explicit reminder that single-line block forms are unsupported (`if/for/match` require newline+indent blocks).
-  - mixin hook grammar added for sector mixins:
+  - mixin hook grammar added for sector and type mixins:
     - `hook head|tail|invoke fn ... with(...) = ...`
     - option keys include `id`, `priority`, `depends`, `at`, `cancelable`, `returnDep`, `const`.
   - resolver now supports hook call-stack ordering with priority/dependency resolution and locator checks (`at`).
+  - type-target mixins now support hook weaving over injected methods (including `head` cancelation and `tail returnDep` rules).
   - hook semantic checks were tightened:
     - unknown `with(...)` option keys are now rejected,
     - `head + cancelable=true` now requires return type `Option[targetReturnType]`,

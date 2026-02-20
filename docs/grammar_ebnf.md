@@ -69,8 +69,8 @@ sector_item     ::= let_decl | need_decl | fn_decl | on_handler
 ```
 
 Current implementation note:
-- `hook` items are currently supported for sector-target mixins.
-- Type-target mixins currently support `pattern`, `fn`, `around`, and field additions.
+- `hook` items are supported for both sector-target and type-target mixins.
+- Type-target hook/around targets resolve against mixin-injected methods (`fn name(self: Type, ...)`).
 
 ## Handlers, Blocks, and Statements
 

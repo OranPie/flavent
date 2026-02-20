@@ -251,6 +251,40 @@ _RUNTIME_CASES.extend(
             ),
             uses="use flvrepr\n",
         ),
+        Case(
+            name="type-mixin-hook-head-invoke-tail-runtime",
+            body=(
+                "    let u = { id = 2 }\n"
+                "    let z = { id = 0 }\n"
+                "    assertEq(callScore(u), 14)?\n"
+                "    assertEq(callScore(z), 50)?\n"
+            ),
+            uses=(
+                "type User = { id: Int }\n"
+                "\n"
+                "fn callScore(u: User) -> Int = User.score(u)\n"
+                "\n"
+                "mixin Base v1 into type User:\n"
+                "  fn score(self: User) -> Int = self.id + 1\n"
+                "\n"
+                "mixin Head v1 into type User:\n"
+                "  hook head fn score(self: User) -> Option[Int] with(cancelable=true) = match self.id == 0:\n"
+                "    true -> Some(50)\n"
+                "    false -> None\n"
+                "\n"
+                "mixin Invoke v1 into type User:\n"
+                "  hook invoke fn score(self: User) -> Int = do:\n"
+                "    return proceed(self) + 1\n"
+                "\n"
+                "mixin Tail v1 into type User:\n"
+                "  hook tail fn score(self: User, ret: Int) -> Int with(returnDep=\"replace_return\") = ret + 10\n"
+                "\n"
+                "use mixin Base v1\n"
+                "use mixin Head v1\n"
+                "use mixin Invoke v1\n"
+                "use mixin Tail v1\n"
+            ),
+        ),
     ]
 )
 

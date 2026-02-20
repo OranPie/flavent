@@ -6,7 +6,7 @@ This document describes the hook-oriented mixin extension and the `flvrepr` meta
 
 ## Hook Syntax
 
-Inside a sector-target mixin:
+Inside a sector-target or type-target mixin:
 
 ```flv
 hook <point> fn <target>(<params>) -> <ret>
@@ -18,6 +18,8 @@ Hook points:
 - `head`: runs before target invocation.
 - `tail`: runs after target invocation.
 - `invoke`: full around-style interception (`proceed(...)` supported).
+
+For type-target mixins, `hook`/`around` targets are method names declared by type mixins (`fn method(self: Type, ...)`).
 
 ## Hook Options
 

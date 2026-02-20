@@ -21,12 +21,12 @@
 
 ## Phase A：Hook 目标覆盖扩展
 
-- [ ] 为 type-target mixin 增加 `hook` 支持（当前以 sector 为主）。
+- [x] 为 type-target mixin 增加 `hook` 支持（当前以 sector 为主）。
 - [ ] 明确 callable 目标边界（sector fn / type method / handler）。
 - [ ] 统一既有 `around fn` 与新 hook 的兼容规则。
-- [ ] 测试：
-  - [ ] type-target invoke/head/tail 正向用例
-  - [ ] 非支持目标的精确报错用例
+- [~] 测试：
+  - [x] type-target invoke/head/tail 正向用例
+  - [x] 非支持目标的精确报错用例
 
 ## Phase B：Hook 上下文与控制策略
 
