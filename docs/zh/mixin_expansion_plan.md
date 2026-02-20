@@ -35,8 +35,8 @@
 - [x] 增加 strict 模式：未解析 `depends` 或 locator 失配直接失败。
 - [~] 增加 hook 栈“dry-run resolve”输出（CI/排障）。（已增加 JSON 报告产物）
 - [ ] 测试：
-  - [ ] 冲突策略行为矩阵
-  - [ ] strict / non-strict 差异行为
+  - [x] 冲突策略行为矩阵
+  - [x] strict / non-strict 差异行为
 
 ## Phase C：诊断与报告
 
@@ -54,8 +54,8 @@
 - [ ] 新增 mixin 诊断码目录页。
 - [ ] 新增 6+ 个专项示例：
   - [ ] type-target hook 链
-  - [ ] 冲突策略演示
-  - [ ] strict locator/depends 校验
+  - [x] 冲突策略演示
+  - [x] strict locator/depends 校验
   - [ ] 报告与 CI 策略接入示例
 
 ## 完成标准

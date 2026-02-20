@@ -354,3 +354,63 @@ run()
     assert len(plan) == 1
     assert plan[0]["status"] == "dropped"
     assert plan[0]["drop_reason"] == "locator_mismatch"
+
+
+@pytest.mark.parametrize(
+    ("strict_opt", "expect_error"),
+    [
+        ("", True),
+        (", strict=true", True),
+        (", strict=false", False),
+    ],
+)
+def test_mixin_hook_dependency_strict_mode_matrix(strict_opt: str, expect_error: bool):
+    src = f"""sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", depends="Missing"{strict_opt}) = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    if expect_error:
+        with pytest.raises(ResolveError, match="Unknown hook dependency"):
+            _resolve(src)
+        return
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo" and p["hook_id"] == "A"]
+    assert len(plan) == 1
+    assert plan[0]["status"] == "dropped"
+    assert plan[0]["drop_reason"].startswith("unknown_dependency:")
+
+
+@pytest.mark.parametrize(
+    ("strict_opt", "expect_error"),
+    [
+        ("", True),
+        (", strict=true", True),
+        (", strict=false", False),
+    ],
+)
+def test_mixin_hook_locator_strict_mode_matrix(strict_opt: str, expect_error: bool):
+    src = f"""sector S:
+  fn foo(x: Int) -> Int = x
+
+mixin A v1 into sector S:
+  hook invoke fn foo(x: Int) -> Int with(id="A", at="anchor:nope"{strict_opt}) = do:
+    return proceed(x)
+
+use mixin A v1
+run()
+"""
+    if expect_error:
+        with pytest.raises(ResolveError, match="locator mismatch"):
+            _resolve(src)
+        return
+    res = _resolve(src)
+    plan = [p for p in res.mixin_hook_plan if p["target"] == "S.foo" and p["hook_id"] == "A"]
+    assert len(plan) == 1
+    assert plan[0]["status"] == "dropped"
+    assert plan[0]["drop_reason"] == "locator_mismatch"

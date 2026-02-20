@@ -1,0 +1,22 @@
+type Event.Start = {}
+
+sector S:
+  fn value(x: Int) -> Int = x
+
+mixin Base v1 into sector S:
+  hook invoke fn value(x: Int) -> Int with(id="chain", conflict="prefer", priority=1) = do:
+    return proceed(x + 1)
+
+mixin Override v1 into sector S:
+  hook invoke fn value(x: Int) -> Int with(id="chain", conflict="prefer", priority=10) = do:
+    return proceed(x + 100)
+
+use mixin Base v1
+use mixin Override v1
+
+sector main:
+  on Event.Start -> do:
+    rpc S.value(1)
+    stop()
+
+run()

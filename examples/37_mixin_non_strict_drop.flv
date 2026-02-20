@@ -1,0 +1,21 @@
+type Event.Start = {}
+
+sector S:
+  fn value(x: Int) -> Int = x
+
+mixin Relaxed v1 into sector S:
+  hook invoke fn value(x: Int) -> Int with(id="drop-missing", depends="Missing", strict=false) = do:
+    return proceed(x + 1)
+  hook invoke fn value(x: Int) -> Int with(id="drop-locator", at="anchor:nope", strict=false) = do:
+    return proceed(x + 2)
+  hook invoke fn value(x: Int) -> Int with(id="kept", strict=true) = do:
+    return proceed(x + 10)
+
+use mixin Relaxed v1
+
+sector main:
+  on Event.Start -> do:
+    rpc S.value(1)
+    stop()
+
+run()

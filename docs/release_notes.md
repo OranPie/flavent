@@ -197,6 +197,9 @@ Compatibility note:
   - `33_uuid_glob_tempfile_ops.flv`
   - `34_py_json_bridge.flv`
   - `35_file_lines_pipeline.flv`
+- Added mixin policy examples:
+  - `36_mixin_conflict_strategy.flv` (duplicate hook-id conflict `prefer` strategy)
+  - `37_mixin_non_strict_drop.flv` (non-strict dependency/locator drop behavior)
 
 ## Grammar Planning Notes
 

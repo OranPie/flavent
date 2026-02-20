@@ -68,7 +68,9 @@ Each entry includes:
 - `owner_kind` (`sector` or `type`)
 - `target` (`Owner.fn` / `Type.method`)
 - `hook_id`, `point`, `origin`, `conflict_policy`, `mixin_key`
-- `priority`, `depends`, `at`, `depth` (`0` is outermost)
+- `priority`, `depends`, `at`, `depth` (`0` is outermost for active hooks)
+- `status`: `active` or `dropped`
+- `drop_reason` (when dropped): `duplicate_drop`, `unknown_dependency:<id>`, `locator_mismatch`
 
 ## `flvrepr` Package
 

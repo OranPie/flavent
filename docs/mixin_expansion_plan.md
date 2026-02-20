@@ -35,8 +35,8 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 - [x] Add optional strict mode: unresolved `depends` or locator mismatch => hard error.
 - [~] Add “dry-run resolve” output for hook stack planning (for CI/debug). (JSON report artifact added)
 - [ ] Tests:
-  - [ ] conflict resolution behavior matrix
-  - [ ] strict vs non-strict policy behavior
+  - [x] conflict resolution behavior matrix
+  - [x] strict vs non-strict policy behavior
 
 ## Phase C: Diagnostics and Reporting
 
@@ -54,8 +54,8 @@ Deliver a stable, debuggable, policy-friendly mixin system with stronger composi
 - [ ] Add diagnostics catalog page for mixin codes.
 - [ ] Add 6+ focused examples:
   - [ ] type-target hook chain
-  - [ ] conflict strategy demo
-  - [ ] strict locator/dependency checks
+  - [x] conflict strategy demo
+  - [x] strict locator/dependency checks
   - [ ] reporting/CI policy example
 
 ## Exit Criteria
