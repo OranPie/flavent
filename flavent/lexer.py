@@ -7,6 +7,34 @@ from .span import Span
 from .token import KEYWORDS, Token, TokenKind
 
 
+_CONFUSABLE_PUNCT_EQUIV: dict[str, str] = {
+    "（": "(",
+    "）": ")",
+    "【": "[",
+    "】": "]",
+    "｛": "{",
+    "｝": "}",
+    "，": ",",
+    "：": ":",
+    "．": ".",
+    "＠": "@",
+    "｜": "|",
+    "＝": "=",
+    "＋": "+",
+    "－": "-",
+    "＊": "*",
+    "／": "/",
+    "＜": "<",
+    "＞": ">",
+    "！": "!",
+    "？": "?",
+}
+
+
+def _norm_punct(ch: str) -> str:
+    return _CONFUSABLE_PUNCT_EQUIV.get(ch, ch)
+
+
 @dataclass(slots=True)
 class _State:
     file: str
@@ -255,7 +283,9 @@ def lex(file: str, src: str) -> list[Token]:
             _lex_string(st, emit, start_i, start_line, start_col, bytes_prefix=False)
             continue
 
-        two = ch + st.peek(1)
+        norm_ch = _norm_punct(ch)
+        norm_next = _norm_punct(st.peek(1))
+        two = norm_ch + norm_next
         if two == "->":
             st.advance(2)
             emit(TokenKind.ARROW, "->", start_i, start_line, start_col)
@@ -301,86 +331,86 @@ def lex(file: str, src: str) -> list[Token]:
             emit(TokenKind.PIPE, "|>", start_i, start_line, start_col)
             continue
 
-        if ch == "(":
+        if norm_ch == "(":
             st.advance(1)
             bracket_depth += 1
             emit(TokenKind.LPAREN, "(", start_i, start_line, start_col)
             continue
-        if ch == ")":
+        if norm_ch == ")":
             st.advance(1)
             bracket_depth = max(0, bracket_depth - 1)
             emit(TokenKind.RPAREN, ")", start_i, start_line, start_col)
             continue
-        if ch == "[":
+        if norm_ch == "[":
             st.advance(1)
             bracket_depth += 1
             emit(TokenKind.LBRACKET, "[", start_i, start_line, start_col)
             continue
-        if ch == "]":
+        if norm_ch == "]":
             st.advance(1)
             bracket_depth = max(0, bracket_depth - 1)
             emit(TokenKind.RBRACKET, "]", start_i, start_line, start_col)
             continue
-        if ch == "{":
+        if norm_ch == "{":
             st.advance(1)
             bracket_depth += 1
             emit(TokenKind.LBRACE, "{", start_i, start_line, start_col)
             continue
-        if ch == "}":
+        if norm_ch == "}":
             st.advance(1)
             bracket_depth = max(0, bracket_depth - 1)
             emit(TokenKind.RBRACE, "}", start_i, start_line, start_col)
             continue
 
-        if ch == ",":
+        if norm_ch == ",":
             st.advance(1)
             emit(TokenKind.COMMA, ",", start_i, start_line, start_col)
             continue
-        if ch == ".":
+        if norm_ch == ".":
             st.advance(1)
             emit(TokenKind.DOT, ".", start_i, start_line, start_col)
             continue
-        if ch == ":":
+        if norm_ch == ":":
             st.advance(1)
             emit(TokenKind.COLON, ":", start_i, start_line, start_col)
             continue
-        if ch == "@":
+        if norm_ch == "@":
             st.advance(1)
             emit(TokenKind.AT, "@", start_i, start_line, start_col)
             continue
-        if ch == "|":
+        if norm_ch == "|":
             st.advance(1)
             emit(TokenKind.BAR, "|", start_i, start_line, start_col)
             continue
-        if ch == "=":
+        if norm_ch == "=":
             st.advance(1)
             emit(TokenKind.EQ, "=", start_i, start_line, start_col)
             continue
-        if ch == "+":
+        if norm_ch == "+":
             st.advance(1)
             emit(TokenKind.PLUS, "+", start_i, start_line, start_col)
             continue
-        if ch == "-":
+        if norm_ch == "-":
             st.advance(1)
             emit(TokenKind.MINUS, "-", start_i, start_line, start_col)
             continue
-        if ch == "*":
+        if norm_ch == "*":
             st.advance(1)
             emit(TokenKind.STAR, "*", start_i, start_line, start_col)
             continue
-        if ch == "/":
+        if norm_ch == "/":
             st.advance(1)
             emit(TokenKind.SLASH, "/", start_i, start_line, start_col)
             continue
-        if ch == "<":
+        if norm_ch == "<":
             st.advance(1)
             emit(TokenKind.LT, "<", start_i, start_line, start_col)
             continue
-        if ch == ">":
+        if norm_ch == ">":
             st.advance(1)
             emit(TokenKind.GT, ">", start_i, start_line, start_col)
             continue
-        if ch == "?":
+        if norm_ch == "?":
             st.advance(1)
             emit(TokenKind.QMARK, "?", start_i, start_line, start_col)
             continue

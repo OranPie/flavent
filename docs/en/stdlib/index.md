@@ -2,6 +2,10 @@
 
 This directory contains **one page per stdlib module**.
 
+## Language Switch
+- Simplified Chinese (zh-CN): [`docs/zh/stdlib/index.md`](../../zh/stdlib/index.md)
+- Chinese alias (cn): [`docs/cn/stdlib/index.md`](../../cn/stdlib/index.md)
+
 ## Core
 - [std.option](./std.option.md)
 - [std.result](./std.result.md)

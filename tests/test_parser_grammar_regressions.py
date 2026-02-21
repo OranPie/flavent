@@ -82,8 +82,11 @@ run()
 
 def test_parse_error_expected_token_hint():
     src = "fn f() = (1 + 2\n"
-    with pytest.raises(ParseError, match="hint: missing"):
+    with pytest.raises(ParseError, match="hint: missing") as exc:
         parse_program(lex("test.flv", src))
+    msg = str(exc.value)
+    assert "Expected ')'" in msg
+    assert "got end of file" in msg or "got newline" in msg
 
 
 def test_parse_error_hints_flvtest_top_level():

@@ -9,6 +9,76 @@ from .span import Span
 from .token import Token, TokenKind
 
 
+_TOKEN_SYMBOLS: dict[TokenKind, str] = {
+    TokenKind.LPAREN: "(",
+    TokenKind.RPAREN: ")",
+    TokenKind.LBRACE: "{",
+    TokenKind.RBRACE: "}",
+    TokenKind.LBRACKET: "[",
+    TokenKind.RBRACKET: "]",
+    TokenKind.COMMA: ",",
+    TokenKind.DOT: ".",
+    TokenKind.COLON: ":",
+    TokenKind.ARROW: "->",
+    TokenKind.AT: "@",
+    TokenKind.BAR: "|",
+    TokenKind.EQ: "=",
+    TokenKind.PLUS: "+",
+    TokenKind.MINUS: "-",
+    TokenKind.STAR: "*",
+    TokenKind.STARSTAR: "**",
+    TokenKind.SLASH: "/",
+    TokenKind.EQEQ: "==",
+    TokenKind.NEQ: "!=",
+    TokenKind.LT: "<",
+    TokenKind.LTE: "<=",
+    TokenKind.GT: ">",
+    TokenKind.GTE: ">=",
+    TokenKind.PIPE: "|>",
+    TokenKind.QMARK: "?",
+}
+
+
+def _expected_token_label(kind: TokenKind) -> str:
+    if kind == TokenKind.NL:
+        return "newline"
+    if kind == TokenKind.INDENT:
+        return "indentation"
+    if kind == TokenKind.DEDENT:
+        return "dedentation"
+    if kind == TokenKind.EOF:
+        return "end of file"
+    sym = _TOKEN_SYMBOLS.get(kind)
+    if sym is not None:
+        return repr(sym)
+    if kind.name.startswith("KW_"):
+        return f"keyword {kind.name[3:].lower()!r}"
+    return kind.name
+
+
+def _describe_token(tok: Token) -> str:
+    if tok.kind == TokenKind.NL:
+        return "newline"
+    if tok.kind == TokenKind.EOF:
+        return "end of file"
+    if tok.kind == TokenKind.INDENT:
+        return "indentation"
+    if tok.kind == TokenKind.DEDENT:
+        return "dedentation"
+    sym = _TOKEN_SYMBOLS.get(tok.kind)
+    if sym is not None:
+        return f"{sym!r}"
+    if tok.kind == TokenKind.IDENT:
+        return f"identifier {tok.text!r}"
+    if tok.kind in (TokenKind.INT, TokenKind.FLOAT, TokenKind.STR, TokenKind.BYTES, TokenKind.BOOL):
+        return f"{tok.kind.name.lower()} {tok.text!r}"
+    if tok.kind.name.startswith("KW_"):
+        return f"keyword {tok.text!r}"
+    if tok.text:
+        return f"{tok.kind.name}({tok.text!r})"
+    return tok.kind.name
+
+
 @dataclass(slots=True)
 class _Cursor:
     tokens: list[Token]
@@ -34,20 +104,24 @@ class _Cursor:
     def expect(self, kind: TokenKind, msg: str | None = None) -> Token:
         t = self.peek()
         if t.kind != kind:
-            got = f"{t.kind.name}({t.text!r})" if t.text else t.kind.name
-            base = msg or f"Expected {kind.name}"
-            hint: str | None = None
+            got = _describe_token(t)
+            base = msg or f"Expected {_expected_token_label(kind)}"
+            hints: list[str] = []
             if kind == TokenKind.COLON:
-                hint = "missing ':' before an indented block"
+                hints.append("missing ':' before an indented block")
             elif kind == TokenKind.RPAREN:
-                hint = "missing ')' to close grouped expression or call"
+                hints.append("missing ')' to close grouped expression or call")
             elif kind == TokenKind.RBRACKET:
-                hint = "missing ']' to close index or type arguments"
+                hints.append("missing ']' to close index or type arguments")
             elif kind == TokenKind.ARROW:
-                hint = "expected '->' before handler or match arm body"
+                hints.append("expected '->' before handler or match arm body")
+            if t.kind == TokenKind.EOF and kind in (TokenKind.RPAREN, TokenKind.RBRACKET, TokenKind.RBRACE):
+                hints.append("reached end of file while closing delimiters")
+            if t.kind == TokenKind.NL and kind in (TokenKind.RPAREN, TokenKind.RBRACKET, TokenKind.RBRACE):
+                hints.append("a closing delimiter may be missing before newline")
             full = f"{base}, got {got}"
-            if hint is not None:
-                full = f"{full}; hint: {hint}"
+            if hints:
+                full = f"{full}; hint: {'; '.join(hints)}"
             raise ParseError(full, t.span)
         return self.advance()
 

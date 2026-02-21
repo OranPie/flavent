@@ -69,6 +69,8 @@ python3 -m pytest -q --junit-xml=reports/junit.xml
 
 ## Documentation
 
+- [Documentation Portal](docs/README.md)
+- [English Docs Hub](docs/en/README.md)
 - [Language Specification & Library Docs](DOCS.md)
 - [Bridge API Summary](BRIDGE_PYTHON_SUMMARY.md)
 - [Stdlib Docs (one page per module)](docs/en/stdlib/index.md)
@@ -108,10 +110,8 @@ use pyadapters.demo
 let r = rpc demo.echo(b"hello")
 ```
 
-## 中文文档 (Chinese)
+## 中文文档 (zh-CN)
 
-- [docs/zh/README.md](docs/zh/README.md)
-- [docs/zh/FLM_SPEC.md](docs/zh/FLM_SPEC.md)
-- [docs/zh/DOCS.md](docs/zh/DOCS.md)
-- [docs/zh/COMPILER.md](docs/zh/COMPILER.md)
-- [docs/zh/stdlib/index.md](docs/zh/stdlib/index.md)
+- [中文文档中心（zh）](docs/zh/README.md)
+- [中文文档入口（cn 别名）](docs/cn/README.md)
+- [标准库索引（zh）](docs/zh/stdlib/index.md)

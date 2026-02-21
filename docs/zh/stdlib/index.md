@@ -2,6 +2,10 @@
 
 本目录采用“每个 stdlib 模块一页”的文档结构。
 
+## 语言切换
+- English: [`docs/en/stdlib/index.md`](../../en/stdlib/index.md)
+- cn 别名入口: [`docs/cn/stdlib/index.md`](../../cn/stdlib/index.md)
+
 ## 核心
 - [std.option](./std.option.md)
 - [std.result](./std.result.md)
